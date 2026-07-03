@@ -112,8 +112,6 @@ export const quizService = {
    *   4. Root-level collection docs where courseId field === courseId
    */
   async getQuestionsForCourse(courseId: string): Promise<QuizQuestion[]> {
-    console.log(`[QuizService] Fetching questions for courseId="${courseId}"`);
-
     // STEP 1: Embedded inside the course document
     try {
       const snap = await getDoc(doc(db, 'courses', courseId));
@@ -121,13 +119,10 @@ export const quizService = {
         const raw = extractRawArray(snap.data());
         if (raw) {
           const qs = parseQuestions(raw, courseId);
-          if (qs.length > 0) {
-            console.log(`[QuizService] SUCCESS: ${qs.length} q from courses/${courseId} embedded`);
-            return qs;
-          }
+          if (qs.length > 0) return qs;
         }
       }
-    } catch (e) { console.warn('[QuizService] Step 1:', e); }
+    } catch (e) { /* silent */ }
 
     // STEP 2: Subcollections under courses/{courseId}
     const subcollections = ['questions','quizQuestions','quizzes','testSeries','tests','quiz','exam','assessments'];
@@ -140,10 +135,7 @@ export const quizService = {
             const q = normaliseQuestion({ id: d.id, ...d.data() }, qs.length, courseId);
             if (q) qs.push(q);
           });
-          if (qs.length > 0) {
-            console.log(`[QuizService] SUCCESS: ${qs.length} q from courses/${courseId}/${sub}`);
-            return qs;
-          }
+          if (qs.length > 0) return qs;
         }
       } catch (_) {}
     }
@@ -158,17 +150,10 @@ export const quizService = {
           const raw = extractRawArray(snap.data());
           if (raw) {
             const qs = parseQuestions(raw, courseId);
-            if (qs.length > 0) {
-              console.log(`[QuizService] SUCCESS: ${qs.length} q from ${coll}/${courseId} (doc-ID)`);
-              return qs;
-            }
+            if (qs.length > 0) return qs;
           }
-          // Maybe the doc itself is a single question
           const singleQ = normaliseQuestion({ id: snap.id, ...snap.data() }, 0, courseId);
-          if (singleQ) {
-            console.log(`[QuizService] SUCCESS: 1 q from ${coll}/${courseId} (single-doc)`);
-            return [singleQ];
-          }
+          if (singleQ) return [singleQ];
         }
       } catch (_) {}
 
@@ -181,13 +166,23 @@ export const quizService = {
           if (!snap.empty) {
             const qs: QuizQuestion[] = [];
             snap.forEach((d) => {
-              const q = normaliseQuestion({ id: d.id, ...d.data() }, qs.length, courseId);
-              if (q) qs.push(q);
+              const data = d.data();
+              // Skip hidden/draft tests
+              if (data.status === 'hidden' || data.status === 'draft') return;
+              // First try to extract embedded questions array (superadmin format)
+              const rawArr = extractRawArray(data);
+              if (rawArr && rawArr.length > 0) {
+                rawArr.forEach((raw: any, idx: number) => {
+                  const q = normaliseQuestion(raw, idx, courseId);
+                  if (q) qs.push(q);
+                });
+              } else {
+                // Fallback: treat doc itself as a single question
+                const singleQ = normaliseQuestion({ id: d.id, ...data }, qs.length, courseId);
+                if (singleQ) qs.push(singleQ);
+              }
             });
-            if (qs.length > 0) {
-              console.log(`[QuizService] SUCCESS: ${qs.length} q from ${coll} where ${field}=="${courseId}"`);
-              return qs;
-            }
+            if (qs.length > 0) return qs;
           }
         } catch (_) {}
       }
@@ -198,7 +193,12 @@ export const quizService = {
   },
 
   /**
-   * Submit quiz result and generate a certificate if passed
+   * Submit quiz result.
+   * - Always saves quiz attempt to quizResults.
+   * - Generates certificate ONLY if:
+   *     1. Student passed (score >= 60%)
+   *     2. Course progress is 100%
+   *     3. Certificate doesn't already exist (one-time only)
    */
   async submitQuizResult(
     userId: string,
@@ -210,6 +210,7 @@ export const quizService = {
     passed: boolean
   ): Promise<string | null> {
     try {
+      const scorePct = total > 0 ? Math.round((score / total) * 100) : 0;
       const resultId = `result_${userId}_${courseId}_${Date.now()}`;
       await setDoc(doc(db, 'quizResults', resultId), {
         id: resultId,
@@ -219,20 +220,37 @@ export const quizService = {
         userName,
         score,
         total,
+        scorePct,
         passed,
         completedAt: new Date().toISOString(),
       });
 
       if (passed) {
+        // Check course progress — certificate requires 100% completion
+        let courseProgress = 0;
+        try {
+          const userSnap = await getDoc(doc(db, 'users', userId));
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            courseProgress = (data.courseProgress && data.courseProgress[courseId]) || 0;
+          }
+        } catch (_) {}
+
+        if (courseProgress < 100) {
+          // Passed the quiz but hasn't finished all lectures — no cert yet
+          return null;
+        }
+
+        // One-time certificate generation
         const certId = `cert_${userId}_${courseId}`;
         const certRef = doc(db, 'certificates', certId);
         const certSnap = await getDoc(certRef);
         if (certSnap.exists()) {
-          console.log(`[QuizService] Certificate already exists for cert_${userId}_${courseId}, skipping regeneration.`);
+          // Certificate already issued — do NOT regenerate
           return certId;
         }
 
-        const credentialId = `LMS-${Date.now().toString(36).toUpperCase()}`;
+        const credentialId = `LMS-${Date.now().toString(36).toUpperCase()}-${userId.slice(-4).toUpperCase()}`;
         await setDoc(certRef, {
           id: certId,
           courseId,
@@ -243,9 +261,11 @@ export const quizService = {
             day: '2-digit', month: 'long', year: 'numeric',
           }),
           credentialId,
-          score,
+          score: scorePct,
+          passed: true,
+          createdAt: new Date().toISOString(),
         }, { merge: true });
-        console.log(`[QuizService] ✅ Certificate created: cert_${userId}_${courseId}`);
+
         return certId;
       }
       return null;

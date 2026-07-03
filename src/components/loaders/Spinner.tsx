@@ -10,7 +10,7 @@ interface SpinnerProps {
 export const Spinner: React.FC<SpinnerProps> = ({
   fullScreen = false,
   message,
-  color = '#208AEF',
+  color = '#4F46E5',
 }) => {
   if (fullScreen) {
     return (

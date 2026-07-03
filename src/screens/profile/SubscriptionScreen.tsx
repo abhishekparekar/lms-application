@@ -74,7 +74,7 @@ export const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
         : ['All Premium Courses', 'Unlimited Learning Resources', 'Verified credential badge'],
       buttonText: 'Upgrade to Plus',
       disabled: false,
-      accent: '#208AEF',
+      accent: '#4F46E5',
     },
     {
       id: 'recruiter',

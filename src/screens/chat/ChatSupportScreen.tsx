@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
   },
   userBubble: {
-    backgroundColor: '#208AEF',
+    backgroundColor: '#4F46E5',
   },
   supportBubble: {
     backgroundColor: '#F3F4F6',
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   sendBtn: {
-    backgroundColor: '#208AEF',
+    backgroundColor: '#4F46E5',
     borderRadius: 20,
     height: 40,
     paddingHorizontal: 16,

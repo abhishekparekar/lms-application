@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedPill: {
-    backgroundColor: '#208AEF',
+    backgroundColor: '#4F46E5',
   },
   typePillText: {
     color: '#4B5563',

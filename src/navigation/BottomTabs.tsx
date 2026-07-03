@@ -50,6 +50,7 @@ interface BottomTabsProps {
   onViewCertificates: () => void;
   onLogout: () => void;
   onPostJobPress?: (editingJobId?: string) => void;
+  onTakeTest?: (courseId: string) => void;
 }
 
 const ACTIVE_COLOR = '#4F46E5';
@@ -123,6 +124,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
   onViewCertificates,
   onLogout,
   onPostJobPress,
+  onTakeTest,
 }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab || 'dashboard');
@@ -172,6 +174,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
             onCoursePress={onCoursePress}
             onJobPress={onJobPress}
             onPostJobPress={onPostJobPress}
+            onTakeTest={onTakeTest}
           />
         );
       case 'courses':

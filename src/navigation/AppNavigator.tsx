@@ -415,6 +415,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
           onViewCertificates={() => setScreen({ type: 'certificates' })}
           onLogout={onLogout}
           onPostJobPress={(editingJobId) => setScreen({ type: 'post_job', editingJobId })}
+          onTakeTest={(cid) => setScreen({ type: 'test_series', courseId: cid })}
         />
       );
 

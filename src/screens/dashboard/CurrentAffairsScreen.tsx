@@ -23,7 +23,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Science: '#8B5CF6',
   Education: '#F59E0B',
   'Law & Governance': '#EF4444',
-  default: '#208AEF',
+  default: '#4F46E5',
 };
 
 export const CurrentAffairsScreen: React.FC = () => {
@@ -146,7 +146,7 @@ export const CurrentAffairsScreen: React.FC = () => {
               key={cat}
               style={[
                 styles.filterPill,
-                isSelected && { backgroundColor: '#208AEF' },
+                isSelected && { backgroundColor: '#4F46E5' },
               ]}
               onPress={() => setSelectedCategory(cat)}
             >
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8, lineHeight: 22 },
   cardSummary: { fontSize: 13, color: '#4B5563', lineHeight: 19, marginBottom: 12 },
   readMoreBtn: { alignSelf: 'flex-start' },
-  readMoreText: { fontSize: 13, color: '#208AEF', fontWeight: '700' },
+  readMoreText: { fontSize: 13, color: '#4F46E5', fontWeight: '700' },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',

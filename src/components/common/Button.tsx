@@ -69,7 +69,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator 
-          color={variant === 'outline' ? '#208AEF' : '#ffffff'} 
+          color={variant === 'outline' ? '#4F46E5' : '#ffffff'} 
           size="small" 
         />
       ) : (
@@ -81,22 +81,22 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
     paddingHorizontal: 16,
   },
   primary: {
-    backgroundColor: '#208AEF',
+    backgroundColor: '#4F46E5',
   },
   secondary: {
-    backgroundColor: '#E6F4FE',
+    backgroundColor: '#EEF2FF',
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#208AEF',
+    borderWidth: 1.5,
+    borderColor: '#4F46E5',
   },
   danger: {
     backgroundColor: '#EF4444',
@@ -116,13 +116,13 @@ const styles = StyleSheet.create({
   text: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   textOutline: {
-    color: '#208AEF',
+    color: '#4F46E5',
   },
   textSecondary: {
-    color: '#208AEF',
+    color: '#4F46E5',
   },
   textSmall: {
     fontSize: 14,

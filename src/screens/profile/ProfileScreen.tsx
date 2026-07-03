@@ -787,31 +787,22 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 : (user?.displayName || 'Employer Account')}
             </Text>
             {!isSeeker && (
-              <Ionicons name="checkmark-circle" size={18} color="#2563EB" style={{ marginTop: 2 }} />
+              <Ionicons name="checkmark-circle" size={18} color="#4F46E5" style={{ marginTop: 2 }} />
             )}
           </View>
           <Text style={styles.heroEmail}>{user?.email || 'email@example.com'}</Text>
-          <TouchableOpacity
+          <View
             style={[styles.roleBadge, isSeeker ? styles.roleBadgeSeeker : styles.roleBadgeRecruiter]}
-            onPress={async () => {
-              const newRole = isSeeker ? 'recruiter' : 'seeker';
-              try {
-                await updateProfile({ role: newRole });
-                Alert.alert('Role Switched', `Your role is now set to: ${newRole === 'seeker' ? 'Job Seeker' : 'Recruiter'}`);
-              } catch (e: any) {
-                Alert.alert('Error', e.message || 'Could not change role.');
-              }
-            }}
           >
             <Ionicons
-              name={isSeeker ? 'school-outline' : 'business-outline'}
+              name={isSeeker ? 'school' : 'business'}
               size={12}
               color={isSeeker ? '#4F46E5' : '#059669'}
             />
             <Text style={[styles.roleBadgeText, isSeeker ? { color: '#4F46E5' } : { color: '#059669' }]}>
-              {isSeeker ? 'Job Seeker' : 'Recruiter'} (Tap to switch)
+              {isSeeker ? 'Job Seeker' : 'Recruiter'}
             </Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Seeker Stats strip ────────────────────────────── */}
@@ -903,7 +894,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 {applications.map((app) => {
                   const statusColors: Record<string, { bg: string, txt: string }> = {
                     pending: { bg: '#FEF3C7', txt: '#D97706' },
-                    reviewing: { bg: '#DBEAFE', txt: '#2563EB' },
+                    reviewing: { bg: '#EEF2FF', txt: '#4F46E5' },
                     interviewing: { bg: '#F3E8FF', txt: '#7C3AED' },
                     accepted: { bg: '#D1FAE5', txt: '#059669' },
                     rejected: { bg: '#FEE2E2', txt: '#DC2626' },
@@ -1041,7 +1032,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
               <View style={styles.recruiterProfileRow}>
                 <View style={[styles.recruiterProfileIconBg, { backgroundColor: '#E0F2FE' }]}>
-                  <Ionicons name="globe" size={16} color="#2563EB" />
+                  <Ionicons name="globe" size={16} color="#4F46E5" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.recruiterProfileLabel}>Company Website</Text>
@@ -1058,7 +1049,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                           }}
                           activeOpacity={0.7}
                         >
-                          <Text style={[styles.recruiterProfileValue, { color: '#2563EB', textDecorationLine: 'underline' }]}>
+                          <Text style={[styles.recruiterProfileValue, { color: '#4F46E5', textDecorationLine: 'underline' }]}>
                             {url}
                           </Text>
                         </TouchableOpacity>
@@ -1398,7 +1389,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 {recruiterApps.map((app) => {
                   const statusColors: Record<string, { bg: string; txt: string }> = {
                     pending:     { bg: '#FEF3C7', txt: '#D97706' },
-                    reviewing:   { bg: '#DBEAFE', txt: '#2563EB' },
+                    reviewing:   { bg: '#EEF2FF', txt: '#4F46E5' },
                     interviewing:{ bg: '#F3E8FF', txt: '#7C3AED' },
                     accepted:    { bg: '#D1FAE5', txt: '#059669' },
                     rejected:    { bg: '#FEE2E2', txt: '#DC2626' },
@@ -1460,8 +1451,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                             onPress={() => Linking.openURL('mailto:' + app.candidateEmail)}
                             style={styles.contactInfoPill}
                           >
-                            <Ionicons name="mail" size={11} color="#2563EB" />
-                            <Text style={[styles.contactInfoText, { color: '#2563EB' }]} numberOfLines={1}>
+                            <Ionicons name="mail" size={11} color="#4F46E5" />
+                            <Text style={[styles.contactInfoText, { color: '#4F46E5' }]} numberOfLines={1}>
                               {app.candidateEmail}
                             </Text>
                           </TouchableOpacity>

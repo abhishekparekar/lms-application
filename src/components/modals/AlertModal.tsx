@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     height: 44,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   confirmButton: {
-    backgroundColor: '#208AEF',
+    backgroundColor: '#4F46E5',
   },
   cancelText: {
     color: '#4B5563',

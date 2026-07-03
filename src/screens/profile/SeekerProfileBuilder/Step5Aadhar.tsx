@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   infoBox: {
     backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 32,
     borderWidth: 1,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
     backgroundColor: '#ECFDF5',
     marginBottom: 20,

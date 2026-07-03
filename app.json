@@ -19,7 +19,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "statusBar": {
+        "barStyle": "dark-content",
+        "backgroundColor": "#ffffff",
+        "translucent": false
+      }
     },
     "web": {
       "output": "static",

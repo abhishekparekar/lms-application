@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 16,
     backgroundColor: '#ECFDF5',
     marginBottom: 20,
@@ -149,9 +149,9 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   reUploadText: {
-    color: '#208AEF',
+    color: '#4F46E5',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   navigationRow: {
     flexDirection: 'row',

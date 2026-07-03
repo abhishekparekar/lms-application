@@ -108,7 +108,7 @@ export const ResourcesScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <ActivityIndicator size="large" color="#4F46E5" />
         <Text style={styles.loadingText}>Loading Resources...</Text>
       </View>
     );
@@ -119,7 +119,7 @@ export const ResourcesScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#208AEF" />
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
       }
     >
       {/* Header */}
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 20,
   },
-  filterPillActive: { backgroundColor: '#208AEF' },
+  filterPillActive: { backgroundColor: '#4F46E5' },
   filterPillText: { fontSize: 13, fontWeight: '600', color: '#4B5563' },
   filterPillTextActive: { color: '#fff' },
   statsRow: { paddingHorizontal: 20, marginBottom: 12 },
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  categoryTagText: { fontSize: 10, color: '#208AEF', fontWeight: '700' },
+  categoryTagText: { fontSize: 10, color: '#4F46E5', fontWeight: '700' },
   downloadBtn: {
     width: 44,
     height: 44,

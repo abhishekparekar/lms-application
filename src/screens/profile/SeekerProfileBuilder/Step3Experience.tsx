@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     backgroundColor: '#F9FAFB',
@@ -206,18 +206,18 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   addBtn: {
-    borderWidth: 1,
-    borderColor: '#208AEF',
+    borderWidth: 1.5,
+    borderColor: '#4F46E5',
     borderStyle: 'dashed',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 14,
     alignItems: 'center',
     marginBottom: 24,
   },
   addBtnText: {
-    color: '#208AEF',
+    color: '#4F46E5',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   navigationRow: {
     flexDirection: 'row',

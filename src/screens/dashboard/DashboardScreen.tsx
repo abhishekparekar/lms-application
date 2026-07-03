@@ -40,6 +40,7 @@ interface DashboardScreenProps {
   onLogout: () => void;
   onCoursePress: (courseId: string) => void;
   onJobPress: (jobId: string) => void;
+  onTakeTest?: (courseId: string) => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -53,6 +54,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onLogout,
   onCoursePress,
   onJobPress,
+  onTakeTest,
 }) => {
   const { user, updateProfile } = useAuth();
   const scheme = useColorScheme();
@@ -88,11 +90,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [candidatesStateFilter, setCandidatesStateFilter] = useState('');
   const [candidatesDistrictFilter, setCandidatesDistrictFilter] = useState('');
   const [candidatesTalukaFilter, setCandidatesTalukaFilter] = useState('');
-  const [candidatesSkillFilter, setCandidatesSkillFilter] = useState('');
+  const [candidatesSkillsFilter, setCandidatesSkillsFilter] = useState('');
   const [candidatesExpFilter, setCandidatesExpFilter] = useState('');
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [revealedIds, setRevealedIds] = useState<string[]>([]);
   const [isJobsVisible, setIsJobsVisible] = useState(true);
+  const [testSeriesModalVisible, setTestSeriesModalVisible] = useState(false);
 
   // Sync editor fields with database recruiter profile data
   useEffect(() => {
@@ -497,10 +500,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       </View>
 
       {isSeeker ? (
-        // ════════════════════════════════════════════════════════════
-        // SEEKER DASHBOARD VIEW
-        // ════════════════════════════════════════════════════════════
-        <ScrollView
+        <>
+          {/* ════════════════════════════════════════════════════════════
+          // SEEKER DASHBOARD VIEW
+          // ════════════════════════════════════════════════════════════ */}
+          <ScrollView
           style={[styles.container, { backgroundColor: '#F8FAFC' }]}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -550,6 +554,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5' }]} onPress={onViewResources}>
                 <Ionicons name="folder-open-outline" size={22} color="#D97706" style={styles.toolIcon} />
                 <Text style={styles.toolLabel}>Study Files</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.toolItem, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]} 
+                onPress={() => setTestSeriesModalVisible(true)}
+              >
+                <Ionicons name="school-outline" size={22} color="#4F46E5" style={styles.toolIcon} />
+                <Text style={styles.toolLabel}>Test Series</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F5F3FF', borderColor: '#EDE9FE' }]} onPress={onViewSupport}>
                 <Ionicons name="chatbubbles-outline" size={22} color="#7C3AED" style={styles.toolIcon} />
@@ -693,6 +704,76 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           )}
         </ScrollView>
+
+        {/* Test Series Modal */}
+        <Modal
+          visible={testSeriesModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setTestSeriesModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.editModalContent, { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Test Series / परीक्षा</Text>
+                <TouchableOpacity onPress={() => setTestSeriesModalVisible(false)} style={styles.editCloseBtn}>
+                  <Ionicons name="close" size={24} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView contentContainerStyle={{ padding: 20 }}>
+                <Text style={styles.modalSubtitle}>Select a course to start its exam series</Text>
+                
+                {enrolledCourses.length === 0 ? (
+                  <View style={styles.emptyCard}>
+                    <Ionicons name="book-outline" size={48} color="#94A3B8" />
+                    <Text style={styles.emptyText}>You are not enrolled in any courses yet.</Text>
+                  </View>
+                ) : (
+                  enrolledCourses.map((c) => {
+                    const progress = progressMap[c.id] || 0;
+                    const isLocked = progress < 100;
+                    return (
+                      <TouchableOpacity
+                        key={c.id}
+                        style={[styles.testCourseItem, isLocked ? styles.testCourseLocked : styles.testCourseUnlocked]}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setTestSeriesModalVisible(false);
+                          if (isLocked) {
+                            Alert.alert(
+                              'Quiz Locked / परीक्षा कुलूपबंद आहे',
+                              `You must complete 100% lectures of this course to unlock the final quiz.\n\nYour progress: ${progress}%\n\nपरीक्षा देण्यासाठी सर्व लेक्चर्स १००% पूर्ण करा.`
+                            );
+                          } else {
+                            if (onTakeTest) onTakeTest(c.id);
+                          }
+                        }}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.testCourseTitle}>{c.title}</Text>
+                          <Text style={styles.testCourseProgress}>Lectures Progress: {progress}%</Text>
+                        </View>
+                        <View style={[styles.lockStatusBadge, { backgroundColor: isLocked ? '#FEF3C7' : '#D1FAE5' }]}>
+                          <Ionicons 
+                            name={isLocked ? "lock-closed" : "checkmark-circle"} 
+                            size={14} 
+                            color={isLocked ? "#D97706" : "#059669"} 
+                            style={{ marginRight: 4 }} 
+                          />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: isLocked ? "#B45309" : "#047857" }}>
+                            {isLocked ? "Locked" : "Start"}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      </>
       ) : (
         // ════════════════════════════════════════════════════════════
         // RECRUITER / EMPLOYER DASHBOARD VIEW (Overhauled)
@@ -1644,9 +1725,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 }
 
                 // Skill filter
-                if (candidatesSkillFilter.trim()) {
+                if (candidatesSkillsFilter.trim()) {
                   const skillsVal = seekerProf.skills || [];
-                  const match = skillsVal.some((s: string) => s.toLowerCase().includes(candidatesSkillFilter.toLowerCase()));
+                  const match = skillsVal.some((s: string) => s.toLowerCase().includes(candidatesSkillsFilter.toLowerCase()));
                   if (!match) return false;
                 }
 
@@ -1710,8 +1791,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       />
                       <TextInput
                         style={styles.filterInput}
-                        value={candidatesSkillFilter}
-                        onChangeText={setCandidatesSkillFilter}
+                        value={candidatesSkillsFilter}
+                        onChangeText={setCandidatesSkillsFilter}
                         placeholder="Filter by Skill"
                         placeholderTextColor="#94A3B8"
                       />
@@ -3656,5 +3737,55 @@ const styles = StyleSheet.create({
   modalListItemYear: {
     fontSize: 10,
     color: '#94A3B8',
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  testCourseItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    marginBottom: 12,
+    gap: 12,
+  },
+  testCourseLocked: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  testCourseUnlocked: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  testCourseTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  testCourseProgress: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  lockStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  editCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 });

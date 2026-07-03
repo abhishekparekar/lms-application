@@ -55,6 +55,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isJobsVisible, setIsJobsVisible] = useState(true);
+  const [isExploreVisible, setIsExploreVisible] = useState(true);
+  const [isCurrentAffairsVisible, setIsCurrentAffairsVisible] = useState(true);
+  const [isResourcesVisible, setIsResourcesVisible] = useState(true);
 
   useEffect(() => {
     setCoursesLoading(courses.length === 0);
@@ -150,6 +153,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
         if (snap.exists()) {
           const data = snap.data();
           setIsJobsVisible(data.jobs !== false);
+          setIsExploreVisible(data.explore !== false);
+          setIsCurrentAffairsVisible(data['current-affairs'] !== false);
+          setIsResourcesVisible(data.resources !== false);
         }
       },
       (err) => {
@@ -307,14 +313,16 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
             Ready to take the next step in your career? Browse active jobs or continue learning.
           </Text>
           <View style={styles.heroCtas}>
-            <TouchableOpacity
-              style={styles.heroPrimaryBtn}
-              onPress={onLearnPress || onLoginPress}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="book-outline" size={16} color="#fff" />
-              <Text style={styles.heroPrimaryBtnText}>Explore Courses</Text>
-            </TouchableOpacity>
+            {isExploreVisible && (
+              <TouchableOpacity
+                style={styles.heroPrimaryBtn}
+                onPress={onLearnPress || onLoginPress}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="book-outline" size={16} color="#fff" />
+                <Text style={styles.heroPrimaryBtnText}>Explore Courses</Text>
+              </TouchableOpacity>
+            )}
             {isJobsVisible && (
               <TouchableOpacity
                 style={[styles.heroSecondaryBtn, { backgroundColor: '#F5F3FF' }]}
@@ -343,14 +351,16 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
           1,00,000+ students · 500+ courses · 95% pass rate
         </Text>
         <View style={styles.heroCtas}>
-          <TouchableOpacity 
-            style={styles.heroPrimaryBtn} 
-            onPress={onLearnPress || onLoginPress} 
-            activeOpacity={0.85}
-          >
-            <Ionicons name="book-outline" size={16} color="#fff" />
-            <Text style={styles.heroPrimaryBtnText}>Explore Courses</Text>
-          </TouchableOpacity>
+          {isExploreVisible && (
+            <TouchableOpacity 
+              style={styles.heroPrimaryBtn} 
+              onPress={onLearnPress || onLoginPress} 
+              activeOpacity={0.85}
+            >
+              <Ionicons name="book-outline" size={16} color="#fff" />
+              <Text style={styles.heroPrimaryBtnText}>Explore Courses</Text>
+            </TouchableOpacity>
+          )}
           {isJobsVisible && (
             <TouchableOpacity 
               style={styles.heroSecondaryBtn} 
@@ -584,7 +594,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
         }
       >
         {renderHero()}
-        {renderCourses()}
+        {isExploreVisible && renderCourses()}
         {isJobsVisible && renderFeaturedJobs()}
         {renderWhyUs()}
         {!user && renderFooterCta()}

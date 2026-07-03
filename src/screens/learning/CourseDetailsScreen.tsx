@@ -386,20 +386,20 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
             <View style={styles.progressSection}>
               <View style={styles.progressLabelRow}>
                 <Text style={styles.progressSectionLabel}>Your Progress</Text>
-                <Text style={[styles.progressSectionPct, { color: isCourseComplete ? '#10B981' : '#208AEF' }]}>
+                <Text style={[styles.progressSectionPct, { color: isCourseComplete ? '#10B981' : '#4F46E5' }]}>
                   {progress}% {isCourseComplete ? '✓ Complete' : ''}
                 </Text>
               </View>
               <View style={styles.progressBarBg}>
                 <View style={[
                   styles.progressBarFillCourse,
-                  { width: `${progress}%`, backgroundColor: isCourseComplete ? '#10B981' : '#208AEF' }
+                  { width: `${progress}%`, backgroundColor: isCourseComplete ? '#10B981' : '#4F46E5' }
                 ]} />
               </View>
             </View>
           )}
 
-          {/* Quiz Unlock Banner — shown only when 100% complete AND superadmin quiz exists */}
+          {/* Test Series Unlock Banner — shown when 100% complete AND quiz exists */}
           {isEnrolledOrAdmin && isCourseComplete && hasQuiz && (
             <TouchableOpacity style={styles.quizUnlockBanner} onPress={handleTakeQuiz} activeOpacity={0.85}>
               <View style={styles.quizUnlockLeft}>
@@ -407,23 +407,23 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
                   <Ionicons name="school" size={24} color="#10B981" />
                 </View>
                 <View>
-                  <Text style={styles.quizUnlockTitle}>Final Exam Unlocked!</Text>
-                  <Text style={styles.quizUnlockSub}>Course completed – take the test to earn your certificate</Text>
+                  <Text style={styles.quizUnlockTitle}>🎉 Test Series Unlocked!</Text>
+                  <Text style={styles.quizUnlockSub}>Course completed – tap to start the final test</Text>
                 </View>
               </View>
-              <Ionicons name="arrow-forward" size={18} color="#10B981" />
+              <Ionicons name="chevron-forward" size={18} color="#10B981" />
             </TouchableOpacity>
           )}
 
-          {/* Still in progress notice — show when enrolled but not complete and quiz exists */}
+          {/* Test Series Locked Banner — show when enrolled, not complete, quiz exists */}
           {isEnrolledOrAdmin && !isCourseComplete && hasQuiz && (
             <View style={styles.quizLockedBanner}>
               <View style={styles.quizLockedIconContainer}>
                 <Ionicons name="lock-closed" size={20} color="#D97706" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.quizLockedTitle}>Final Exam Locked</Text>
-                <Text style={styles.quizLockedSub}>Complete all lessons to unlock the test ({progress}% done)</Text>
+                <Text style={styles.quizLockedTitle}>Test Series Locked</Text>
+                <Text style={styles.quizLockedSub}>Complete all lessons to unlock ({progress}% done)</Text>
               </View>
             </View>
           )}
@@ -448,28 +448,33 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
           {isSeeker || isAdmin ? (
             isEnrolledOrAdmin ? (
               <View style={styles.enrolledActionsRow}>
-                {hasQuiz && (
+                {hasQuiz ? (
                   <TouchableOpacity
                     style={[
                       styles.bottomActionBtn,
                       canTakeQuiz ? styles.quizBtnActive : styles.quizBtnLocked
                     ]}
                     onPress={handleTakeQuiz}
-                    activeOpacity={canTakeQuiz ? 0.8 : 1}
+                    activeOpacity={canTakeQuiz ? 0.8 : 0.95}
                   >
                     <Ionicons 
-                      name={canTakeQuiz ? "school-outline" : "lock-closed-outline"} 
+                      name={canTakeQuiz ? "school" : "lock-closed-outline"} 
                       size={16} 
-                      color={canTakeQuiz ? "#FFFFFF" : "#94A3B8"} 
+                      color={canTakeQuiz ? "#FFFFFF" : "#92400E"} 
                       style={{ marginRight: 6 }} 
                     />
                     <Text style={[
                       styles.bottomActionText, 
-                      { color: canTakeQuiz ? "#FFFFFF" : "#94A3B8" }
+                      { color: canTakeQuiz ? "#FFFFFF" : "#92400E", fontWeight: '800' }
                     ]}>
-                      Take Quiz
+                      {canTakeQuiz ? "Start Test Series" : `Test Series (${progress}%)`}
                     </Text>
                   </TouchableOpacity>
+                ) : (
+                  <View style={[styles.bottomActionBtn, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+                    <Ionicons name="help-circle-outline" size={16} color="#94A3B8" style={{ marginRight: 6 }} />
+                    <Text style={[styles.bottomActionText, { color: '#94A3B8' }]}>No Test Yet</Text>
+                  </View>
                 )}
                 
                 <TouchableOpacity
@@ -609,7 +614,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 16,
-    color: '#208AEF',
+    color: '#4F46E5',
     fontWeight: '600',
   },
   headerBackButton: {
@@ -640,7 +645,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   categoryContainer: {
-    backgroundColor: '#E6F4FE',
+    backgroundColor: '#EEF2FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -648,7 +653,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   categoryText: {
-    color: '#208AEF',
+    color: '#4F46E5',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -712,18 +717,18 @@ const styles = StyleSheet.create({
   },
   syllabusItemEnrolled: {
     backgroundColor: '#ffffff',
-    borderColor: '#208AEF',
+    borderColor: '#4F46E5',
   },
   bulletPoint: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#E6F4FE',
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   bulletText: {
-    color: '#208AEF',
+    color: '#4F46E5',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -746,10 +751,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   backBtn: {
-    backgroundColor: '#208AEF',
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   backBtnText: {
     color: '#ffffff',
@@ -1047,7 +1052,7 @@ const styles = StyleSheet.create({
   invoiceTotalValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#208AEF',
+    color: '#4F46E5',
   },
   paymentTitle: {
     fontSize: 16,

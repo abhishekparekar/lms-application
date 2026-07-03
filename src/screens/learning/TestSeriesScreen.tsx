@@ -104,13 +104,9 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
         if (!isAdmin) {
           const progress = await getUserCourseProgress(user.uid, courseId);
           setUserProgress(progress);
-          if (progress < 100) {
-            setErrorMsg(
-              `You need to complete 100% of the course before taking the exam.\n\nYour current progress: ${progress}%\n\nFinish all lessons to unlock this test.`
-            );
-            setScreen('access_denied');
-            return;
-          }
+          // NOTE: We allow students to attempt the test anytime they are enrolled.
+          // Certificate is only generated when they PASS (60%+) AND have 100% progress.
+          // This allows practice attempts without blocking access.
         }
 
         const [course, qs] = await Promise.all([
