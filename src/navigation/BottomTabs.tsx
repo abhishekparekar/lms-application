@@ -18,6 +18,8 @@ import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { LandingScreen } from '../screens/public/LandingScreen';
 import { MyLearningScreen } from '../screens/learning/MyLearningScreen';
 import { useAuth } from '@/hooks/useAuth';
+import { db } from '@/services/firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 type TabKey =
   | 'dashboard'
@@ -125,6 +127,23 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab || 'dashboard');
   const [learningSubTab, setLearningSubTab] = useState<'explore' | 'my_learning'>('explore');
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, 'lms_config', 'tabs_visibility'),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsJobsVisible(data.jobs !== false);
+        }
+      },
+      (err) => {
+        console.warn('Error listening to tabs visibility in BottomTabs:', err);
+      }
+    );
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (initialTab && initialTab !== activeTab) {
@@ -249,7 +268,8 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
     }
   };
 
-  const visibleTabs = user?.role === 'recruiter' ? RECRUITER_TABS : SEEKER_TABS;
+  const baseTabs = user?.role === 'recruiter' ? RECRUITER_TABS : SEEKER_TABS;
+  const visibleTabs = baseTabs.filter(tab => tab.key !== 'jobs' || isJobsVisible || user?.role === 'recruiter');
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>

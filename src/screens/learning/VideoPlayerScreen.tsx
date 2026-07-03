@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 // ── WebView (react-native-webview 13.16.1) ───────────────────────────────────
 let WebView: any = null;
@@ -77,40 +78,43 @@ iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
   allow="autoplay; fullscreen; picture-in-picture"
   allowfullscreen>
 </iframe>
+<script src="https://player.vimeo.com/api/player.js"></script>
 <script>
 var iframe = document.getElementById('vp');
+var player = new Vimeo.Player(iframe);
+
 function sendRN(ev, d) {
   try {
     if (window.ReactNativeWebView)
       window.ReactNativeWebView.postMessage(JSON.stringify({ event: ev, data: d || {} }));
   } catch(e) {}
 }
-function registerEvents() {
-  ['play','pause','finish','timeupdate'].forEach(function(ev) {
-    iframe.contentWindow.postMessage(
-      JSON.stringify({ method: 'addEventListener', value: ev }),
-      'https://player.vimeo.com'
-    );
-  });
-}
-function setVimeoVolume(v) {
-  iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: v }), 'https://player.vimeo.com');
-}
-window.addEventListener('message', function(e) {
-  if (e.origin.indexOf('vimeo.com') === -1 && e.origin !== window.location.origin) return;
-  var msg;
-  try { msg = JSON.parse(e.data); } catch(ex) { return; }
-  if (!msg || !msg.event) return;
-  if (msg.event === 'ready') { registerEvents(); sendRN('ready'); return; }
-  if (msg.event === 'play')  { sendRN('play'); return; }
-  if (msg.event === 'pause') { sendRN('pause'); return; }
-  if (msg.event === 'finish') { sendRN('finish'); return; }
-  if (msg.event === 'timeupdate' && msg.data) {
-    sendRN('timeupdate', { seconds: msg.data.seconds, duration: msg.data.duration, percent: msg.data.percent });
-  }
+
+player.on('ready', function() {
+  sendRN('ready');
 });
-// Fallback: fire registerEvents after 2 seconds in case ready event missed
-setTimeout(registerEvents, 2000);
+
+player.on('play', function() {
+  sendRN('play');
+});
+
+player.on('pause', function() {
+  sendRN('pause');
+});
+
+player.on('ended', function() {
+  sendRN('finish');
+});
+
+player.on('timeupdate', function(data) {
+  sendRN('timeupdate', { seconds: data.seconds, duration: data.duration, percent: data.percent });
+});
+
+window.setVimeoVolume = function(v) {
+  player.setVolume(v).catch(function(err) {
+    console.log('[VimeoSDK] setVolume error:', err);
+  });
+};
 </script>
 </body>
 </html>`;
@@ -160,6 +164,18 @@ function onYouTubeIframeAPIReady(){
     }
   });
 }
+function setYouTubeVolume(v) {
+  if (yt && yt.setVolume) {
+    yt.setVolume(v * 100);
+  }
+}
+window.addEventListener('message', function(e) {
+  var msg;
+  try { msg = JSON.parse(e.data); } catch(ex) { return; }
+  if (msg.method === 'setVolume') {
+    setYouTubeVolume(msg.value);
+  }
+});
 </script>
 </body>
 </html>`;
@@ -192,6 +208,16 @@ v.ontimeupdate=function(){
   rn('timeupdate',{seconds:v.currentTime,duration:v.duration||0,percent:v.duration>0?v.currentTime/v.duration:0});
 };
 v.onerror=function(){rn('error',{msg:'video load error'});};
+function setMp4Volume(v) {
+  if (v) v.volume = v;
+}
+window.addEventListener('message', function(e) {
+  var msg;
+  try { msg = JSON.parse(e.data); } catch(ex) { return; }
+  if (msg.method === 'setVolume') {
+    setMp4Volume(msg.value);
+  }
+});
 </script>
 </body>
 </html>`;
@@ -390,6 +416,14 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
     return () => { unsubCourse(); unsubUser?.(); unsubEnroll?.(); };
   }, [courseId, user]);
 
+  // Lock orientation back to Portrait on unmount
+  useEffect(() => {
+    return () => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+        .catch(() => { });
+    };
+  }, []);
+
   // ── sync video URL → state + WebView remount ─────────────────────────────
   useEffect(() => {
     console.log('[VideoPlayer] resolvedUrl =', resolvedUrl);
@@ -399,14 +433,14 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
     setProgress(0);
     setIsPlaying(false);
 
-    // For expo-video, we must explicitly replace the source when it changes
-    if (expoPlayer) {
+    // For expo-video, we must explicitly replace the source when it changes (only for non-Webview direct video URLs)
+    if (expoPlayer && !useWV) {
       expoPlayer.replaceAsync(resolvedUrl)
         .then(() => {
           expoPlayer.play();
         })
         .catch((err: any) => {
-          console.warn('[VideoPlayer] replaceAsync failed:', err);
+          console.log('[VideoPlayer] replaceAsync failed:', err);
         });
     }
   }, [resolvedUrl]); // Do NOT add expoPlayer here, it causes infinite replace/reloads
@@ -462,19 +496,37 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
   }, [syllabus.length]);
 
   const toggleFullscreen = useCallback(async () => {
-    setIsFullscreen(!isFullscreen);
-    // Note: ScreenOrientation requires a new native build, so we just expand the UI for now.
+    const nextFullscreen = !isFullscreen;
+    setIsFullscreen(nextFullscreen);
+    try {
+      if (nextFullscreen) {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_LEFT);
+      } else {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      }
+    } catch (e) {
+      console.log('[VideoPlayer] ScreenOrientation lock failed:', e);
+    }
   }, [isFullscreen]);
 
   const changeVolume = useCallback((delta: number) => {
-    if (useWV) {
-      const next = Math.max(0, Math.min(1, vimeoVol + delta));
-      setVimeoVol(next);
-      webViewRef.current?.injectJavaScript(`if(window.setVimeoVolume) window.setVimeoVolume(${next}); true;`);
-    } else if (expoPlayer) {
-      expoPlayer.volume = Math.max(0, Math.min(1, expoPlayer.volume + delta));
-    }
-  }, [useWV, vimeoVol, expoPlayer]);
+    setVimeoVol(prev => {
+      const next = Math.max(0, Math.min(1, prev + delta));
+      console.log('[VideoPlayer] changeVolume -> prev:', prev, 'delta:', delta, 'next:', next);
+
+      if (useWV) {
+        webViewRef.current?.injectJavaScript(`
+          if (window.setVimeoVolume) window.setVimeoVolume(${next});
+          if (window.setYouTubeVolume) window.setYouTubeVolume(${next});
+          if (window.setMp4Volume) window.setMp4Volume(${next});
+          true;
+        `);
+      } else if (expoPlayer) {
+        expoPlayer.volume = next;
+      }
+      return next;
+    });
+  }, [useWV, expoPlayer]);
 
   // WebView message handler — receives events from all 3 HTML embeds
   const onMsg = useCallback((e: any) => {
@@ -622,9 +674,8 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
           </View>
         )}
 
-        {/* Custom Controls Overlay (Applies to both MP4 and Vimeo) */}
         {!showLock && (
-          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          <View style={[StyleSheet.absoluteFill, { zIndex: 99, elevation: 99 }]} pointerEvents="box-none">
             {/* Lock Screen Touch Interceptor */}
             {isScreenLocked && (
               <TouchableOpacity

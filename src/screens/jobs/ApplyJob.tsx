@@ -15,6 +15,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { jobService, Job } from '@/services/jobs/jobService';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
+import { db } from '@/services/firebase/config';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 interface ApplyJobProps {
   jobId: string;
@@ -60,10 +62,40 @@ export const ApplyJob: React.FC<ApplyJobProps> = ({
       );
       return;
     }
-    loading; // placeholder/no-op
     setLoading(true);
     try {
+      // Check application limits inside subscription
+      const subRef = doc(db, 'subscriptions', user.uid);
+      const subSnap = await getDoc(subRef);
+      if (!subSnap.exists()) {
+        Alert.alert('Subscription Required', 'You must have an active subscription package to apply for jobs.');
+        setLoading(false);
+        return;
+      }
+      const subData = subSnap.data();
+      if (subData?.status !== 'active') {
+        Alert.alert('Subscription Expired', 'Your subscription is expired or inactive. Please renew to apply.');
+        setLoading(false);
+        return;
+      }
+      const maxApplications = subData?.maxApplications || 0;
+      const usage = subData?.usageStats || {};
+      const applicationsUsed = usage?.applicationsUsed || 0;
+
+      if (applicationsUsed >= maxApplications) {
+        Alert.alert('Limit Reached', `You have reached the limit of ${maxApplications} applications in your active plan.`);
+        setLoading(false);
+        return;
+      }
+
+      // Submit application
       await jobService.applyForJob(user.uid, jobId);
+
+      // Increment applicationsUsed count
+      await updateDoc(subRef, {
+        'usageStats.applicationsUsed': applicationsUsed + 1
+      });
+
       Alert.alert(
         'Application Submitted!',
         'Your profile details and resume have been sent to the recruiter.',

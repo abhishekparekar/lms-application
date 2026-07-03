@@ -38,6 +38,18 @@ export const JobDetails: React.FC<JobDetailsProps> = ({
   const [hasApplied, setHasApplied] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'lms_config', 'tabs_visibility'), (snap) => {
+      if (snap.exists()) {
+        setIsJobsVisible(snap.data().jobs !== false);
+      }
+    }, (err) => {
+      console.warn('JobDetails visibility listener error:', err);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     setLoading(job === null);
@@ -126,6 +138,19 @@ export const JobDetails: React.FC<JobDetailsProps> = ({
   const isSeeker = user?.role === 'seeker';
   const initial = job.company ? job.company.charAt(0).toUpperCase() : 'J';
   const hasLogo = job.logoUrl && job.logoUrl.startsWith('http');
+
+  const isRecruiter = user?.role === 'recruiter';
+
+  if (!isJobsVisible && !isRecruiter) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
+        <Ionicons name="lock-closed-outline" size={64} color="#9CA3AF" />
+        <Text style={{ color: '#1F2937', marginTop: 16, fontSize: 16, fontWeight: 'bold', textAlign: 'center', paddingHorizontal: 24 }}>
+          Job details are temporarily restricted because the job portal is disabled by the administrator.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

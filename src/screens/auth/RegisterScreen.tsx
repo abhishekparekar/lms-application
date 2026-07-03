@@ -29,35 +29,72 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   onBack,
 }) => {
   const { register } = useAuth();
-  const [displayName, setDisplayName] = useState('');
+  
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'seeker' | 'recruiter'>(initialRole || 'seeker');
+  const [userType, setUserType] = useState<'jobseeker' | 'employer' | 'agent'>('jobseeker');
+  const [referralCode, setReferralCode] = useState('');
 
   useEffect(() => {
     if (initialRole) {
-      setRole(initialRole);
+      setUserType(initialRole === 'recruiter' ? 'employer' : 'jobseeker');
     }
   }, [initialRole]);
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const insets = useSafeAreaInsets();
+  
+  const lastNameRef = useRef<any>(null);
   const emailRef = useRef<any>(null);
+  const phoneRef = useRef<any>(null);
   const passwordRef = useRef<any>(null);
   const confirmPasswordRef = useRef<any>(null);
+  const referralRef = useRef<any>(null);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!displayName.trim()) newErrors.displayName = 'Name is required';
-    if (!email) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email address';
+    
+    if (!firstName.trim()) {
+      newErrors.firstName = 'First Name is required';
+    } else if (firstName.trim().length < 2) {
+      newErrors.firstName = 'Must be at least 2 characters';
+    }
 
-    if (!password) newErrors.password = 'Password is required';
-    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (!lastName.trim()) {
+      newErrors.lastName = 'Last Name is required';
+    } else if (lastName.trim().length < 2) {
+      newErrors.lastName = 'Must be at least 2 characters';
+    }
 
-    if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (!email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    if (!phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(phone)) {
+      newErrors.phone = 'Must be a 10-digit number';
+    }
+
+    if (!password) {
+      newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Must be at least 6 characters';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      newErrors.password = 'Must contain 1 uppercase, 1 lowercase & 1 number';
+    }
+
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -67,7 +104,16 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     if (!validate()) return;
     setLoading(true);
     try {
-      await register({ email, password, displayName, role });
+      await register({
+        email: email.trim(),
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+        userType,
+        referralCode: referralCode.trim() || undefined
+      } as any);
+      
       Alert.alert('Registration Successful', 'Welcome to the platform!', [
         { text: 'OK', onPress: onRegisterSuccess }
       ]);
@@ -78,13 +124,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     }
   };
 
-  const handleSocialRegister = (provider: string) => {
-    Alert.alert('Sign Up', `${provider} sign-up is not configured yet.`);
-  };
-
   return (
     <View style={styles.container}>
-      {/* Background Header - Deep Blue */}
       <View style={styles.headerBackground} />
       
       <KeyboardAvoidingView 
@@ -94,7 +135,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         <ScrollView 
           contentContainerStyle={[
             styles.scrollContent, 
-            { paddingTop: Math.max(insets.top, 20), paddingBottom: Math.max(insets.bottom, 24) }
+            { paddingTop: Math.max(insets.top, 10), paddingBottom: Math.max(insets.bottom, 24) }
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -122,48 +163,79 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           {/* Register Form Card */}
           <View style={styles.formCard}>
             <Text style={styles.cardTitle}>Create Account</Text>
-            <Text style={styles.cardDesc}>Join as a Seeker or a Recruiter</Text>
+            <Text style={styles.cardDesc}>Fill details below to get started</Text>
 
-            {/* Role Selector */}
+            {/* Role/UserType Selector */}
+            <Text style={styles.fieldLabel}>Join As</Text>
             <View style={styles.roleSelector}>
               <TouchableOpacity
-                style={[styles.roleOption, role === 'seeker' && styles.roleOptionActive]}
-                onPress={() => setRole('seeker')}
+                style={[styles.roleOption, userType === 'jobseeker' && styles.roleOptionActive]}
+                onPress={() => setUserType('jobseeker')}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.roleEmoji, role === 'seeker' && styles.roleEmojiActive]}>🎓</Text>
-                <Text style={[styles.roleText, role === 'seeker' && styles.roleTextActive]}>Seeker</Text>
+                <Text style={[styles.roleEmoji, userType === 'jobseeker' && styles.roleEmojiActive]}>🎓</Text>
+                <Text style={[styles.roleText, userType === 'jobseeker' && styles.roleTextActive]}>Seeker</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.roleOption, role === 'recruiter' && styles.roleOptionActive]}
-                onPress={() => setRole('recruiter')}
+                style={[styles.roleOption, userType === 'employer' && styles.roleOptionActive]}
+                onPress={() => setUserType('employer')}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.roleEmoji, role === 'recruiter' && styles.roleEmojiActive]}>🏢</Text>
-                <Text style={[styles.roleText, role === 'recruiter' && styles.roleTextActive]}>Recruiter</Text>
+                <Text style={[styles.roleEmoji, userType === 'employer' && styles.roleEmojiActive]}>🏢</Text>
+                <Text style={[styles.roleText, userType === 'employer' && styles.roleTextActive]}>Recruiter</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.roleOption, userType === 'agent' && styles.roleOptionActive]}
+                onPress={() => setUserType('agent')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.roleEmoji, userType === 'agent' && styles.roleEmojiActive]}>💼</Text>
+                <Text style={[styles.roleText, userType === 'agent' && styles.roleTextActive]}>Agent</Text>
               </TouchableOpacity>
             </View>
 
-            <Input
-              label="Full Name"
-              placeholder="John Doe"
-              value={displayName}
-              onChangeText={(text) => {
-                setDisplayName(text);
-                if (errors.displayName) setErrors({ ...errors, displayName: '' });
-              }}
-              error={errors.displayName}
-              returnKeyType="next"
-              onSubmitEditing={() => emailRef.current?.focus()}
-              containerStyle={styles.inputContainer}
-              inputStyle={styles.modernInput}
-            />
+            <View style={styles.rowInputs}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Input
+                  label="First Name"
+                  placeholder="Rahul"
+                  value={firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    if (errors.firstName) setErrors({ ...errors, firstName: '' });
+                  }}
+                  error={errors.firstName}
+                  returnKeyType="next"
+                  onSubmitEditing={() => lastNameRef.current?.focus()}
+                  containerStyle={styles.inputContainer}
+                  inputStyle={styles.modernInput}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input
+                  ref={lastNameRef}
+                  label="Last Name"
+                  placeholder="Sharma"
+                  value={lastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    if (errors.lastName) setErrors({ ...errors, lastName: '' });
+                  }}
+                  error={errors.lastName}
+                  returnKeyType="next"
+                  onSubmitEditing={() => emailRef.current?.focus()}
+                  containerStyle={styles.inputContainer}
+                  inputStyle={styles.modernInput}
+                />
+              </View>
+            </View>
 
             <Input
               ref={emailRef}
               label="Email Address"
-              placeholder="name@example.com"
+              placeholder="rahul@email.com"
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
@@ -173,6 +245,24 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               keyboardType="email-address"
               autoCapitalize="none"
               returnKeyType="next"
+              onSubmitEditing={() => phoneRef.current?.focus()}
+              containerStyle={styles.inputContainer}
+              inputStyle={styles.modernInput}
+            />
+
+            <Input
+              ref={phoneRef}
+              label="Phone Number"
+              placeholder="10-digit number"
+              value={phone}
+              onChangeText={(text) => {
+                setPhone(text);
+                if (errors.phone) setErrors({ ...errors, phone: '' });
+              }}
+              error={errors.phone}
+              keyboardType="number-pad"
+              maxLength={10}
+              returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               containerStyle={styles.inputContainer}
               inputStyle={styles.modernInput}
@@ -181,7 +271,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
             <Input
               ref={passwordRef}
               label="Password"
-              placeholder="At least 6 characters"
+              placeholder="At least 6 chars (A-z, 0-9)"
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
@@ -206,6 +296,19 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               }}
               error={errors.confirmPassword}
               secureTextEntry
+              returnKeyType="next"
+              onSubmitEditing={() => referralRef.current?.focus()}
+              containerStyle={styles.inputContainer}
+              inputStyle={styles.modernInput}
+            />
+
+            <Input
+              ref={referralRef}
+              label="Referral Code (Optional)"
+              placeholder="Franchise or Agent code"
+              value={referralCode}
+              onChangeText={setReferralCode}
+              autoCapitalize="characters"
               returnKeyType="done"
               onSubmitEditing={handleRegister}
               containerStyle={styles.inputContainer}
@@ -219,29 +322,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               style={styles.loginBtn}
               textStyle={styles.loginBtnText}
             />
-
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or sign up with</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <View style={styles.socialRow}>
-              <TouchableOpacity onPress={() => handleSocialRegister('Google')} style={styles.socialBtn}>
-                <Ionicons name="logo-google" size={22} color="#DB4437" />
-                <Text style={styles.socialBtnText}>Google</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
           {/* Bottom Login Link */}
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Already have an account? </Text>
             <TouchableOpacity onPress={onLoginPress}>
-              <Text style={styles.signupLink}>Sign In</Text>
+              <Text style={styles.signupLink}>Log In</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -251,15 +340,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6', // Light gray background
+    backgroundColor: '#F3F4F6',
   },
   headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: '40%',
-    backgroundColor: '#1E3A8A', // Deep Trustworthy Blue
+    height: 250,
+    backgroundColor: '#1E3A8A',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
@@ -268,13 +357,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   topBar: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
-    height: 44,
   },
   backBtn: {
     padding: 8,
@@ -282,7 +371,7 @@ const styles = StyleSheet.create({
   },
   brandingSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   logoCircle: {
     width: 60,
@@ -291,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -311,55 +400,61 @@ const styles = StyleSheet.create({
   formCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 24,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 4,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   cardTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   cardDesc: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7280',
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
   },
   roleSelector: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 16,
   },
   roleOption: {
     flex: 1,
-    height: 48,
+    height: 44,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: '#F9FAFB',
   },
   roleOptionActive: {
     borderColor: '#1E3A8A',
-    backgroundColor: '#EFF6FF', // Light blue tint
+    backgroundColor: '#EFF6FF',
   },
   roleEmoji: {
-    fontSize: 16,
+    fontSize: 14,
     opacity: 0.6,
   },
   roleEmojiActive: {
     opacity: 1,
   },
   roleText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: '#6B7280',
   },
@@ -367,78 +462,45 @@ const styles = StyleSheet.create({
     color: '#1E3A8A',
     fontWeight: 'bold',
   },
+  rowInputs: {
+    flexDirection: 'row',
+  },
   inputContainer: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   modernInput: {
     backgroundColor: '#F9FAFB',
     borderColor: '#E5E7EB',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    height: 48,
+    height: 44,
   },
   loginBtn: {
-    height: 52,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 10,
     backgroundColor: '#1E3A8A',
     elevation: 2,
     marginTop: 10,
   },
   loginBtnText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#9CA3AF',
-    fontSize: 14,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  socialBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 24,
-    width: '100%',
-  },
-  socialBtnText: {
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto',
+    marginTop: 10,
+    marginBottom: 20,
   },
   signupText: {
     color: '#6B7280',
-    fontSize: 15,
+    fontSize: 14,
   },
   signupLink: {
     color: '#1E3A8A',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

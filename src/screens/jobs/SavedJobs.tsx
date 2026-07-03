@@ -36,6 +36,18 @@ export const SavedJobs: React.FC<SavedJobsProps> = ({
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'lms_config', 'tabs_visibility'), (snap) => {
+      if (snap.exists()) {
+        setIsJobsVisible(snap.data().jobs !== false);
+      }
+    }, (err) => {
+      console.warn('SavedJobs visibility listener error:', err);
+    });
+    return () => unsub();
+  }, []);
 
   const savedJobs = allJobs.filter(j => savedJobIds.includes(j.id));
 
@@ -139,6 +151,17 @@ export const SavedJobs: React.FC<SavedJobsProps> = ({
       console.error('Apply failed:', e);
     }
   };
+
+  if (!isJobsVisible) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
+        <Ionicons name="lock-closed-outline" size={64} color="#9CA3AF" />
+        <Text style={{ color: '#1F2937', marginTop: 16, fontSize: 16, fontWeight: 'bold', textAlign: 'center', paddingHorizontal: 24 }}>
+          Saved jobs are temporarily unavailable because the job portal is disabled by the administrator.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

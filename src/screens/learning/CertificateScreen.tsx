@@ -55,117 +55,255 @@ export const CertificateScreen: React.FC<CertificateScreenProps> = ({
     setGenerating(cert.id);
     try {
       const htmlContent = `
-        <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-          <style>
-            body {
-              font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-              text-align: center;
-              padding: 40px;
-              background-color: #fcf8f2;
-            }
-            .container {
-              border: 10px double #F59E0B;
-              padding: 40px;
-              background-color: #ffffff;
-              box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-              position: relative;
-            }
-            .badge {
-              font-size: 50px;
-              margin-bottom: 10px;
-            }
-            .logo {
-              font-size: 14px;
-              color: #9CA3AF;
-              font-weight: bold;
-              letter-spacing: 3px;
-              margin-bottom: 20px;
-            }
-            .title {
-              font-size: 32px;
-              font-weight: 800;
-              color: #111827;
-              margin-top: 10px;
-              margin-bottom: 30px;
-            }
-            .presented {
-              font-size: 16px;
-              color: #6B7280;
-              margin-bottom: 10px;
-            }
-            .name {
-              font-size: 28px;
-              font-weight: bold;
-              color: #1F2937;
-              margin-bottom: 10px;
-              border-bottom: 2px solid #E5E7EB;
-              display: inline-block;
-              padding-bottom: 5px;
-            }
-            .completion {
-              font-size: 16px;
-              color: #6B7280;
-              margin-top: 20px;
-              margin-bottom: 15px;
-            }
-            .course {
-              font-size: 22px;
-              font-weight: bold;
-              color: #208AEF;
-              margin-bottom: 30px;
-            }
-            .meta {
-              margin-top: 40px;
-              display: flex;
-              justify-content: space-around;
-              align-items: center;
-            }
-            .meta-item {
-              text-align: center;
-              flex: 1;
-            }
-            .meta-label {
-              font-size: 11px;
-              color: #9CA3AF;
-              margin-bottom: 5px;
-              font-weight: bold;
-            }
-            .meta-value {
-              font-size: 13px;
-              font-weight: bold;
-              color: #374151;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="badge">🎖️</div>
-            <div class="logo">LMS JOB PORTAL ACADEMY</div>
-            <div class="title">Certificate of Completion</div>
-            <div class="presented">This is proudly presented to</div>
-            <div class="name">${user?.displayName || user?.email || 'Student'}</div>
-            <div class="completion">for successfully completing the course</div>
-            <div class="course">${cert.courseTitle}</div>
-            
-            <div class="meta">
-              <div class="meta-item">
-                <div class="meta-label">SCORE</div>
-                <div class="meta-value">${cert.score}%</div>
-              </div>
-              <div class="meta-item">
-                <div class="meta-label">DATE ISSUED</div>
-                <div class="meta-value">${cert.issuedDate}</div>
-              </div>
-              <div class="meta-item">
-                <div class="meta-label">CREDENTIAL ID</div>
-                <div class="meta-value" style="font-family: monospace;">${cert.credentialId}</div>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .cert-container {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      border: 15px double rgba(245, 158, 11, 0.25);
+      padding: 30px 40px;
+      position: relative;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-align: center;
+      font-family: 'Georgia', serif;
+    }
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 56px;
+      color: rgba(0, 0, 0, 0.02);
+      font-weight: bold;
+      letter-spacing: 8px;
+      pointer-events: none;
+      white-space: nowrap;
+      text-transform: uppercase;
+      z-index: 1;
+    }
+    .top-seal {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      width: 64px;
+      height: 64px;
+      border: 1px dashed rgba(245, 158, 11, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(245, 158, 11, 0.15);
+      font-size: 7px;
+      font-weight: 900;
+      transform: rotate(12deg);
+      text-transform: uppercase;
+    }
+    .header-section {
+      z-index: 2;
+    }
+    .subtitle {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      font-family: sans-serif;
+      font-weight: 900;
+      color: #b45309;
+      text-transform: uppercase;
+    }
+    .academy-name {
+      font-size: 20px;
+      font-style: italic;
+      font-weight: 900;
+      color: #1e293b;
+      margin: 5px 0;
+    }
+    .body-section {
+      z-index: 2;
+    }
+    .presented-text {
+      font-size: 11px;
+      color: #94a3b8;
+      font-style: italic;
+      font-family: sans-serif;
+    }
+    .student-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0f172a;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+      padding-bottom: 3px;
+      display: inline-block;
+      width: 80%;
+      margin: 8px auto;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .course-details {
+      font-size: 10px;
+      color: #64748b;
+      max-width: 500px;
+      margin: 8px auto;
+      line-height: 1.5;
+      font-family: sans-serif;
+    }
+    .course-name {
+      font-size: 18px;
+      font-weight: 900;
+      color: #4338ca;
+      margin-top: 4px;
+    }
+    .footer-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      z-index: 2;
+      font-family: sans-serif;
+      padding-top: 10px;
+    }
+    .footer-col {
+      width: 30%;
+    }
+    .label {
+      font-size: 8px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .value {
+      font-size: 10px;
+      color: #1e293b;
+      font-weight: bold;
+      margin-top: 3px;
+    }
+    .sig-line {
+      font-family: 'Georgia', serif;
+      font-style: italic;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 2px;
+      display: inline-block;
+      width: 80%;
+    }
+    .stamp-container {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gold-seal {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+      border-radius: 50%;
+      border: 1px solid #fbbf24;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      z-index: 3;
+    }
+    .inner-seal {
+      position: absolute;
+      width: 80%;
+      height: 80%;
+      border-radius: 50%;
+      border: 1px solid #fef3c7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 7px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      z-index: 4;
+      text-align: center;
+    }
+    .ribbon-l {
+      position: absolute;
+      bottom: -12px;
+      left: 12px;
+      width: 12px;
+      height: 30px;
+      background-color: #d97706;
+      transform: rotate(15deg);
+      clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 80%, 0% 100%);
+      z-index: 2;
+    }
+    .ribbon-r {
+      position: absolute;
+      bottom: -12px;
+      right: 12px;
+      width: 12px;
+      height: 30px;
+      background-color: #d97706;
+      transform: rotate(-15deg);
+      clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 80%, 0% 100%);
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <div class="cert-container">
+    <div class="watermark">iCoded Academy</div>
+    <div class="top-seal">Official Seal</div>
+    
+    <div class="header-section">
+      <span class="subtitle">Certificate of Excellence</span>
+      <h1 class="academy-name">LMS Job Portal Academy</h1>
+    </div>
+    
+    <div class="body-section">
+      <p class="presented-text">This credential is proudly presented to</p>
+      <div class="student-name">${cert.userName || user?.displayName || user?.email || 'Student'}</div>
+      <p class="course-details">
+        for demonstrating technical mastery with a final assessment score of ${cert.score}% and successfully passing all lesson modules for the professional curriculum
+      </p>
+      <div class="course-name">${cert.courseTitle}</div>
+    </div>
+    
+    <div class="footer-section">
+      <div class="footer-col" style="text-align: left;">
+        <span class="label">Credential ID / Issue Date</span>
+        <div class="value">${cert.credentialId} <br/> ${cert.issuedDate}</div>
+      </div>
+      
+      <div class="stamp-container">
+        <div class="gold-seal"></div>
+        <div class="inner-seal">
+          <span>Verified</span>
+          <span style="font-size: 5px; opacity: 0.8; margin-top: 1px;">Excellence</span>
+        </div>
+        <div class="ribbon-l"></div>
+        <div class="ribbon-r"></div>
+      </div>
+      
+      <div class="footer-col" style="text-align: right;">
+        <span class="label">Course Director</span>
+        <div class="value">
+          <span class="sig-line">iCoded Academy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
       `;
 
       if (Platform.OS === 'web') {

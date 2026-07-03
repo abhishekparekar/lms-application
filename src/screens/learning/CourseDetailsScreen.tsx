@@ -23,6 +23,7 @@ import { paymentService } from '@/services/payments/paymentService';
 import { quizService } from '@/services/lms/quizService';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { RazorpayCheckoutModal } from '@/components/modals/RazorpayCheckoutModal';
 
 interface CourseDetailsScreenProps {
   courseId: string;
@@ -55,6 +56,10 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Razorpay States
+  const [razorpayVisible, setRazorpayVisible] = useState(false);
+  const [orderId, setOrderId] = useState('');
 
   useEffect(() => {
     setLoading(course === null);
@@ -163,32 +168,51 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
 
   const handleProcessCheckout = async () => {
     if (!user || !course) return;
-    
-    // Validate card details using paymentService
-    if (!paymentService.validateCardDetails(cardNumber, expiry, cvc)) {
-      Alert.alert('Invalid Card Details', 'Please check your card number (15-16 digits), expiry MM/YY (4 digits), and CVC (3 digits).');
-      return;
-    }
 
     setPaymentLoading(true);
     try {
-      const result = await paymentService.processPayment(course.price, `Course: ${course.title}`);
-      if (result.success) {
-        await courseService.enrollInCourse(user.uid, course.id);
-        setIsEnrolled(true);
-        setCheckoutVisible(false);
-        setCardNumber('');
-        setExpiry('');
-        setCvc('');
-        Alert.alert(
-          'Payment Successful',
-          `You have purchased and enrolled in ${course.title}!\n\nTransaction ID: ${result.transactionId}`
-        );
+      const order = await paymentService.createRazorpayOrder(course.price);
+      if (order) {
+        setOrderId(order.id);
+        setRazorpayVisible(true);
       } else {
-        Alert.alert('Payment Failed', result.errorMessage || 'Transaction could not be completed.');
+        Alert.alert('Checkout Initialization Failed', 'Could not create order with Razorpay. Please try again.');
       }
     } catch (e: any) {
       Alert.alert('Payment Error', e.message || 'An unexpected checkout error occurred.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (data: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => {
+    if (!user || !course) return;
+
+    setRazorpayVisible(false);
+    setCheckoutVisible(false);
+    setPaymentLoading(true);
+    try {
+      const verified = await paymentService.verifyPayment(
+        data.razorpay_payment_id,
+        data.razorpay_order_id,
+        data.razorpay_signature
+      );
+      if (verified) {
+        await courseService.enrollInCourse(user.uid, course.id);
+        setIsEnrolled(true);
+        Alert.alert(
+          'Payment Successful! 🎉',
+          `You have purchased and enrolled in ${course.title}!\n\nPayment ID: ${data.razorpay_payment_id}`
+        );
+      } else {
+        Alert.alert('Verification Failed', 'Payment signature could not be verified.');
+      }
+    } catch (e: any) {
+      Alert.alert('Enrollment Error', e.message || 'Payment was successful, but enrollment could not be processed. Please contact support.');
     } finally {
       setPaymentLoading(false);
     }
@@ -492,59 +516,41 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
                 </View>
               </View>
 
-              {/* Payment form */}
-              <Text style={[styles.paymentTitle, { color: colors.text }]}>Card Information</Text>
-              
-              <Input
-                label="Card Number"
-                placeholder="4111 2222 3333 4444"
-                keyboardType="numeric"
-                value={cardNumber}
-                onChangeText={setCardNumber}
-                maxLength={16}
-              />
-
-              <View style={styles.formRow}>
-                <View style={{ flex: 1 }}>
-                  <Input
-                    label="Expiry (MM/YY)"
-                    placeholder="12/28"
-                    keyboardType="numeric"
-                    value={expiry}
-                    onChangeText={setExpiry}
-                    maxLength={5}
-                  />
-                </View>
-                <View style={{ flex: 1, marginLeft: 16 }}>
-                  <Input
-                    label="CVC"
-                    placeholder="123"
-                    keyboardType="numeric"
-                    secureTextEntry
-                    value={cvc}
-                    onChangeText={setCvc}
-                    maxLength={3}
-                  />
-                </View>
-              </View>
-
+              {/* Payment button */}
               <Button
-                title={paymentLoading ? "Processing Payment..." : `Pay ₹${(course?.price || 0).toFixed(2)}`}
+                title={paymentLoading ? "Preparing Gateway..." : `Pay Securely with Razorpay`}
                 onPress={handleProcessCheckout}
                 loading={paymentLoading}
                 style={styles.payBtn}
               />
 
               <View style={styles.securityNoteRow}>
-                <Ionicons name="lock-closed-outline" size={13} color="#9CA3AF" style={{ marginRight: 6 }} />
-                <Text style={styles.paymentSecurityNote}>
-                  256-bit SSL encrypted connection. Payment details are simulated.
+                <Ionicons name="shield-checkmark" size={15} color="#10B981" style={{ marginRight: 6 }} />
+                <Text style={[styles.paymentSecurityNote, { color: '#10B981', fontWeight: '600' }]}>
+                  Secured by Razorpay. All cards, UPI, netbanking accepted.
                 </Text>
               </View>
             </ScrollView>
           </View>
         </View>
       </Modal>
+
+      {/* Razorpay Web Checkout Webview Modal */}
+      <RazorpayCheckoutModal
+        visible={razorpayVisible}
+        amount={course?.price || 0}
+        description={`Course Enrollment: ${course?.title}`}
+        orderId={orderId}
+        customerName={user?.seekerProfile?.fullName || user?.displayName || 'User'}
+        customerEmail={user?.email || ''}
+        customerPhone={user?.seekerProfile?.phone || '9999999999'}
+        onSuccess={handlePaymentSuccess}
+        onCancel={() => setRazorpayVisible(false)}
+        onFailure={(errMsg) => {
+          setRazorpayVisible(false);
+          Alert.alert('Payment Failed', errMsg);
+        }}
+      />
     </SafeAreaView>
   );
 };

@@ -3,6 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useColorScheme, A
 import { Colors } from '@/constants/theme';
 import { paymentService } from '@/services/payments/paymentService';
 import { Button } from '@/components/common/Button';
+import { useAuth } from '@/hooks/useAuth';
+import { RazorpayCheckoutModal } from '@/components/modals/RazorpayCheckoutModal';
+import { db } from '@/services/firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface SubscriptionScreenProps {
   onBack: () => void;
@@ -13,16 +17,46 @@ export const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
 }) => {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const { user } = useAuth();
   
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  React.useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, 'lms_config', 'tabs_visibility'),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsJobsVisible(data.jobs !== false);
+        }
+      },
+      (err) => {
+        console.warn('Error fetching tabs visibility in SubscriptionScreen:', err);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  // Razorpay Checkout Modal States
+  const [razorpayVisible, setRazorpayVisible] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentDescription, setPaymentDescription] = useState('');
+  const [paymentPlanId, setPaymentPlanId] = useState('');
+  const [paymentPlanName, setPaymentPlanName] = useState('');
+  const [orderId, setOrderId] = useState('');
 
   const plans = [
     {
       id: 'basic',
       name: 'Free Starter',
       price: 'Free',
-      description: 'Access standard courses and apply to up to 5 jobs monthly.',
-      features: ['Access standard tutorials', 'Apply to 5 jobs / month', 'Community support'],
+      description: isJobsVisible 
+        ? 'Access standard courses and apply to up to 5 jobs monthly.' 
+        : 'Access standard courses and study materials.',
+      features: isJobsVisible 
+        ? ['Access standard tutorials', 'Apply to 5 jobs / month', 'Community support'] 
+        : ['Access standard tutorials', 'Community support'],
       buttonText: 'Current Plan',
       disabled: true,
       accent: '#6B7280',
@@ -32,8 +66,12 @@ export const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
       name: 'Seeker Plus',
       price: '₹799/mo',
       value: 799,
-      description: 'Unlock premium certifications and unlimited job applications.',
-      features: ['All Premium Courses', 'Unlimited Job Applications', 'Direct chat with recruiters', 'Verified credential badge'],
+      description: isJobsVisible 
+        ? 'Unlock premium certifications and unlimited job applications.' 
+        : 'Unlock premium certifications and unlimited learning resources.',
+      features: isJobsVisible 
+        ? ['All Premium Courses', 'Unlimited Job Applications', 'Direct chat with recruiters', 'Verified credential badge'] 
+        : ['All Premium Courses', 'Unlimited Learning Resources', 'Verified credential badge'],
       buttonText: 'Upgrade to Plus',
       disabled: false,
       accent: '#208AEF',
@@ -51,20 +89,63 @@ export const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
     }
   ];
 
-  const handleCheckout = async (planName: string, price: number) => {
+  const handleCheckout = async (planName: string, planId: string, price: number) => {
+    if (!user) {
+      Alert.alert('Authentication Required', 'Please log in to upgrade your subscription plan.');
+      return;
+    }
+
     setLoadingPlan(planName);
     try {
-      const result = await paymentService.processPayment(price, `${planName} Subscription Upgrade`);
-      if (result.success) {
-        Alert.alert(
-          'Payment Successful!',
-          `You have upgraded to ${planName}. Transaction ID: ${result.transactionId}`
-        );
+      const order = await paymentService.createRazorpayOrder(price);
+      if (order) {
+        setOrderId(order.id);
+        setPaymentAmount(price);
+        setPaymentDescription(`${planName} Subscription Upgrade`);
+        setPaymentPlanId(planId);
+        setPaymentPlanName(planName);
+        setRazorpayVisible(true);
       } else {
-        Alert.alert('Payment Failed', result.errorMessage || 'Could not finalize payment.');
+        Alert.alert('Checkout Initialization Failed', 'Could not create order with Razorpay. Please try again.');
       }
     } catch (e) {
-      Alert.alert('Error', 'An unexpected billing error occurred.');
+      Alert.alert('Error', 'An unexpected checkout initialization error occurred.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const handlePaymentSuccess = async (data: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => {
+    setRazorpayVisible(false);
+    setLoadingPlan(paymentPlanName);
+    try {
+      const verified = await paymentService.verifyPayment(
+        data.razorpay_payment_id,
+        data.razorpay_order_id,
+        data.razorpay_signature
+      );
+      if (verified) {
+        // Activate plan in Firestore
+        await paymentService.activateSubscription(
+          user!.uid,
+          paymentPlanName,
+          paymentPlanId,
+          paymentAmount,
+          data.razorpay_payment_id
+        );
+        Alert.alert(
+          'Upgrade Successful! 🎉',
+          `Thank you for your purchase! You have upgraded to ${paymentPlanName} successfully.`
+        );
+      } else {
+        Alert.alert('Verification Failed', 'Payment signature could not be verified.');
+      }
+    } catch (e: any) {
+      Alert.alert('Activation Error', e.message || 'Payment was successful, but could not activate subscription in database. Please contact support.');
     } finally {
       setLoadingPlan(null);
     }
@@ -97,7 +178,7 @@ export const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
 
             <Button
               title={plan.buttonText}
-              onPress={() => plan.value && handleCheckout(plan.name, plan.value)}
+              onPress={() => plan.value && handleCheckout(plan.name, plan.id, plan.value)}
               disabled={plan.disabled}
               loading={loadingPlan === plan.name}
               style={{ backgroundColor: plan.accent }}
@@ -105,6 +186,23 @@ export const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
           </View>
         ))}
       </ScrollView>
+
+      {/* Razorpay Web Checkout Webview Modal */}
+      <RazorpayCheckoutModal
+        visible={razorpayVisible}
+        amount={paymentAmount}
+        description={paymentDescription}
+        orderId={orderId}
+        customerName={user?.seekerProfile?.fullName || user?.recruiterProfile?.companyName || user?.displayName || 'User'}
+        customerEmail={user?.email || ''}
+        customerPhone={user?.seekerProfile?.phone || (user as any).phone || '9999999999'}
+        onSuccess={handlePaymentSuccess}
+        onCancel={() => setRazorpayVisible(false)}
+        onFailure={(errMsg) => {
+          setRazorpayVisible(false);
+          Alert.alert('Payment Failed', errMsg);
+        }}
+      />
     </View>
   );
 };
@@ -126,7 +224,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 15,
-    color: '#208AEF',
+    color: '#4F46E5',
     fontWeight: '600',
   },
   headerTitle: {

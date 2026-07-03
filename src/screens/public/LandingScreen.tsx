@@ -54,6 +54,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
 
   useEffect(() => {
     setCoursesLoading(courses.length === 0);
@@ -143,9 +144,23 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       );
     }
 
+    const unsubscribeVisibility = onSnapshot(
+      doc(db, 'lms_config', 'tabs_visibility'),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsJobsVisible(data.jobs !== false);
+        }
+      },
+      (err) => {
+        console.warn('Error fetching visibility settings on landing:', err);
+      }
+    );
+
     return () => {
       unsubscribeCourses();
       unsubscribeJobs();
+      unsubscribeVisibility();
       if (unsubscribeUser) unsubscribeUser();
       if (unsubscribeApps) unsubscribeApps();
     };
@@ -300,14 +315,16 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
               <Ionicons name="book-outline" size={16} color="#fff" />
               <Text style={styles.heroPrimaryBtnText}>Explore Courses</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.heroSecondaryBtn, { backgroundColor: '#F5F3FF' }]}
-              onPress={onJobsPress}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="briefcase-outline" size={16} color="#4F46E5" />
-              <Text style={styles.heroSecondaryBtnText}>Find Jobs</Text>
-            </TouchableOpacity>
+            {isJobsVisible && (
+              <TouchableOpacity
+                style={[styles.heroSecondaryBtn, { backgroundColor: '#F5F3FF' }]}
+                onPress={onJobsPress}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="briefcase-outline" size={16} color="#4F46E5" />
+                <Text style={styles.heroSecondaryBtnText}>Find Jobs</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       );
@@ -334,14 +351,16 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
             <Ionicons name="book-outline" size={16} color="#fff" />
             <Text style={styles.heroPrimaryBtnText}>Explore Courses</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.heroSecondaryBtn} 
-            onPress={onJobsPress} 
-            activeOpacity={0.85}
-          >
-            <Ionicons name="briefcase-outline" size={16} color="#4F46E5" />
-            <Text style={styles.heroSecondaryBtnText}>Find Jobs</Text>
-          </TouchableOpacity>
+          {isJobsVisible && (
+            <TouchableOpacity 
+              style={styles.heroSecondaryBtn} 
+              onPress={onJobsPress} 
+              activeOpacity={0.85}
+            >
+              <Ionicons name="briefcase-outline" size={16} color="#4F46E5" />
+              <Text style={styles.heroSecondaryBtnText}>Find Jobs</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Stats Strip */}
@@ -566,7 +585,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       >
         {renderHero()}
         {renderCourses()}
-        {renderFeaturedJobs()}
+        {isJobsVisible && renderFeaturedJobs()}
         {renderWhyUs()}
         {!user && renderFooterCta()}
       </ScrollView>

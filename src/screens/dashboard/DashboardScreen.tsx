@@ -6,7 +6,7 @@ import { db } from '@/services/firebase/config';
 import { Job, JobApplication, jobService } from '@/services/jobs/jobService';
 import { Course, courseService, lmsService } from '@/services/lms/lmsService';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, doc, onSnapshot, query, where, getDocs, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, getDocs, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -65,7 +65,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [enrolledIds, setEnrolledIds] = useState<string[]>([]);
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recruiterTab, setRecruiterTab] = useState<'overview' | 'my_jobs' | 'applications' | 'analytics' | 'profile'>('overview');
+  const [recruiterTab, setRecruiterTab] = useState<'overview' | 'my_jobs' | 'applications' | 'analytics' | 'profile' | 'candidates'>('overview');
 
   // Search & Status filters for recruiter applications tab
   const [appsSearchTerm, setAppsSearchTerm] = useState('');
@@ -80,6 +80,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [companyPosition, setCompanyPosition] = useState('');
   const [companyBio, setCompanyBio] = useState('');
   const [savingCompany, setSavingCompany] = useState(false);
+
+  // Candidate Search states
+  const [candidateList, setCandidateList] = useState<any[]>([]);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
+  const [candidatesSearch, setCandidatesSearch] = useState('');
+  const [candidatesStateFilter, setCandidatesStateFilter] = useState('');
+  const [candidatesDistrictFilter, setCandidatesDistrictFilter] = useState('');
+  const [candidatesTalukaFilter, setCandidatesTalukaFilter] = useState('');
+  const [candidatesSkillFilter, setCandidatesSkillFilter] = useState('');
+  const [candidatesExpFilter, setCandidatesExpFilter] = useState('');
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const [revealedIds, setRevealedIds] = useState<string[]>([]);
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
 
   // Sync editor fields with database recruiter profile data
   useEffect(() => {
@@ -238,12 +251,40 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         },
         (err) => console.error('Company doc listener error:', err)
       );
+      // Fetch jobseeker candidates
+      setCandidatesLoading(true);
+      const seekersQ = query(collection(db, 'users'), where('role', '==', 'seeker'));
+      getDocs(seekersQ).then((snap) => {
+        const list: any[] = [];
+        snap.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        setCandidateList(list);
+        setCandidatesLoading(false);
+      }).catch((err) => {
+        console.error('Failed to load seekers:', err);
+        setCandidatesLoading(false);
+      });
     }
+
+    const unsubscribeVisibility = onSnapshot(
+      doc(db, 'lms_config', 'tabs_visibility'),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsJobsVisible(data.jobs !== false);
+        }
+      },
+      (err) => {
+        console.error('Visibility snapshot error:', err);
+      }
+    );
 
     return () => {
       unsubscribeCourses();
       unsubscribeJobs();
       unsubscribeUser();
+      unsubscribeVisibility();
       if (unsubscribeApps) unsubscribeApps();
       if (unsubscribeCompany) unsubscribeCompany();
     };
@@ -471,15 +512,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Text style={styles.statNumber}>{enrolledCourses.length}</Text>
               <Text style={styles.statLabel}>Courses Enrolled</Text>
             </View>
-            <TouchableOpacity
-              style={[styles.statCard, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}
-              onPress={onViewApplications}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="paper-plane" size={24} color="#059669" style={styles.statIcon} />
-              <Text style={styles.statNumber}>{applications.length}</Text>
-              <Text style={styles.statLabel}>Applications</Text>
-            </TouchableOpacity>
+            {isJobsVisible && (
+              <TouchableOpacity
+                style={[styles.statCard, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}
+                onPress={onViewApplications}
+                activeOpacity={0.9}
+              >
+                <Ionicons name="paper-plane" size={24} color="#059669" style={styles.statIcon} />
+                <Text style={styles.statNumber}>{applications.length}</Text>
+                <Text style={styles.statLabel}>Applications</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Action Row */}
@@ -488,10 +531,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Ionicons name="book-outline" size={18} color="#FFFFFF" />
               <Text style={styles.actionBtnTextSolid}>Explore Courses</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnOutline]} onPress={onBrowseJobs}>
-              <Ionicons name="briefcase-outline" size={18} color="#4F46E5" />
-              <Text style={styles.actionBtnTextOutline}>Find Jobs</Text>
-            </TouchableOpacity>
+            {isJobsVisible && (
+              <TouchableOpacity style={[styles.actionBtn, styles.actionBtnOutline]} onPress={onBrowseJobs}>
+                <Ionicons name="briefcase-outline" size={18} color="#4F46E5" />
+                <Text style={styles.actionBtnTextOutline}>Find Jobs</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Study Resources */}
@@ -595,57 +640,58 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             )}
           </View>
 
-          {/* Featured Job Openings */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 2 }]}>Featured Job Openings</Text>
-                <Text style={styles.sectionSubtitle}>Find jobs matching your skills and experience</Text>
+          {isJobsVisible && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 2 }]}>Featured Job Openings</Text>
+                  <Text style={styles.sectionSubtitle}>Find jobs matching your skills and experience</Text>
+                </View>
+                <TouchableOpacity onPress={onBrowseJobs} style={styles.seeAllLink}>
+                  <Text style={styles.seeAllLinkText}>See All</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#4F46E5" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={onBrowseJobs} style={styles.seeAllLink}>
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color="#4F46E5" />
-              </TouchableOpacity>
-            </View>
 
-            {activeJobs.length === 0 ? (
-              <View style={styles.emptyCard}>
-                {loading ? (
-                  <ActivityIndicator size="small" color="#4F46E5" />
-                ) : (
-                  <>
-                    <Ionicons name="briefcase-outline" size={32} color="#94A3B8" />
-                    <Text style={styles.emptyText}>No active job listings found.</Text>
-                  </>
-                )}
-              </View>
-            ) : (
-              <FlatList
-                data={activeJobs}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => `all-j-${item.id}`}
-                contentContainerStyle={styles.horizontalList}
-                renderItem={({ item }) => {
-                  const hasApplied = appliedJobIds.includes(item.id);
-                  const isSaved = savedJobIds.includes(item.id);
-                  return (
-                    <View style={{ width: 300, marginRight: 16 }}>
-                      <JobCard
-                        job={item}
-                        layoutMode="horizontal"
-                        onPress={() => onJobPress(item.id)}
-                        onApply={() => handleApplyJob(item.id)}
-                        hasApplied={hasApplied}
-                        isSaved={isSaved}
-                        onSaveToggle={() => handleToggleSaveJob(item.id)}
-                      />
-                    </View>
-                  );
-                }}
-              />
-            )}
-          </View>
+              {activeJobs.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#4F46E5" />
+                  ) : (
+                    <>
+                      <Ionicons name="briefcase-outline" size={32} color="#94A3B8" />
+                      <Text style={styles.emptyText}>No active job listings found.</Text>
+                    </>
+                  )}
+                </View>
+              ) : (
+                <FlatList
+                  data={activeJobs}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => `all-j-${item.id}`}
+                  contentContainerStyle={styles.horizontalList}
+                  renderItem={({ item }) => {
+                    const hasApplied = appliedJobIds.includes(item.id);
+                    const isSaved = savedJobIds.includes(item.id);
+                    return (
+                      <View style={{ width: 300, marginRight: 16 }}>
+                        <JobCard
+                          job={item}
+                          layoutMode="horizontal"
+                          onPress={() => onJobPress(item.id)}
+                          onApply={() => handleApplyJob(item.id)}
+                          hasApplied={hasApplied}
+                          isSaved={isSaved}
+                          onSaveToggle={() => handleToggleSaveJob(item.id)}
+                        />
+                      </View>
+                    );
+                  }}
+                />
+              )}
+            </View>
+          )}
         </ScrollView>
       ) : (
         // ════════════════════════════════════════════════════════════
@@ -751,6 +797,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Ionicons name="people-outline" size={16} color={recruiterTab === 'applications' ? '#4F46E5' : '#6B7280'} />
                 <Text style={[styles.recruiterTabText, recruiterTab === 'applications' && styles.recruiterTabTextActive]}>
                   Applications <Text style={styles.badgeText}>({totalAppsCount})</Text>
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.recruiterTabBtn, recruiterTab === 'candidates' && styles.recruiterTabBtnActive]}
+                onPress={() => setRecruiterTab('candidates')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="search-outline" size={16} color={recruiterTab === 'candidates' ? '#4F46E5' : '#6B7280'} />
+                <Text style={[styles.recruiterTabText, recruiterTab === 'candidates' && styles.recruiterTabTextActive]}>
+                  Candidates
                 </Text>
               </TouchableOpacity>
 
@@ -1547,7 +1604,388 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </View>
               </>
             )}
+
+            {recruiterTab === 'candidates' && (() => {
+              const filteredCandidates = candidateList.filter((cand) => {
+                const seekerProf = cand.seekerProfile || {};
+                
+                // Name or Email match
+                if (candidatesSearch.trim()) {
+                  const queryText = candidatesSearch.toLowerCase();
+                  const nameVal = (cand.firstName || '') + ' ' + (cand.lastName || '');
+                  const emailVal = cand.email || '';
+                  if (!nameVal.toLowerCase().includes(queryText) && !emailVal.toLowerCase().includes(queryText)) {
+                    return false;
+                  }
+                }
+                
+                // State filter
+                if (candidatesStateFilter.trim()) {
+                  const stateVal = cand.state || cand.location || '';
+                  if (!stateVal.toLowerCase().includes(candidatesStateFilter.toLowerCase())) {
+                    return false;
+                  }
+                }
+
+                // District filter
+                if (candidatesDistrictFilter.trim()) {
+                  const distVal = cand.district || cand.location || '';
+                  if (!distVal.toLowerCase().includes(candidatesDistrictFilter.toLowerCase())) {
+                    return false;
+                  }
+                }
+
+                // Taluka filter
+                if (candidatesTalukaFilter.trim()) {
+                  const talVal = cand.taluka || '';
+                  if (!talVal.toLowerCase().includes(candidatesTalukaFilter.toLowerCase())) {
+                    return false;
+                  }
+                }
+
+                // Skill filter
+                if (candidatesSkillFilter.trim()) {
+                  const skillsVal = seekerProf.skills || [];
+                  const match = skillsVal.some((s: string) => s.toLowerCase().includes(candidatesSkillFilter.toLowerCase()));
+                  if (!match) return false;
+                }
+
+                // Experience filter
+                if (candidatesExpFilter.trim()) {
+                  const expPref = cand.experienceLevel || '';
+                  if (!expPref.toLowerCase().includes(candidatesExpFilter.toLowerCase())) {
+                    return false;
+                  }
+                }
+
+                return true;
+              });
+
+              return (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={styles.sectionTitle}>Talent Database Search</Text>
+                  
+                  {/* Search and Filters Card */}
+                  <View style={styles.candidateSearchCard}>
+                    <View style={styles.appsSearchBox}>
+                      <Ionicons name="search" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
+                      <TextInput
+                        style={styles.appsSearchInput}
+                        value={candidatesSearch}
+                        onChangeText={setCandidatesSearch}
+                        placeholder="Search candidates by name or email..."
+                        placeholderTextColor="#94A3B8"
+                      />
+                      {candidatesSearch.length > 0 && (
+                        <TouchableOpacity onPress={() => setCandidatesSearch('')}>
+                          <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    <View style={styles.filtersGrid}>
+                      <TextInput
+                        style={styles.filterInput}
+                        value={candidatesStateFilter}
+                        onChangeText={setCandidatesStateFilter}
+                        placeholder="Filter by State"
+                        placeholderTextColor="#94A3B8"
+                      />
+                      <TextInput
+                        style={styles.filterInput}
+                        value={candidatesDistrictFilter}
+                        onChangeText={setCandidatesDistrictFilter}
+                        placeholder="Filter by District"
+                        placeholderTextColor="#94A3B8"
+                      />
+                    </View>
+
+                    <View style={styles.filtersGrid}>
+                      <TextInput
+                        style={styles.filterInput}
+                        value={candidatesTalukaFilter}
+                        onChangeText={setCandidatesTalukaFilter}
+                        placeholder="Filter by Taluka"
+                        placeholderTextColor="#94A3B8"
+                      />
+                      <TextInput
+                        style={styles.filterInput}
+                        value={candidatesSkillFilter}
+                        onChangeText={setCandidatesSkillFilter}
+                        placeholder="Filter by Skill"
+                        placeholderTextColor="#94A3B8"
+                      />
+                    </View>
+                  </View>
+
+                  {/* Candidates List */}
+                  {candidatesLoading ? (
+                    <ActivityIndicator size="large" color="#4F46E5" style={{ marginTop: 24 }} />
+                  ) : filteredCandidates.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                      <Ionicons name="people-outline" size={32} color="#94A3B8" />
+                      <Text style={styles.emptyText}>No candidates found matching the filters.</Text>
+                    </View>
+                  ) : (
+                    <View style={{ gap: 12, marginTop: 12 }}>
+                      {filteredCandidates.map((cand) => {
+                        const seekerProf = cand.seekerProfile || {};
+                        const name = (cand.firstName || cand.displayName || 'Anonymous') + ' ' + (cand.lastName || '');
+                        const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                        const skills = seekerProf.skills || [];
+                        const isUnlocked = revealedIds.includes(cand.id);
+                        
+                        // Masked info helper
+                        const getMaskedPhone = (p: string) => {
+                          if (!p) return 'Not Provided';
+                          if (isUnlocked) return p;
+                          return p.substring(0, 3) + '******' + p.substring(p.length - 2);
+                        };
+
+                        const getMaskedEmail = (e: string) => {
+                          if (!e) return 'Not Provided';
+                          if (isUnlocked) return e;
+                          const parts = e.split('@');
+                          return parts[0].substring(0, 2) + '****@' + parts[1];
+                        };
+
+                        const handleUnlockCandidate = async () => {
+                          if (!user) return;
+                          if (isUnlocked) {
+                            setSelectedCandidate(cand);
+                            return;
+                          }
+
+                          // Verify subscription
+                          try {
+                            const subRef = doc(db, 'subscriptions', user.uid);
+                            const subSnap = await getDoc(subRef);
+                            if (!subSnap.exists()) {
+                              Alert.alert('Subscription Required', 'You must have an active subscription package to unlock candidate contact details.');
+                              return;
+                            }
+                            const subData = subSnap.data();
+                            if (subData?.status !== 'active') {
+                              Alert.alert('Subscription Expired', 'Your subscription is expired or inactive. Please renew to download resumes.');
+                              return;
+                            }
+                            const maxDownloads = subData?.maxResumeDownloads || 50; // fallback to 50
+                            const usage = subData?.usageStats || {};
+                            const downloadsUsed = usage?.resumeDownloads || 0;
+
+                            if (downloadsUsed >= maxDownloads) {
+                              Alert.alert('Limit Reached', `You have reached the limit of ${maxDownloads} resume downloads in your active plan.`);
+                              return;
+                            }
+
+                            Alert.alert(
+                              'Confirm Unlock',
+                              'Unlocking this candidate will consume 1 resume download credit. Proceed?',
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                  text: 'Unlock',
+                                  onPress: async () => {
+                                    await updateDoc(subRef, {
+                                      'usageStats.resumeDownloads': downloadsUsed + 1
+                                    });
+                                    setRevealedIds(prev => [...prev, cand.id]);
+                                    setSelectedCandidate(cand);
+                                    Alert.alert('Success 🎉', 'Candidate contact details unlocked successfully!');
+                                  }
+                                }
+                              ]
+                            );
+                          } catch (err: any) {
+                            Alert.alert('Error', err.message || 'Could not verify subscription.');
+                          }
+                        };
+
+                        return (
+                          <View key={cand.id} style={styles.candidateCardItem}>
+                            <View style={styles.applicantCardHeader}>
+                              <View style={styles.candidateLogoCircle}>
+                                <Text style={styles.candidateLogoInitials}>{initials}</Text>
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.applicantNameText}>{name}</Text>
+                                <Text style={styles.applicantJobTitleText}>
+                                  {cand.location || cand.state || 'India'}
+                                </Text>
+                              </View>
+                              <TouchableOpacity
+                                style={[
+                                  styles.unlockBtn,
+                                  isUnlocked && { backgroundColor: '#10B981', borderColor: '#10B981' }
+                                ]}
+                                onPress={handleUnlockCandidate}
+                                activeOpacity={0.8}
+                              >
+                                <Ionicons 
+                                  name={isUnlocked ? "checkmark-circle" : "lock-closed"} 
+                                  size={12} 
+                                  color="#fff" 
+                                  style={{ marginRight: 4 }} 
+                                />
+                                <Text style={styles.unlockBtnText}>
+                                  {isUnlocked ? 'Unlocked' : 'Unlock Contact'}
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.contactDetailsQuickRow}>
+                              <View style={styles.contactDetailCell}>
+                                <Ionicons name="call-outline" size={13} color="#64748B" />
+                                <Text style={styles.contactDetailText}>{getMaskedPhone(cand.phone || seekerProf.phone)}</Text>
+                              </View>
+                              <View style={styles.contactDetailCell}>
+                                <Ionicons name="mail-outline" size={13} color="#64748B" />
+                                <Text style={styles.contactDetailText}>{getMaskedEmail(cand.email)}</Text>
+                              </View>
+                            </View>
+
+                            {skills.length > 0 && (
+                              <View style={styles.skillsContainerRow}>
+                                {skills.slice(0, 4).map((s: string, idx: number) => (
+                                  <View key={idx} style={styles.skillTagBadge}>
+                                    <Text style={styles.skillTagText}>{s}</Text>
+                                  </View>
+                                ))}
+                                {skills.length > 4 && (
+                                  <View style={[styles.skillTagBadge, { backgroundColor: '#F1F5F9' }]}>
+                                    <Text style={[styles.skillTagText, { color: '#64748B' }]}>
+                                      +{skills.length - 4}
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
           </View>
+
+          {/* Candidate Detailed Profile Modal */}
+          {selectedCandidate && (
+            <Modal
+              visible={selectedCandidate !== null}
+              animationType="slide"
+              transparent={true}
+              onRequestClose={() => setSelectedCandidate(null)}
+            >
+              <View style={styles.candidateModalOverlay}>
+                <View style={styles.candidateDetailsModalContent}>
+                  <View style={styles.modalHeaderRow}>
+                    <Text style={styles.modalHeaderTitle}>Candidate Profile</Text>
+                    <TouchableOpacity onPress={() => setSelectedCandidate(null)}>
+                      <Ionicons name="close-circle" size={24} color="#64748B" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+                    <View style={styles.modalHeroSection}>
+                      <View style={[styles.profileLogoCircle, { width: 64, height: 64, borderRadius: 32 }]}>
+                        <Text style={[styles.profileLogoInitials, { fontSize: 22 }]}>
+                          {((selectedCandidate.firstName || selectedCandidate.displayName || 'A')[0] + (selectedCandidate.lastName || '')[0]).toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={styles.modalCandidateName}>
+                        {(selectedCandidate.firstName || selectedCandidate.displayName || 'Anonymous Candidate') + ' ' + (selectedCandidate.lastName || '')}
+                      </Text>
+                      <Text style={styles.modalCandidateLoc}>
+                        {selectedCandidate.location || selectedCandidate.state || 'India'}
+                      </Text>
+                    </View>
+
+                    {/* Contact Details */}
+                    <View style={styles.modalSectionBox}>
+                      <Text style={styles.modalSectionTitle}>Contact Information</Text>
+                      <View style={{ gap: 8, marginTop: 8 }}>
+                        <View style={styles.modalInfoRow}>
+                          <Ionicons name="call" size={16} color="#4F46E5" />
+                          <Text style={styles.modalInfoText}>{selectedCandidate.phone || selectedCandidate.seekerProfile?.phone || 'Not Provided'}</Text>
+                        </View>
+                        <View style={styles.modalInfoRow}>
+                          <Ionicons name="mail" size={16} color="#4F46E5" />
+                          <Text style={styles.modalInfoText}>{selectedCandidate.email}</Text>
+                        </View>
+                        {selectedCandidate.seekerProfile?.resumeUrl ? (
+                          <TouchableOpacity
+                            style={styles.resumeDownloadBtn}
+                            onPress={() => Linking.openURL(selectedCandidate.seekerProfile.resumeUrl)}
+                          >
+                            <Ionicons name="download-outline" size={16} color="#fff" />
+                            <Text style={styles.resumeDownloadBtnText}>Download Resume PDF</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <Text style={styles.noResumeInfo}>No Resume Document Uploaded</Text>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Bio */}
+                    {selectedCandidate.seekerProfile?.bio ? (
+                      <View style={styles.modalSectionBox}>
+                        <Text style={styles.modalSectionTitle}>Professional Summary</Text>
+                        <Text style={styles.modalBodyBio}>{selectedCandidate.seekerProfile.bio}</Text>
+                      </View>
+                    ) : null}
+
+                    {/* Skills */}
+                    {selectedCandidate.seekerProfile?.skills && selectedCandidate.seekerProfile.skills.length > 0 ? (
+                      <View style={styles.modalSectionBox}>
+                        <Text style={styles.modalSectionTitle}>Professional Skills</Text>
+                        <View style={[styles.skillsContainerRow, { marginTop: 8 }]}>
+                          {selectedCandidate.seekerProfile.skills.map((s: string, idx: number) => (
+                            <View key={idx} style={styles.skillTagBadge}>
+                              <Text style={styles.skillTagText}>{s}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {/* Education */}
+                    {selectedCandidate.seekerProfile?.education && selectedCandidate.seekerProfile.education.length > 0 ? (
+                      <View style={styles.modalSectionBox}>
+                        <Text style={styles.modalSectionTitle}>Education History</Text>
+                        <View style={{ gap: 10, marginTop: 8 }}>
+                          {selectedCandidate.seekerProfile.education.map((edu: any, idx: number) => (
+                            <View key={idx} style={styles.modalListItemCard}>
+                              <Text style={styles.modalListItemTitle}>{edu.degree || edu.degreeName || 'Degree/Qualification'}</Text>
+                              <Text style={styles.modalListItemSub}>{edu.school || edu.institution || 'School/College'}</Text>
+                              {edu.year && <Text style={styles.modalListItemYear}>Year: {edu.year}</Text>}
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {/* Experience */}
+                    {selectedCandidate.seekerProfile?.experience && selectedCandidate.seekerProfile.experience.length > 0 ? (
+                      <View style={styles.modalSectionBox}>
+                        <Text style={styles.modalSectionTitle}>Work Experience</Text>
+                        <View style={{ gap: 10, marginTop: 8 }}>
+                          {selectedCandidate.seekerProfile.experience.map((exp: any, idx: number) => (
+                            <View key={idx} style={styles.modalListItemCard}>
+                              <Text style={styles.modalListItemTitle}>{exp.jobTitle || 'Role'}</Text>
+                              <Text style={styles.modalListItemSub}>{exp.company || 'Company'}</Text>
+                              {exp.duration && <Text style={styles.modalListItemYear}>Duration: {exp.duration}</Text>}
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
+                  </ScrollView>
+                </View>
+              </View>
+            </Modal>
+          )}
 
           {/* ── MODAL: Company Profile Editor ── */}
           <Modal
@@ -3024,5 +3462,199 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#4338CA',
     flexShrink: 1,
+  },
+  candidateSearchCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  filtersGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterInput: {
+    flex: 1,
+    height: 38,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 10,
+    fontSize: 12,
+    color: '#1E293B',
+    backgroundColor: '#F8FAFC',
+  },
+  candidateCardItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    gap: 8,
+  },
+  candidateLogoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  candidateLogoInitials: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#4F46E5',
+  },
+  unlockBtn: {
+    backgroundColor: '#4F46E5',
+    borderWidth: 1,
+    borderColor: '#4F46E5',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  unlockBtnText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  contactDetailsQuickRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 4,
+  },
+  contactDetailCell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  contactDetailText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  candidateModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  candidateDetailsModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: '85%',
+    padding: 16,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 10,
+  },
+  modalHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  modalHeroSection: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 6,
+  },
+  modalCandidateName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  modalCandidateLoc: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  modalSectionBox: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 12,
+  },
+  modalSectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1E293B',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingBottom: 4,
+  },
+  modalInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalInfoText: {
+    fontSize: 12,
+    color: '#334155',
+    fontWeight: '700',
+  },
+  resumeDownloadBtn: {
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  resumeDownloadBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  noResumeInfo: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  modalBodyBio: {
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 18,
+    marginTop: 6,
+  },
+  modalListItemCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    padding: 8,
+    gap: 2,
+  },
+  modalListItemTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  modalListItemSub: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  modalListItemYear: {
+    fontSize: 10,
+    color: '#94A3B8',
   },
 });

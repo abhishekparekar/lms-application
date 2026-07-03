@@ -49,6 +49,18 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
   const [selectedType, setSelectedType] = useState('All');
   const [selectedWorkspace, setSelectedWorkspace] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'lms_config', 'tabs_visibility'), (snap) => {
+      if (snap.exists()) {
+        setIsJobsVisible(snap.data().jobs !== false);
+      }
+    }, (err) => {
+      console.warn('JobDashboard visibility listener error:', err);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     setLoading(jobs.length === 0);
@@ -185,6 +197,17 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
   });
 
   const isRecruiter = user?.role === 'recruiter';
+
+  if (!isJobsVisible && !isRecruiter) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC', justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
+        <Ionicons name="lock-closed-outline" size={64} color="#9CA3AF" />
+        <Text style={{ color: '#1F2937', marginTop: 16, fontSize: 16, fontWeight: 'bold', textAlign: 'center', paddingHorizontal: 24 }}>
+          Job portal access has been temporarily restricted by the administrator.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC' }]} edges={['top']}>

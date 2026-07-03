@@ -128,10 +128,33 @@ const mockApplications: JobApplication[] = [
 
 export const jobService = {
   /**
+   * Check global jobs visibility status
+   */
+  async getJobsVisibility(): Promise<boolean> {
+    try {
+      const docRef = doc(db, 'lms_config', 'tabs_visibility');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data().jobs !== false;
+      }
+      return true;
+    } catch (e) {
+      console.warn('Failed to fetch jobs visibility setting:', e);
+      return true;
+    }
+  },
+
+  /**
    * Get all jobs
    */
   async getJobs(): Promise<Job[]> {
     try {
+      const isVisible = await this.getJobsVisibility();
+      if (!isVisible) {
+        console.log('🚫 [jobService] Jobs are hidden by Super Admin setting.');
+        return [];
+      }
+
       const querySnapshot = await getDocs(collection(db, 'jobs'));
       const jobs: Job[] = [];
       querySnapshot.forEach((docSnap) => {

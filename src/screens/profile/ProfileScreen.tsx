@@ -113,9 +113,25 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const isSeeker = user?.role === 'seeker';
   const completeness = user?.profileCompleteness ?? 0;
 
-  // ── Seeker applications history ────────────────────────
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, 'lms_config', 'tabs_visibility'),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsJobsVisible(data.jobs !== false);
+        }
+      },
+      (err) => {
+        console.warn('Error fetching tabs visibility in ProfileScreen:', err);
+      }
+    );
+    return () => unsub();
+  }, []);
 
   // ── Modals state ────────────────────────────────────────
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
@@ -661,13 +677,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           color: '#4F46E5',
           onPress: () => { setStep(1); setSection('builder'); },
         },
-        {
+        ...(isJobsVisible ? [{
           icon: 'bookmark-outline' as const,
           label: 'Saved Jobs',
           sub: 'View bookmarked opportunities',
           color: '#D97706',
           onPress: onSavedJobsPress || (() => Alert.alert('Saved Jobs', 'No saved jobs yet.')),
-        },
+        }] : []),
         {
           icon: 'ribbon-outline' as const,
           label: 'My Certificates',
@@ -683,7 +699,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         {
           icon: 'card-outline' as const,
           label: 'Subscription Plans',
-          sub: 'Upgrade to apply unlimited jobs',
+          sub: isJobsVisible ? 'Upgrade to apply unlimited jobs' : 'Upgrade your learning plan limits',
           color: '#7C3AED',
           onPress: onViewSubscription,
         },

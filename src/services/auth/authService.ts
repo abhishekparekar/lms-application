@@ -51,6 +51,15 @@ export interface UserProfile {
   recruiterProfile?: RecruiterProfile;
   userType?: string;
   originalRole?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  referredBy?: string;
+  franchiseId?: string;
+  location?: string;
+  state?: string;
+  district?: string;
+  taluka?: string;
 }
 
 export const authService = {
@@ -64,31 +73,88 @@ export const authService = {
   },
 
   /**
-   * Register user
-   */
-  /**
    * Register user — only real Firebase credentials accepted
    */
-  async register({ email, password, displayName, role }: { 
+  async register({ 
+    email, 
+    password, 
+    firstName, 
+    lastName, 
+    phone, 
+    userType, 
+    referralCode 
+  }: { 
     email: string; 
     password?: string; 
-    displayName: string; 
-    role: 'seeker' | 'recruiter';
+    firstName: string; 
+    lastName: string; 
+    phone: string; 
+    userType: 'jobseeker' | 'employer' | 'agent';
+    referralCode?: string;
   }) {
     if (!password) {
       throw new Error('Password is required for registration.');
     }
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const displayName = `${firstName} ${lastName}`.trim();
     await updateFirebaseProfile(userCredential.user, { displayName });
+
+    let franchiseId = '';
+    let referredBy = '';
+    if (referralCode) {
+      try {
+        const franchiseDoc = await getDoc(doc(db, 'franchises', referralCode));
+        if (franchiseDoc.exists()) {
+          franchiseId = referralCode;
+          referredBy = franchiseDoc.data()?.name || referralCode;
+        } else {
+          referredBy = referralCode; // fallback/agent matching
+        }
+      } catch (e) {
+        console.log('[AuthService] Error checking referral code:', e);
+        referredBy = referralCode;
+      }
+    }
+
+    const role: 'seeker' | 'recruiter' = (userType === 'jobseeker') ? 'seeker' : 'recruiter';
+
     const newUser: UserProfile = {
       uid: userCredential.user.uid,
       email,
       displayName,
       role,
-      userType: role === 'seeker' ? 'jobseeker' : 'employer',
+      userType,
       createdAt: new Date().toISOString(),
       profileCompleted: false,
+      firstName,
+      lastName,
+      phone,
+      location: '',
+      state: '',
+      district: '',
+      taluka: '',
+      ...(referralCode ? { referredBy, franchiseId } : {})
     };
+
+    if (role === 'seeker') {
+      newUser.seekerProfile = {
+        fullName: displayName,
+        phone,
+        bio: '',
+        education: [],
+        experience: [],
+        skills: []
+      };
+    } else {
+      newUser.recruiterProfile = {
+        companyName: '',
+        companyWebsite: '',
+        industry: '',
+        position: '',
+        bio: ''
+      };
+    }
+
     await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
     return { user: newUser, firebaseUser: userCredential.user };
   },

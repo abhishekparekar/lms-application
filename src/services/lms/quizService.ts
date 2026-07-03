@@ -1,4 +1,4 @@
-﻿import { 
+import { 
   collection, 
   getDocs, 
   doc, 
@@ -229,8 +229,15 @@ export const quizService = {
 
       if (passed) {
         const certId = `cert_${userId}_${courseId}`;
+        const certRef = doc(db, 'certificates', certId);
+        const certSnap = await getDoc(certRef);
+        if (certSnap.exists()) {
+          console.log(`[QuizService] Certificate already exists for cert_${userId}_${courseId}, skipping regeneration.`);
+          return certId;
+        }
+
         const credentialId = `LMS-${Date.now().toString(36).toUpperCase()}`;
-        await setDoc(doc(db, 'certificates', certId), {
+        await setDoc(certRef, {
           id: certId,
           courseId,
           courseTitle,
@@ -242,7 +249,7 @@ export const quizService = {
           credentialId,
           score,
         }, { merge: true });
-        console.log(`[QuizService] âœ… Certificate created: cert_${userId}_${courseId}`);
+        console.log(`[QuizService] ✅ Certificate created: cert_${userId}_${courseId}`);
         return certId;
       }
       return null;

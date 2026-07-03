@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/hooks/useAuth';
 import { jobService } from '@/services/jobs/jobService';
 import { db } from '@/services/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 interface PostJobProps {
   onBack: () => void;
@@ -361,6 +361,36 @@ ${benefits.length > 0 ? `• Added Benefits: ${benefits.join(', ')}\n` : ''}
 
     setLoading(true);
     try {
+      const subRef = doc(db, 'subscriptions', user.uid);
+      let subData: any = null;
+      let jobPostingsUsed = 0;
+      let maxJobPostings = 0;
+
+      // Subscription check only when posting a NEW job
+      if (!editingJobId) {
+        const subSnap = await getDoc(subRef);
+        if (!subSnap.exists()) {
+          Alert.alert('Subscription Required', 'You must have an active subscription package to post a job.');
+          setLoading(false);
+          return;
+        }
+        subData = subSnap.data();
+        if (subData?.status !== 'active') {
+          Alert.alert('Subscription Expired', 'Your subscription is expired or inactive. Please renew to post.');
+          setLoading(false);
+          return;
+        }
+        maxJobPostings = subData?.maxJobPostings || 0;
+        const usage = subData?.usageStats || {};
+        jobPostingsUsed = usage?.jobPostingsUsed || 0;
+
+        if (jobPostingsUsed >= maxJobPostings) {
+          Alert.alert('Limit Reached', `You have reached the limit of ${maxJobPostings} job postings in your active plan.`);
+          setLoading(false);
+          return;
+        }
+      }
+
       // Fetch company profile to bind correctly
       const compRef = doc(db, 'companies', user.uid);
       const compSnap = await getDoc(compRef);
@@ -385,7 +415,6 @@ ${benefits.length > 0 ? `• Added Benefits: ${benefits.join(', ')}\n` : ''}
         description: description.trim(),
         requirements: requirements.length > 0 ? requirements : ['No specific requirements listed.'],
         salaryRange: salaryMin ? `₹${salaryMin} - ₹${salaryMax} (${salaryPeriod})` : 'Salary Negotiable',
-        // Support custom fields matching Web collection
         experienceRequired,
         gender,
         department,
@@ -411,6 +440,11 @@ ${benefits.length > 0 ? `• Added Benefits: ${benefits.join(', ')}\n` : ''}
         await jobService.postJob({
           ...cleanedData,
           recruiterId: user.uid,
+        });
+
+        // Increment usage count in active subscription
+        await updateDoc(subRef, {
+          'usageStats.jobPostingsUsed': jobPostingsUsed + 1
         });
       }
 
