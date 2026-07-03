@@ -39,7 +39,7 @@ interface EducationItem {
   endYear?: string;
 }
 
-// Generates an 80%+ corporate ATS-accepted single column layout
+// Generates an 80%+ corporate ATS-accepted single column layout with custom themes
 const generateResumeHtml = (
   name: string,
   email: string,
@@ -47,7 +47,8 @@ const generateResumeHtml = (
   bio: string,
   skills: string[],
   experience: ExperienceItem[],
-  education: EducationItem[]
+  education: EducationItem[],
+  theme: 'classic' | 'modern' | 'emerald'
 ) => {
   const safeSkills = Array.isArray(skills) ? skills : [];
   const safeExperience = Array.isArray(experience) ? experience : [];
@@ -92,6 +93,18 @@ const generateResumeHtml = (
 
   const skillsText = safeSkills.join(', ');
 
+  // Dynamic colors based on theme choice
+  let headerColor = '#0f172a';
+  let accentColor = '#94a3b8';
+  
+  if (theme === 'modern') {
+    headerColor = '#1e3a8a';
+    accentColor = '#3b82f6';
+  } else if (theme === 'emerald') {
+    headerColor = '#064e3b';
+    accentColor = '#10b981';
+  }
+
   return `
     <!DOCTYPE html>
     <html>
@@ -110,14 +123,14 @@ const generateResumeHtml = (
           }
           .header {
             text-align: center;
-            border-bottom: 2px solid #0f172a;
+            border-bottom: 2px solid ${headerColor};
             padding-bottom: 12px;
             margin-bottom: 16px;
           }
           .name {
             font-size: 24px;
             font-weight: bold;
-            color: #0f172a;
+            color: ${headerColor};
             margin: 0 0 6px 0;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -134,8 +147,8 @@ const generateResumeHtml = (
           .section-title {
             font-size: 12px;
             font-weight: bold;
-            color: #0f172a;
-            border-bottom: 1px solid #94a3b8;
+            color: ${headerColor};
+            border-bottom: 1px solid ${accentColor};
             padding-bottom: 2px;
             margin-top: 18px;
             margin-bottom: 10px;
@@ -160,7 +173,7 @@ const generateResumeHtml = (
           .item-title {
             font-size: 11.5px;
             font-weight: bold;
-            color: #0f172a;
+            color: ${headerColor};
           }
           .item-date {
             font-size: 10.5px;
@@ -232,6 +245,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
 }) => {
   const { user } = useAuth();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<'classic' | 'modern' | 'emerald'>('classic');
 
   const seekerProfile = user?.seekerProfile;
   const name = seekerProfile?.fullName || user?.displayName || 'Your Name';
@@ -244,10 +258,20 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
 
   const isProfileEmpty = !bio && skills.length === 0 && experience.length === 0 && education.length === 0;
 
+  // Theme palettes configuration
+  const themeColors = {
+    classic: { primary: '#0F172A', accent: '#94A3B8', bg: '#F8FAFC', label: 'Classic Slate' },
+    modern: { primary: '#1E3A8A', accent: '#3B82F6', bg: '#EFF6FF', label: 'Modern Royal' },
+    emerald: { primary: '#064E3B', accent: '#10B981', bg: '#ECFDF5', label: 'Creative Mint' }
+  };
+
+  const activeColor = themeColors[selectedTheme].primary;
+  const accentColor = themeColors[selectedTheme].accent;
+
   const startPdfExport = async () => {
     setIsGeneratingPdf(true);
     try {
-      const htmlContent = generateResumeHtml(name, email, phone, bio, skills, experience, education);
+      const htmlContent = generateResumeHtml(name, email, phone, bio, skills, experience, education, selectedTheme);
       
       if (Platform.OS === 'web') {
         setIsGeneratingPdf(false);
@@ -256,7 +280,6 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
         try {
           const { uri } = await Print.printToFileAsync({ html: htmlContent });
           setIsGeneratingPdf(false);
-          // Small delay to ensure the modal transitions out fully before launching sharing overlay
           await new Promise(resolve => setTimeout(resolve, 350));
           
           const shareOptions: Sharing.SharingOptions = {
@@ -270,14 +293,12 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
           if (await Sharing.isAvailableAsync()) {
             await Sharing.shareAsync(uri, shareOptions);
           } else {
-            // Fallback to printAsync if sharing is not available
             await Print.printAsync({ html: htmlContent });
           }
         } catch (innerErr: any) {
-          console.log('[ResumeBuilder] printToFileAsync or shareAsync failed (expected on simulator), falling back to printAsync:', innerErr?.message || innerErr);
+          console.log('[ResumeBuilder] printToFileAsync failed, falling back to printAsync:', innerErr?.message || innerErr);
           setIsGeneratingPdf(false);
           await new Promise(resolve => setTimeout(resolve, 350));
-          // Direct native print manager fallback (allows "Save as PDF")
           await Print.printAsync({ html: htmlContent });
         }
       }
@@ -288,11 +309,44 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
     }
   };
 
+  const startPdfShare = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const htmlContent = generateResumeHtml(name, email, phone, bio, skills, experience, education, selectedTheme);
+      
+      if (Platform.OS === 'web') {
+        setIsGeneratingPdf(false);
+        await Print.printAsync({ html: htmlContent });
+      } else {
+        try {
+          const { uri } = await Print.printToFileAsync({ html: htmlContent });
+          setIsGeneratingPdf(false);
+          await new Promise(resolve => setTimeout(resolve, 350));
+          
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(uri, {
+              mimeType: 'application/pdf',
+              dialogTitle: `Share ${name} Resume`,
+            });
+          } else {
+            Alert.alert('Sharing Unavailable', 'Native sharing is not supported on this device.');
+          }
+        } catch (innerErr: any) {
+          setIsGeneratingPdf(false);
+          Alert.alert('Share Failed', 'Unable to initiate sharing overlay.');
+        }
+      }
+    } catch (e: any) {
+      setIsGeneratingPdf(false);
+      Alert.alert('Sharing Failed', e.message || 'Could not compile PDF.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Top Title Bar */}
       <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>ATS Resume Builder</Text>
+        <Text style={styles.headerTitle}>Professional ATS Resume</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -300,18 +354,44 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
         <View style={styles.infoBanner}>
           <Ionicons name="information-circle-outline" size={20} color="#1E3A8A" />
           <View style={styles.infoTextContainer}>
-            <Text style={styles.infoTitle}>Corporate Recruiter Format (80%+ Acceptance)</Text>
+            <Text style={styles.infoTitle}>Corporate Recruiter Format (80%+ ATS Score)</Text>
             <Text style={styles.infoDesc}>
               This standard single-column layout is designed to score high with Applicant Tracking Systems (ATS) and recruiter screenings.
             </Text>
           </View>
         </View>
 
+        {/* Template Style Selector */}
+        <View style={styles.themeSection}>
+          <Text style={styles.themeLabel}>Choose Resume Template Style:</Text>
+          <View style={styles.themeChipsContainer}>
+            {(Object.keys(themeColors) as Array<keyof typeof themeColors>).map((key) => {
+              const isActive = selectedTheme === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[
+                    styles.themeChip,
+                    isActive && { borderColor: themeColors[key].primary, backgroundColor: themeColors[key].bg }
+                  ]}
+                  onPress={() => setSelectedTheme(key)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.colorDot, { backgroundColor: themeColors[key].primary }]} />
+                  <Text style={[styles.themeChipText, isActive && { color: themeColors[key].primary, fontWeight: '800' }]}>
+                    {themeColors[key].label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Paper Sheet Resume Preview */}
         <View style={styles.resumePaper}>
           {/* Header */}
-          <View style={styles.resumeHeader}>
-            <Text style={styles.resumeName}>{name}</Text>
+          <View style={[styles.resumeHeader, { borderBottomColor: activeColor }]}>
+            <Text style={[styles.resumeName, { color: activeColor }]}>{name}</Text>
             <View style={styles.resumeContactStrip}>
               {email ? (
                 <View style={styles.contactItem}>
@@ -335,7 +415,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
               <Text style={styles.emptyStateDesc}>
                 Update your professional details in your profile builder to populate your corporate resume.
               </Text>
-              <TouchableOpacity style={styles.emptyStateBtn} onPress={onStartProfileBuilder}>
+              <TouchableOpacity style={[styles.emptyStateBtn, { backgroundColor: activeColor }]} onPress={onStartProfileBuilder}>
                 <Ionicons name="create-outline" size={16} color="#FFFFFF" />
                 <Text style={styles.emptyStateBtnText}>Build Profile Info</Text>
               </TouchableOpacity>
@@ -345,7 +425,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
               {/* Professional Summary */}
               {bio ? (
                 <View style={styles.resumeSection}>
-                  <Text style={styles.sectionTitle}>Professional Summary</Text>
+                  <Text style={[styles.sectionTitle, { color: activeColor, borderBottomColor: accentColor }]}>Professional Summary</Text>
                   <Text style={styles.resumeBio}>{bio}</Text>
                 </View>
               ) : null}
@@ -353,7 +433,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
               {/* Work Experience */}
               {experience.length > 0 ? (
                 <View style={styles.resumeSection}>
-                  <Text style={styles.sectionTitle}>Work Experience</Text>
+                  <Text style={[styles.sectionTitle, { color: activeColor, borderBottomColor: accentColor }]}>Work Experience</Text>
                   {experience.map((exp, idx) => (
                     <View key={idx} style={styles.experienceItem}>
                       <View style={styles.rowBetween}>
@@ -370,7 +450,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
               {/* Education */}
               {education.length > 0 ? (
                 <View style={styles.resumeSection}>
-                  <Text style={styles.sectionTitle}>Education</Text>
+                  <Text style={[styles.sectionTitle, { color: activeColor, borderBottomColor: accentColor }]}>Education</Text>
                   {education.map((edu, idx) => (
                     <View key={idx} style={styles.educationItem}>
                       <View style={styles.rowBetween}>
@@ -386,7 +466,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
               {/* Skills */}
               {skills.length > 0 ? (
                 <View style={styles.resumeSection}>
-                  <Text style={styles.sectionTitle}>Skills & Expertise</Text>
+                  <Text style={[styles.sectionTitle, { color: activeColor, borderBottomColor: accentColor }]}>Skills & Expertise</Text>
                   <View style={styles.skillsWrap}>
                     {skills.map((sk) => (
                       <View key={sk} style={styles.skillPill}>
@@ -401,22 +481,24 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
         </View>
 
         {/* Action Row */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={[styles.actionBtn, styles.editBtn]} onPress={onStartProfileBuilder}>
-            <Ionicons name="create-outline" size={20} color="#4F46E5" />
-            <Text style={styles.editBtnText}>Edit Details</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, styles.downloadBtn]} onPress={startPdfExport} disabled={isGeneratingPdf}>
-            {isGeneratingPdf ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Ionicons name="cloud-download-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.downloadBtnText}>Download PDF</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+        {!isProfileEmpty && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={[styles.actionBtn, styles.editBtn]} onPress={onStartProfileBuilder}>
+              <Ionicons name="create-outline" size={18} color="#4F46E5" />
+              <Text style={styles.editBtnText}>Edit</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[styles.actionBtn, styles.downloadBtn]} onPress={startPdfExport} disabled={isGeneratingPdf}>
+              <Ionicons name="cloud-download-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.downloadBtnText}>PDF</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.actionBtn, styles.shareBtn]} onPress={startPdfShare} disabled={isGeneratingPdf}>
+              <Ionicons name="share-social-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.shareBtnText}>Share</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {/* Generating PDF Loader Modal */}
@@ -483,6 +565,47 @@ const styles = StyleSheet.create({
     color: '#1E40AF',
     lineHeight: 16,
   },
+  themeSection: {
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    padding: 12,
+  },
+  themeLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#475569',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  themeChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  themeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#F8FAFC',
+    gap: 6,
+  },
+  colorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  themeChipText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#64748B',
+  },
   resumePaper: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -496,20 +619,15 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginBottom: 20,
   },
-  resumePaperLocked: {
-    opacity: 0.6,
-  },
   resumeHeader: {
     alignItems: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: '#0F172A',
     paddingBottom: 12,
     marginBottom: 12,
   },
   resumeName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0F172A',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
@@ -536,11 +654,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#0F172A',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
     paddingBottom: 3,
     marginBottom: 10,
   },
@@ -604,7 +720,7 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   actionBtn: {
     flex: 1,
@@ -613,7 +729,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
   },
   editBtn: {
     backgroundColor: '#FFFFFF',
@@ -621,7 +737,7 @@ const styles = StyleSheet.create({
     borderColor: '#C7D2FE',
   },
   editBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
     color: '#4F46E5',
   },
@@ -629,7 +745,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#4F46E5',
   },
   downloadBtnText: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  shareBtn: {
+    backgroundColor: '#10B981',
+  },
+  shareBtnText: {
+    fontSize: 13,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -656,7 +780,6 @@ const styles = StyleSheet.create({
   emptyStateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4F46E5',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
