@@ -114,7 +114,7 @@ export const quizService = {
   async getQuestionsForCourse(courseId: string): Promise<QuizQuestion[]> {
     console.log(`[QuizService] Fetching questions for courseId="${courseId}"`);
 
-    // STEP 1 â”€â”€ Embedded inside the course document
+    // STEP 1: Embedded inside the course document
     try {
       const snap = await getDoc(doc(db, 'courses', courseId));
       if (snap.exists()) {
@@ -122,14 +122,14 @@ export const quizService = {
         if (raw) {
           const qs = parseQuestions(raw, courseId);
           if (qs.length > 0) {
-            console.log(`[QuizService] âœ… ${qs.length} q from courses/${courseId} embedded`);
+            console.log(`[QuizService] SUCCESS: ${qs.length} q from courses/${courseId} embedded`);
             return qs;
           }
         }
       }
     } catch (e) { console.warn('[QuizService] Step 1:', e); }
 
-    // STEP 2 â”€â”€ Subcollections under courses/{courseId}
+    // STEP 2: Subcollections under courses/{courseId}
     const subcollections = ['questions','quizQuestions','quizzes','testSeries','tests','quiz','exam','assessments'];
     for (const sub of subcollections) {
       try {
@@ -141,14 +141,14 @@ export const quizService = {
             if (q) qs.push(q);
           });
           if (qs.length > 0) {
-            console.log(`[QuizService] âœ… ${qs.length} q from courses/${courseId}/${sub}`);
+            console.log(`[QuizService] SUCCESS: ${qs.length} q from courses/${courseId}/${sub}`);
             return qs;
           }
         }
       } catch (_) {}
     }
 
-    // STEP 3 & 4 â”€â”€ Root-level collections
+    // STEP 3 & 4: Root-level collections
     const rootCollections = ['testSeries','tests','quizQuestions','quizzes','questions','quiz','exams','assessments'];
     for (const coll of rootCollections) {
       // 3a: doc ID === courseId
@@ -159,37 +159,33 @@ export const quizService = {
           if (raw) {
             const qs = parseQuestions(raw, courseId);
             if (qs.length > 0) {
-              console.log(`[QuizService] âœ… ${qs.length} q from ${coll}/${courseId} (doc-ID)`);
+              console.log(`[QuizService] SUCCESS: ${qs.length} q from ${coll}/${courseId} (doc-ID)`);
               return qs;
             }
           }
           // Maybe the doc itself is a single question
           const singleQ = normaliseQuestion({ id: snap.id, ...snap.data() }, 0, courseId);
           if (singleQ) {
-            console.log(`[QuizService] âœ… 1 q from ${coll}/${courseId} (single-doc)`);
+            console.log(`[QuizService] SUCCESS: 1 q from ${coll}/${courseId} (single-doc)`);
             return [singleQ];
           }
         }
       } catch (_) {}
 
-      // 3b: query by courseId field variants
-      for (const field of ['courseId','course_id','courseID']) {
+      // 3b: query matching courseId field
+      const fieldsToCheck = ['courseId', 'course_id', 'course', 'cid'];
+      for (const field of fieldsToCheck) {
         try {
-          const snap = await getDocs(query(collection(db, coll), where(field, '==', courseId)));
+          const q = query(collection(db, coll), where(field, '==', courseId));
+          const snap = await getDocs(q);
           if (!snap.empty) {
             const qs: QuizQuestion[] = [];
             snap.forEach((d) => {
-              const data = d.data();
-              const embedded = extractRawArray(data);
-              if (embedded) {
-                parseQuestions(embedded, courseId).forEach((q) => qs.push(q));
-              } else {
-                const q = normaliseQuestion({ id: d.id, ...data }, qs.length, courseId);
-                if (q) qs.push(q);
-              }
+              const q = normaliseQuestion({ id: d.id, ...d.data() }, qs.length, courseId);
+              if (q) qs.push(q);
             });
             if (qs.length > 0) {
-              console.log(`[QuizService] âœ… ${qs.length} q from ${coll} where ${field}=="${courseId}"`);
+              console.log(`[QuizService] SUCCESS: ${qs.length} q from ${coll} where ${field}=="${courseId}"`);
               return qs;
             }
           }
@@ -197,7 +193,7 @@ export const quizService = {
       }
     }
 
-    console.warn(`[QuizService] âŒ No questions for courseId="${courseId}". Checked: embedded, subcollections, root: [${rootCollections.join(', ')}]`);
+    console.warn(`[QuizService] WARNING: No questions found for courseId="${courseId}".`);
     return [];
   },
 
