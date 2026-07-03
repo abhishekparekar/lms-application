@@ -431,52 +431,85 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
       </ScrollView>
 
       {/* Sticky Bottom Actions */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom, height: 80 + insets.bottom }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom, height: 86 + insets.bottom }]}>
         <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Total Price</Text>
-          <Text style={[styles.priceValue, { color: colors.text }]}>
-            {course.price === 0 ? 'Free' : `₹${course.price}`}
-          </Text>
+          <Text style={styles.priceLabel}>Price / फी</Text>
+          <View style={styles.priceRow}>
+            {course.price > 0 && (
+              <Text style={styles.strikePrice}>₹{Math.round(course.price * 2.5)}</Text>
+            )}
+            <Text style={[styles.priceValue, { color: '#10B981' }]}>
+              {course.price === 0 ? 'Free' : `₹${course.price}`}
+            </Text>
+          </View>
         </View>
         
-        {isSeeker || isAdmin ? (
-          isEnrolledOrAdmin ? (
-            <View style={styles.enrolledActions}>
-              {/* Quiz button: only show if BOTH complete AND quiz exists */}
-              {onTakeTest && hasQuiz && canTakeQuiz && (
+        <View style={styles.actionsContainer}>
+          {isSeeker || isAdmin ? (
+            isEnrolledOrAdmin ? (
+              <View style={styles.enrolledActionsRow}>
+                {hasQuiz && (
+                  <TouchableOpacity
+                    style={[
+                      styles.bottomActionBtn,
+                      canTakeQuiz ? styles.quizBtnActive : styles.quizBtnLocked
+                    ]}
+                    onPress={handleTakeQuiz}
+                    activeOpacity={canTakeQuiz ? 0.8 : 1}
+                  >
+                    <Ionicons 
+                      name={canTakeQuiz ? "school-outline" : "lock-closed-outline"} 
+                      size={16} 
+                      color={canTakeQuiz ? "#FFFFFF" : "#94A3B8"} 
+                      style={{ marginRight: 6 }} 
+                    />
+                    <Text style={[
+                      styles.bottomActionText, 
+                      { color: canTakeQuiz ? "#FFFFFF" : "#94A3B8" }
+                    ]}>
+                      Take Quiz
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                
                 <TouchableOpacity
-                  style={[styles.smallBtn, styles.examBtn]}
-                  onPress={handleTakeQuiz}
+                  style={[styles.bottomActionBtn, styles.resumeBtnActive]}
+                  onPress={() => onWatchVideo(course.id, 0)}
+                  activeOpacity={0.8}
                 >
-                  <Ionicons name="document-text-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.examBtnText}>Take Exam</Text>
+                  <Ionicons 
+                    name={isCourseComplete ? "refresh-outline" : "play-outline"} 
+                    size={16} 
+                    color="#FFFFFF" 
+                    style={{ marginRight: 6 }} 
+                  />
+                  <Text style={[styles.bottomActionText, { color: '#FFFFFF' }]}>
+                    {isCourseComplete ? 'Revisit' : 'Start Learn'}
+                  </Text>
                 </TouchableOpacity>
-              )}
+              </View>
+            ) : (
               <TouchableOpacity
-                style={[styles.smallBtn, styles.resumeBtn]}
-                onPress={() => onWatchVideo(course.id, 0)}
+                style={[styles.bottomActionBtn, styles.buyBtnActive]}
+                onPress={handleEnrollOrBuy}
+                activeOpacity={0.8}
               >
-                <Ionicons name={isCourseComplete ? "refresh-outline" : "play-circle-outline"} size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.resumeBtnText}>{isCourseComplete ? 'Revisit' : 'Continue'}</Text>
+                <Ionicons name="card-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={[styles.bottomActionText, { color: '#FFFFFF' }]}>
+                  {course.price === 0 ? "Enroll Free" : "Buy Course"}
+                </Text>
               </TouchableOpacity>
+            )
+          ) : isRecruiter ? (
+            <View style={styles.recruiterBanner}>
+              <Text style={styles.recruiterBannerText}>Employer Preview Mode</Text>
             </View>
           ) : (
-            <Button
-              title={course.price === 0 ? "Enroll Now" : "Buy Course"}
-              onPress={handleEnrollOrBuy}
-              loading={actionLoading}
-              style={styles.actionBtn}
-            />
-          )
-        ) : isRecruiter ? (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoBoxText}>Recruiter Account</Text>
-          </View>
-        ) : (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoBoxText}>Access Restricted</Text>
-          </View>
-        )}
+            <View style={styles.recruiterBanner}>
+              <Text style={styles.recruiterBannerText}>Access Restricted</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Checkout Modal */}
@@ -727,83 +760,106 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
     backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopWidth: 1.5,
+    borderTopColor: '#E2E8F0',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 10,
   },
   priceContainer: {
     justifyContent: 'center',
   },
   priceLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  strikePrice: {
+    fontSize: 13,
+    color: '#94A3B8',
+    textDecorationLine: 'line-through',
+    fontWeight: '500',
   },
   priceValue: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '900',
   },
-  actionBtn: {
+  actionsContainer: {
     flex: 1,
-    marginLeft: 24,
-    maxWidth: 200,
-  },
-  enrolledActions: {
-    flexDirection: 'row',
-    gap: 12,
-    flex: 1,
-    justifyContent: 'flex-end',
     marginLeft: 16,
+    justifyContent: 'flex-end',
   },
-  smallBtn: {
+  enrolledActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+    justifyContent: 'flex-end',
+  },
+  bottomActionBtn: {
     height: 48,
-    borderRadius: 8,
-    justifyContent: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    flex: 1,
+    maxWidth: 130,
   },
-  testBtn: {
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  testBtnLocked: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#F3F4F6',
-    opacity: 0.7,
-  },
-  testBtnText: {
-    color: '#4B5563',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  testBtnTextLocked: {
-    color: '#9CA3AF',
-  },
-  // Exam (unlocked quiz) button in bottom bar
-  examBtn: {
+  quizBtnActive: {
     backgroundColor: '#10B981',
-    flex: 1,
-    maxWidth: 140,
   },
-  examBtnText: {
-    color: '#ffffff',
+  quizBtnLocked: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+  },
+  resumeBtnActive: {
+    backgroundColor: '#4F46E5',
+  },
+  buyBtnActive: {
+    backgroundColor: '#4F46E5',
+    height: 50,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    marginLeft: 16,
+    alignSelf: 'stretch',
+    flex: 1,
+  },
+  bottomActionText: {
+    fontSize: 13,
     fontWeight: '800',
-    fontSize: 14,
   },
-  resumeBtn: {
-    backgroundColor: '#208AEF',
-    flex: 1,
-    maxWidth: 140,
+  recruiterBanner: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignItems: 'center',
   },
-  resumeBtnText: {
-    color: '#ffffff',
+  recruiterBannerText: {
+    fontSize: 12,
     fontWeight: '700',
-    fontSize: 14,
+    color: '#64748B',
   },
   // Course progress section inside syllabus area
   progressSection: {
