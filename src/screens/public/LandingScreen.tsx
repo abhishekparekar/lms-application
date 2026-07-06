@@ -17,6 +17,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -33,6 +34,15 @@ interface LandingScreenProps {
   onStartProfileBuilder?: () => void;
   onViewSubscription?: () => void;
 }
+
+const CATEGORIES = [
+  { id: 'All', label: 'All', icon: 'apps' },
+  { id: 'Development', label: 'Tech & Coding 💻', icon: 'code-slash' },
+  { id: 'Design', label: 'Design & Creative 🎨', icon: 'color-palette' },
+  { id: 'Business', label: 'Business & Management 💼', icon: 'business' },
+  { id: 'Marketing', label: 'Digital Marketing 📣', icon: 'megaphone' },
+  { id: 'Personal Development', label: 'Soft Skills 🌱', icon: 'git-branch' },
+];
 
 
 
@@ -58,6 +68,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   const [isExploreVisible, setIsExploreVisible] = useState(true);
   const [isCurrentAffairsVisible, setIsCurrentAffairsVisible] = useState(true);
   const [isResourcesVisible, setIsResourcesVisible] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
     setCoursesLoading(courses.length === 0);
@@ -237,6 +249,33 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     }
   };
 
+  const filteredCourses = React.useMemo(() => {
+    return courses.filter((course) => {
+      const title = course.title || '';
+      const description = (course as any).description || '';
+      const instructor = course.instructor || '';
+      const category = course.category || '';
+
+      const matchesSearch =
+        !searchQuery.trim() ||
+        title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        instructor.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCat =
+        selectedCategory === 'All' ||
+        category.toLowerCase() === selectedCategory.toLowerCase() ||
+        category.toLowerCase().includes(selectedCategory.toLowerCase());
+
+      return matchesSearch && matchesCat;
+    });
+  }, [courses, searchQuery, selectedCategory]);
+
+  const featuredCourse = React.useMemo(() => {
+    if (courses.length === 0) return null;
+    return [...courses].sort((a, b) => (b.rating || 0) - (a.rating || 0))[0];
+  }, [courses]);
+
   const getCategoryDetails = (category: string) => {
     const cat = category ? category.toLowerCase() : '';
     if (cat.includes('dev')) {
@@ -341,51 +380,19 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     return (
       <View style={styles.heroSection}>
         <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>★ INDIA&apos;S #1 LEARNING PLATFORM</Text>
+          <Text style={styles.heroBadgeText}>{"★ INDIA'S #1 LEARNING PLATFORM"}</Text>
         </View>
         <Text style={styles.heroTitle}>
           Learn. Grow.{'\n'}
           <Text style={styles.heroHighlight}>Succeed.</Text>
         </Text>
         <Text style={styles.heroSub}>
-          1,00,000+ students · 500+ courses · 95% pass rate
+          Join thousands of learners building their dream careers.
         </Text>
         <View style={styles.heroCtas}>
-          {isExploreVisible && (
-            <TouchableOpacity 
-              style={styles.heroPrimaryBtn} 
-              onPress={onLearnPress || onLoginPress} 
-              activeOpacity={0.85}
-            >
-              <Ionicons name="book-outline" size={16} color="#fff" />
-              <Text style={styles.heroPrimaryBtnText}>Explore Courses</Text>
-            </TouchableOpacity>
-          )}
-          {isJobsVisible && (
-            <TouchableOpacity 
-              style={styles.heroSecondaryBtn} 
-              onPress={onJobsPress} 
-              activeOpacity={0.85}
-            >
-              <Ionicons name="briefcase-outline" size={16} color="#4F46E5" />
-              <Text style={styles.heroSecondaryBtnText}>Find Jobs</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Stats Strip */}
-        <View style={styles.statsStrip}>
-          {[
-            { val: '1L+', label: 'Students' },
-            { val: '500+', label: 'Courses' },
-            { val: '4.9★', label: 'Rating' },
-            { val: '95%', label: 'Pass Rate' },
-          ].map((s) => (
-            <View key={s.label} style={styles.statItem}>
-              <Text style={styles.statVal}>{s.val}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
+          <TouchableOpacity style={styles.heroPrimaryBtn} onPress={onLoginPress} activeOpacity={0.85}>
+            <Text style={styles.heroPrimaryBtnText}>{"Get Started — It's Free"}</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -409,25 +416,138 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     </View>
   );
 
+  // ── Search & Filter ──────────────────────────────────────
+  const renderSearchAndFilters = () => (
+    <View style={styles.searchFilterContainer}>
+      <View style={styles.searchBarWrapper}>
+        <Ionicons name="search-outline" size={20} color="#6B7280" style={styles.searchIcon} />
+        <TextInput
+          placeholder="What do you want to learn today?"
+          placeholderTextColor="#9CA3AF"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.searchInput}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
+            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryScroll}
+      >
+        {CATEGORIES.map((cat) => {
+          const isActive = selectedCategory === cat.id;
+          return (
+            <TouchableOpacity
+              key={cat.id}
+              style={[
+                styles.categoryFilterBtn,
+                isActive && styles.categoryFilterBtnActive
+              ]}
+              onPress={() => setSelectedCategory(cat.id)}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name={cat.icon as any}
+                size={14}
+                color={isActive ? '#ffffff' : '#4B5563'}
+              />
+              <Text
+                style={[
+                  styles.categoryFilterTxt,
+                  isActive && styles.categoryFilterTxtActive
+                ]}
+              >
+                {cat.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
+  // ── Featured Course Banner ───────────────────────────────
+  const renderFeaturedCourse = () => {
+    if (!featuredCourse) return null;
+
+    const details = getCategoryDetails(featuredCourse.category);
+
+    return (
+      <View style={styles.featuredCourseWrap}>
+        <Text style={styles.featuredTitle}>⚡ Featured Course</Text>
+        <TouchableOpacity
+          style={styles.featuredCard}
+          onPress={() => {
+            if (onCoursePress) onCoursePress(featuredCourse.id);
+            else onLoginPress();
+          }}
+          activeOpacity={0.95}
+        >
+          <View style={styles.featuredBadge}>
+            <Text style={styles.featuredBadgeText}>BEST SELLER</Text>
+          </View>
+          <View style={styles.featuredInner}>
+            <Text style={[styles.featuredCardCategory, { color: '#818CF8' }]}>
+              {details.emoji} {featuredCourse.category}
+            </Text>
+            <Text style={styles.featuredCardTitle} numberOfLines={2}>
+              {featuredCourse.title}
+            </Text>
+            <Text style={styles.featuredCardInstructor}>
+              By {featuredCourse.instructor}
+            </Text>
+            <View style={styles.featuredCardMeta}>
+              <Text style={styles.featuredCardMetaTxt}>⭐ {(featuredCourse.rating || 0).toFixed(1)} rating</Text>
+              <Text style={styles.featuredCardMetaTxt}>🕒 {featuredCourse.duration}</Text>
+            </View>
+            <View style={styles.featuredFooter}>
+              <Text style={styles.featuredCardPrice}>
+                {featuredCourse.price === 0 ? 'Free' : `₹${featuredCourse.price}`}
+              </Text>
+              <View style={styles.exploreBtn}>
+                <Text style={styles.exploreBtnText}>Start Learning</Text>
+                <Ionicons name="arrow-forward" size={14} color="#ffffff" />
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   // ── Courses ───────────────────────────────────────────────
   const renderCourses = () => (
     <View style={styles.section}>
-      {renderSectionHeader('Popular Courses', onLearnPress || onLoginPress, '#DB2777')}
+      {renderSectionHeader('Explore Courses', onLearnPress || onLoginPress, '#DB2777')}
+
+      {renderSearchAndFilters()}
+
+      {renderFeaturedCourse()}
+
+      <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+        <Text style={styles.featuredTitle}>📚 Recommended for you</Text>
+      </View>
 
       {coursesLoading ? (
         <View style={styles.jobsLoader}>
           <ActivityIndicator size="large" color="#DB2777" />
           <Text style={styles.jobsLoaderText}>Loading courses…</Text>
         </View>
-      ) : courses.length === 0 ? (
+      ) : filteredCourses.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateEmoji}>📚</Text>
-          <Text style={styles.emptyStateTitle}>No Courses Yet</Text>
-          <Text style={styles.emptyStateText}>Courses will be available soon.</Text>
+          <Text style={styles.emptyStateEmoji}>🔍</Text>
+          <Text style={styles.emptyStateTitle}>No Courses Found</Text>
+          <Text style={styles.emptyStateText}>Try checking your search spelling or change filters.</Text>
         </View>
       ) : (
         <FlatList
-          data={courses}
+          data={filteredCourses}
           horizontal
           keyExtractor={(item) => item.id}
           showsHorizontalScrollIndicator={false}
@@ -464,6 +584,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       )}
     </View>
   );
+
+
+
 
   // ── Jobs ──────────────────────────────────────────────────
   const renderFeaturedJobs = () => (
@@ -594,7 +717,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
         }
       >
         {renderHero()}
-        {isExploreVisible && renderCourses()}
+        {renderCourses()}
         {isJobsVisible && renderFeaturedJobs()}
         {renderWhyUs()}
         {!user && renderFooterCta()}
@@ -1085,5 +1208,300 @@ const styles = StyleSheet.create({
     color: '#A5B4FC',
     fontSize: 11,
     fontWeight: '500',
+  },
+  // ── Search & Filter Styles
+  searchFilterContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  searchBarWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 48,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  clearBtn: {
+    padding: 4,
+  },
+  categoryScroll: {
+    paddingVertical: 4,
+    gap: 8,
+  },
+  categoryFilterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginRight: 6,
+  },
+  categoryFilterBtnActive: {
+    backgroundColor: '#DB2777',
+    borderColor: '#DB2777',
+  },
+  categoryFilterTxt: {
+    fontSize: 12,
+    color: '#4B5563',
+    fontWeight: '600',
+  },
+  categoryFilterTxtActive: {
+    color: '#ffffff',
+    fontWeight: '700',
+  },
+
+  // ── Featured Course Styles
+  featuredCourseWrap: {
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  featuredTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 10,
+  },
+  featuredCard: {
+    backgroundColor: '#1E1B4B',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#312E81',
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  featuredBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    zIndex: 2,
+  },
+  featuredBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  featuredInner: {
+    padding: 20,
+  },
+  featuredCardCategory: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  featuredCardTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#ffffff',
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  featuredCardInstructor: {
+    fontSize: 13,
+    color: '#A5B4FC',
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  featuredCardMeta: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 16,
+  },
+  featuredCardMetaTxt: {
+    color: '#C7D2FE',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  featuredFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#312E81',
+    paddingTop: 16,
+  },
+  featuredCardPrice: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#10B981',
+  },
+  exploreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  exploreBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  // ── Roadmaps Styles
+  roadmapSection: {
+    backgroundColor: '#ffffff',
+    paddingBottom: 16,
+  },
+  roadmapScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 12,
+  },
+  roadmapCard: {
+    width: 260,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1.5,
+    marginRight: 12,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  roadmapIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  roadmapTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 6,
+  },
+  roadmapSteps: {
+    fontSize: 11.5,
+    color: '#4B5563',
+    lineHeight: 16,
+    marginBottom: 16,
+    minHeight: 32,
+  },
+  roadmapFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 12,
+  },
+  roadmapLink: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // ── Testimonials Styles
+  testimonialSection: {
+    backgroundColor: '#F8FAFC',
+    paddingBottom: 24,
+  },
+  testimonialScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 12,
+  },
+  testimonialCard: {
+    width: 280,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  testimonialHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  testimonialAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#059669',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  testimonialAvatarText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  testimonialUser: {
+    flex: 1,
+  },
+  testimonialName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  testimonialRole: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  testimonialRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  testimonialRatingTxt: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#D97706',
+  },
+  testimonialText: {
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 18,
+    fontStyle: 'italic',
   },
 });

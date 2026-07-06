@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { db } from '@/services/firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface RegisterScreenProps {
   initialRole?: 'seeker' | 'recruiter';
@@ -38,12 +40,37 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userType, setUserType] = useState<'jobseeker' | 'employer' | 'agent'>('jobseeker');
   const [referralCode, setReferralCode] = useState('');
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, 'lms_config', 'tabs_visibility'),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          const visible = data.jobs !== false;
+          setIsJobsVisible(visible);
+          if (!visible) {
+            setUserType((prev) => (prev === 'employer' ? 'jobseeker' : prev));
+          }
+        }
+      },
+      (err) => {
+        console.warn('Error listening to tabs visibility in RegisterScreen:', err);
+      }
+    );
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (initialRole) {
-      setUserType(initialRole === 'recruiter' ? 'employer' : 'jobseeker');
+      if (initialRole === 'recruiter' && !isJobsVisible) {
+        setUserType('jobseeker');
+      } else {
+        setUserType(initialRole === 'recruiter' ? 'employer' : 'jobseeker');
+      }
     }
-  }, [initialRole]);
+  }, [initialRole, isJobsVisible]);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -177,14 +204,16 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 <Text style={[styles.roleText, userType === 'jobseeker' && styles.roleTextActive]}>Seeker</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.roleOption, userType === 'employer' && styles.roleOptionActive]}
-                onPress={() => setUserType('employer')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.roleEmoji, userType === 'employer' && styles.roleEmojiActive]}>🏢</Text>
-                <Text style={[styles.roleText, userType === 'employer' && styles.roleTextActive]}>Recruiter</Text>
-              </TouchableOpacity>
+              {isJobsVisible && (
+                <TouchableOpacity
+                  style={[styles.roleOption, userType === 'employer' && styles.roleOptionActive]}
+                  onPress={() => setUserType('employer')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.roleEmoji, userType === 'employer' && styles.roleEmojiActive]}>🏢</Text>
+                  <Text style={[styles.roleText, userType === 'employer' && styles.roleTextActive]}>Recruiter</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={[styles.roleOption, userType === 'agent' && styles.roleOptionActive]}

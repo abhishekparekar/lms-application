@@ -16,6 +16,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { db } from '@/services/firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { useEffect } from 'react';
 
 interface LoginScreenProps {
   onRegisterPress: (role?: 'seeker' | 'recruiter') => void;
@@ -36,7 +39,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
-  
+  const [isJobsVisible, setIsJobsVisible] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, 'lms_config', 'tabs_visibility'),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setIsJobsVisible(data.jobs !== false);
+        }
+      },
+      (err) => {
+        console.warn('Error listening to tabs visibility in LoginScreen:', err);
+      }
+    );
+    return () => unsub();
+  }, []);
+
   const insets = useSafeAreaInsets();
   const passwordRef = useRef<any>(null);
 
@@ -73,21 +93,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     <View style={styles.container}>
       {/* Background Header - Deep Blue */}
       <View style={styles.headerBackground} />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={[
-            styles.scrollContent, 
+            styles.scrollContent,
             { paddingTop: Math.max(insets.top, 20), paddingBottom: Math.max(insets.bottom, 24) }
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          
+
           {/* Top Bar with Back Button */}
           <View style={styles.topBar}>
             {onBack ? (
@@ -175,7 +195,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
           {/* Bottom Signup Link */}
           <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account? </Text>
+            <Text style={styles.signupText}>{"Don't have an account? "}</Text>
             <TouchableOpacity onPress={() => setUserTypeModalVisible(true)}>
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
@@ -218,34 +238,36 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   <Ionicons name="briefcase" size={22} color="#4F46E5" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.typeOptionTitle}>I am a Job Seeker</Text>
+                  <Text style={styles.typeOptionTitle}>I am a Student </Text>
                   <Text style={styles.typeOptionDesc}>
-                    Find verified job options, track applications, and advance your skills.
+                    Find verified courses for your skills.
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
               </TouchableOpacity>
 
               {/* Option: Employer / Recruiter */}
-              <TouchableOpacity
-                style={styles.typeOptionCard}
-                onPress={() => {
-                  setUserTypeModalVisible(false);
-                  onRegisterPress('recruiter');
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.typeOptionIconBox, { backgroundColor: '#FFF7ED' }]}>
-                  <Ionicons name="business" size={22} color="#EA580C" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.typeOptionTitle}>I am an Employer</Text>
-                  <Text style={styles.typeOptionDesc}>
-                    Post requirements, review matching profiles, and hire top talent directly.
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-              </TouchableOpacity>
+              {isJobsVisible && (
+                <TouchableOpacity
+                  style={styles.typeOptionCard}
+                  onPress={() => {
+                    setUserTypeModalVisible(false);
+                    onRegisterPress('recruiter');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.typeOptionIconBox, { backgroundColor: '#FFF7ED' }]}>
+                    <Ionicons name="business" size={22} color="#EA580C" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.typeOptionTitle}>I am an Employer</Text>
+                    <Text style={styles.typeOptionDesc}>
+                      Post requirements, review matching profiles, and hire top talent directly.
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              )}
             </View>
 
             <TouchableOpacity

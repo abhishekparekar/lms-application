@@ -256,6 +256,7 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
 
   // expo-video hook — MUST be top-level (Rules of Hooks)
   const expoPlayer = useVideoPlayer
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     ? useVideoPlayer(videoUri, (p: any) => {
       p.loop = false;
       p.play(); // Auto-play the video
@@ -462,6 +463,16 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
 
   // ── handlers ──────────────────────────────────────────────────────────────
 
+  const goToLesson = useCallback((idx: number) => {
+    if (idx < 0 || idx >= syllabus.length) return;
+    setCurrentLesson(idx);
+    setProgress(0);
+    setPreviewExpired(false);
+    setPreviewLeft(300);
+    setIsPlaying(false);
+    setWvKey(k => k + 1);
+  }, [syllabus.length]);
+
   const markComplete = useCallback(async () => {
     if (!user || !course) return;
     setMarking(true);
@@ -483,17 +494,7 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
       }
     } catch { Alert.alert('Error', 'Could not save progress.'); }
     finally { setMarking(false); }
-  }, [user, course, completed, currentLesson, syllabus.length, onBack]);
-
-  const goToLesson = useCallback((idx: number) => {
-    if (idx < 0 || idx >= syllabus.length) return;
-    setCurrentLesson(idx);
-    setProgress(0);
-    setPreviewExpired(false);
-    setPreviewLeft(300);
-    setIsPlaying(false);
-    setWvKey(k => k + 1);
-  }, [syllabus.length]);
+  }, [user, course, completed, currentLesson, syllabus.length, onBack, goToLesson]);
 
   const toggleFullscreen = useCallback(async () => {
     const nextFullscreen = !isFullscreen;

@@ -133,26 +133,6 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
     init();
   }, [courseId, user]);
 
-  useEffect(() => {
-    if (screen !== 'quiz' || quizFinished) return;
-    timerRef.current = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleAutoSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [screen, quizFinished]);
-
-  const handleAutoSubmit = () => {
-    Alert.alert('Time Up!', 'Time expired — submitting your answers now.');
-    finishQuiz();
-  };
-
   const finishQuiz = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -188,6 +168,26 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
       }
     }
   };
+
+  const handleAutoSubmit = () => {
+    Alert.alert('Time Up!', 'Time expired — submitting your answers now.');
+    finishQuiz();
+  };
+
+  useEffect(() => {
+    if (screen !== 'quiz' || quizFinished) return;
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          handleAutoSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [screen, quizFinished]);
 
   const handleSelect = (optIdx: number) => {
     const q = questions[currentIdx];

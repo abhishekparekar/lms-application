@@ -1036,7 +1036,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   {recruiterJobs.length === 0 ? (
                     <View style={styles.emptyCard}>
                       <Ionicons name="briefcase-outline" size={32} color="#94A3B8" />
-                      <Text style={styles.emptyText}>You haven't posted any jobs yet.</Text>
+                      <Text style={styles.emptyText}>{"You haven't posted any jobs yet."}</Text>
                       {onPostJobPress && (
                         <TouchableOpacity 
                           style={[styles.emptyBtn, { backgroundColor: '#4F46E5', marginTop: 10 }]} 

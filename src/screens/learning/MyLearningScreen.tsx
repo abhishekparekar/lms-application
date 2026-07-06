@@ -228,7 +228,7 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
                     <Ionicons name="book-outline" size={48} color="#1E3A8A" />
                   </View>
                   <Text style={styles.emptyTitle}>No Enrolled Courses</Text>
-                  <Text style={styles.emptyText}>You haven't enrolled in any courses yet. Discover our premium live classes and enhance your skills.</Text>
+                  <Text style={styles.emptyText}>{"You haven't enrolled in any courses yet. Discover our premium live classes and enhance your skills."}</Text>
                   <TouchableOpacity style={styles.exploreBtn} onPress={onExploreCourses}>
                     <Text style={styles.exploreBtnText}>Explore Courses</Text>
                     <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
