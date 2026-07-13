@@ -12,6 +12,7 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  Image,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -36,12 +37,13 @@ interface LandingScreenProps {
 }
 
 const CATEGORIES = [
-  { id: 'All', label: 'All', icon: 'apps' },
-  { id: 'Development', label: 'Tech & Coding 💻', icon: 'code-slash' },
-  { id: 'Design', label: 'Design & Creative 🎨', icon: 'color-palette' },
-  { id: 'Business', label: 'Business & Management 💼', icon: 'business' },
-  { id: 'Marketing', label: 'Digital Marketing 📣', icon: 'megaphone' },
-  { id: 'Personal Development', label: 'Soft Skills 🌱', icon: 'git-branch' },
+  { id: 'All', label: 'सर्व (All) 📱', icon: 'apps' },
+  { id: 'UPSC', label: 'स्पर्धा परीक्षा (UPSC) 📚', icon: 'school-outline' },
+  { id: 'Development', label: 'तंत्रज्ञान (Development) 💻', icon: 'code-slash-outline' },
+  { id: 'Entrepreneurship', label: 'उद्योजकता (Entrepreneurship) 🚀', icon: 'rocket-outline' },
+  { id: 'Design', label: 'रचना व कला (Design) 🎨', icon: 'color-palette-outline' },
+  { id: 'Business', label: 'व्यवसाय (Business) 💼', icon: 'business-outline' },
+  { id: 'Marketing', label: 'विपणन (Marketing) 📣', icon: 'megaphone-outline' },
 ];
 
 
@@ -299,10 +301,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       return (
         <View style={styles.navbar}>
           <View style={styles.logoRow}>
-            <View style={styles.logoIconBg}>
-              <Text style={styles.logoEmoji}>💼</Text>
-            </View>
-            <Text style={styles.logoText}>JobSkill</Text>
+            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.logoImageSmall} />
+            <Text style={styles.logoText}>गनिमी कावा</Text>
           </View>
           <TouchableOpacity
             style={styles.profileNavBtn}
@@ -323,10 +323,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     return (
       <View style={styles.navbar}>
         <View style={styles.logoRow}>
-          <View style={styles.logoIconBg}>
-            <Text style={styles.logoEmoji}>💼</Text>
-          </View>
-          <Text style={styles.logoText}>JobSkill</Text>
+          <Image source={require('../../assets/images/logo1.jpeg')} style={styles.logoImageSmall} />
+          <Text style={styles.logoText}>गनिमी कावा</Text>
         </View>
         <TouchableOpacity style={styles.signInBtn} onPress={onLoginPress} activeOpacity={0.85}>
           <Ionicons name="person-outline" size={15} color="#4F46E5" />
@@ -341,16 +339,46 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     if (user) {
       return (
         <View style={styles.heroSection}>
-          <View style={[styles.heroBadge, { backgroundColor: '#EEF2FF' }]}>
-            <Text style={[styles.heroBadgeText, { color: '#4F46E5' }]}>★ WELCOME BACK</Text>
+          <Text style={styles.marathiHeroTitle}>
+            बलाढ्य आव्हानांना पराभूत करायला आता फक्त <Text style={styles.roseText}>'कष्ट'</Text> नाही,{'\n'}
+            छत्रपतींच्या गनिमी काव्यासारखी <Text style={styles.orangeText}>'मानसिक रणनीती'</Text> हवी!
+          </Text>
+
+          {/* Feature Row */}
+          <View style={styles.featureRow}>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureTitleBlue}>वैज्ञानिक तंत्र</Text>
+              <Text style={styles.featureSub}>100% प्रॅक्टिकल सायंटिफिक</Text>
+            </View>
+            <View style={styles.featureDivider} />
+            <View style={styles.featureItem}>
+              <Text style={styles.featureTitleGreen}>रांगडा पॅटर्न</Text>
+              <Text style={styles.featureSub}>सोपी मराठी भाषा</Text>
+            </View>
+            <View style={styles.featureDivider} />
+            <View style={styles.featureItem}>
+              <Text style={styles.featureTitlePink}>मनाची शक्ती</Text>
+              <Text style={styles.featureSub}>अथांग मानसिक क्रांती</Text>
+            </View>
           </View>
-          <Text style={styles.heroTitle}>
-            Hi, {user.displayName || 'Learner'}!{'\n'}
-            <Text style={styles.heroHighlight}>Grow Your Skills</Text>
-          </Text>
-          <Text style={styles.heroSub}>
-            Ready to take the next step in your career? Browse active jobs or continue learning.
-          </Text>
+
+          {/* White Card Container */}
+          <View style={styles.heroCard}>
+            {/* Paragraph 1 */}
+            <Text style={styles.heroCardText}>
+              निराशा आणि अपयशाच्या भिंती भेदून प्रत्येक व्यक्ति, विद्यार्थी, नोकरदार, गृहिणी अन् उद्योजकाला त्याच्या मनाची अथांग शक्ती ओळखायला लावणारे, हे एक{' '}
+              <Text style={styles.blueLinkText}>प्रॅक्टिकल सायंटिफिक अस्त्र</Text>
+              {' '}आहे. म्हणूनच आम्ही घेऊन आलोय 'सेल्फ डेव्हलपमेंटचा{' '}
+              <Text style={styles.orangeHighlightText}>गनिमी कावा</Text>
+              ' ॲप! कोणतीही क्लिष्ट इंग्रजी नाही; संपूर्ण वैज्ञानिक तंत्रांचा सोपा आणि थेट मनाचा ठाव घेणारा 'रांगडा-प्रभावी' मराठी लई भारी पॅटर्न जो तुम्हाला यशाच्या शिखरावर नेईल.
+            </Text>
+
+            {/* Paragraph 2 */}
+            <Text style={[styles.heroCardText, { marginTop: 12 }]}>
+              कोरड्या सिद्धांतांना फाटा देत, सायकॉलॉजी तज्ज्ञांच्या थेट मार्गदर्शनाखाली रोजच्या जगण्यात क्रांती घडवून आणणारी अचूक प्रॅक्टिकल टूल्स यात मिळतील.
+            </Text>
+          </View>
+
           <View style={styles.heroCtas}>
             {isExploreVisible && (
               <TouchableOpacity
@@ -379,19 +407,57 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
 
     return (
       <View style={styles.heroSection}>
-        <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>{"★ INDIA'S #1 LEARNING PLATFORM"}</Text>
+        {/* Title */}
+        <Text style={styles.marathiHeroTitle}>
+          बलाढ्य आव्हानांना पराभूत करायला आता फक्त <Text style={styles.roseText}>'कष्ट'</Text> नाही,{'\n'}
+          छत्रपतींच्या गनिमी काव्यासारखी <Text style={styles.orangeText}>'मानसिक रणनीती'</Text> हवी!
+        </Text>
+
+        {/* Feature Row */}
+        <View style={styles.featureRow}>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureTitleBlue}>वैज्ञानिक तंत्र</Text>
+            <Text style={styles.featureSub}>100% प्रॅक्टिकल सायंटिफिक</Text>
+          </View>
+          <View style={styles.featureDivider} />
+          <View style={styles.featureItem}>
+            <Text style={styles.featureTitleGreen}>रांगडा पॅटर्न</Text>
+            <Text style={styles.featureSub}>सोपी मराठी भाषा</Text>
+          </View>
+          <View style={styles.featureDivider} />
+          <View style={styles.featureItem}>
+            <Text style={styles.featureTitlePink}>मनाची शक्ती</Text>
+            <Text style={styles.featureSub}>अथांग मानसिक क्रांती</Text>
+          </View>
         </View>
-        <Text style={styles.heroTitle}>
-          Learn. Grow.{'\n'}
-          <Text style={styles.heroHighlight}>Succeed.</Text>
-        </Text>
-        <Text style={styles.heroSub}>
-          Join thousands of learners building their dream careers.
-        </Text>
+
+        {/* White Card Container */}
+        <View style={styles.heroCard}>
+          {/* Paragraph 1 */}
+          <Text style={styles.heroCardText}>
+            निराशा आणि अपयशाच्या भिंती भेदून प्रत्येक व्यक्ति, विद्यार्थी, नोकरदार, गृहिणी अन् उद्योजकाला त्याच्या मनाची अथांग शक्ती ओळखायला लावणारे, हे एक{' '}
+            <Text style={styles.blueLinkText}>प्रॅक्टिकल सायंटिफिक अस्त्र</Text>
+            {' '}आहे. म्हणूनच आम्ही घेऊन आलोय 'सेल्फ डेव्हलपमेंटचा{' '}
+            <Text style={styles.orangeHighlightText}>गनिमी कावा</Text>
+            ' ॲप! कोणतीही क्लिष्ट इंग्रजी नाही; संपूर्ण वैज्ञानिक तंत्रांचा सोपा आणि थेट मनाचा ठाव घेणारा 'रांगडा-प्रभावी' मराठी लई भारी पॅटर्न जो तुम्हाला यशाच्या शिखरावर नेईल.
+          </Text>
+
+          {/* Paragraph 2 */}
+          <Text style={[styles.heroCardText, { marginTop: 12 }]}>
+            कोरड्या सिद्धांतांना फाटा देत, सायकॉलॉजी तज्ज्ञांच्या थेट मार्गदर्शनाखाली रोजच्या जगण्यात क्रांती घडवून आणणारी अचूक प्रॅक्टिकल टूल्स यात मिळतील.
+          </Text>
+
+          {/* Quote Block */}
+          <View style={styles.quoteBlock}>
+            <Text style={styles.quoteText}>
+              इतिहास साक्षी आहे, कष्ट सगळेच करतात पण राजे तेच होतात जे 'गनिमी कावा' वापरतात; आजच सबस्क्राईब करा आणि स्वतःचा नवा इतिहास रचा!
+            </Text>
+          </View>
+        </View>
+
         <View style={styles.heroCtas}>
-          <TouchableOpacity style={styles.heroPrimaryBtn} onPress={onLoginPress} activeOpacity={0.85}>
-            <Text style={styles.heroPrimaryBtnText}>{"Get Started — It's Free"}</Text>
+          <TouchableOpacity style={styles.orangeCtaBtn} onPress={onLoginPress} activeOpacity={0.85}>
+            <Text style={styles.orangeCtaBtnText}>आजच सबस्क्राईब करा!</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -524,7 +590,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   // ── Courses ───────────────────────────────────────────────
   const renderCourses = () => (
     <View style={styles.section}>
-      {renderSectionHeader('Explore Courses', onLearnPress || onLoginPress, '#DB2777')}
+      {renderSectionHeader('अभ्यासक्रम (Explore Courses)', onLearnPress || onLoginPress, '#DB2777')}
 
       {renderSearchAndFilters()}
 
@@ -663,13 +729,13 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   // ── Why Us ────────────────────────────────────────────────
   const renderWhyUs = () => (
     <View style={[styles.section, styles.whySection]}>
-      {renderSectionHeader('Why JobSkill?', onLoginPress, '#059669')}
+      {renderSectionHeader('Why गनिमी कावा?', onLoginPress, '#059669')}
       <View style={styles.whyGrid}>
         {[
-          { icon: 'school-outline', color: '#4F46E5', title: 'Expert Instructors', desc: 'Learn from industry veterans' },
-          { icon: 'briefcase-outline', color: '#059669', title: 'Job Placement', desc: '95% placement record' },
-          { icon: 'phone-portrait-outline', color: '#D97706', title: 'Learn Anywhere', desc: 'Android, iOS & Web' },
-          { icon: 'ribbon-outline', color: '#DB2777', title: 'Certificates', desc: 'Industry-recognized certs' },
+          { icon: 'bulb-outline', color: '#4F46E5', title: 'मानसिक खंबीरता', desc: 'सायकॉलॉजी तज्ज्ञांचे थेट मार्गदर्शन व अचूक मानसिक रणनीती.' },
+          { icon: 'shield-checkmark-outline', color: '#F97316', title: 'यशस्वी रणनीती', desc: 'छत्रपती शिवरायांच्या गनिमी काव्यावर आधारित प्रॅक्टिकल रणनीती.' },
+          { icon: 'flame-outline', color: '#EF4444', title: 'मराठी लई भारी पॅटर्न', desc: 'कोणतीही क्लिष्ट इंग्रजी नाही, थेट मनाचा ठाव घेणारी सोपी मराठी भाषा.' },
+          { icon: 'construct-outline', color: '#10B981', title: 'प्रॅक्टिकल टूल्स', desc: 'कोरड्या सिद्धांतांना फाटा देत रोजच्या जगण्यात क्रांती घडवणारी टूल्स.' },
         ].map((item) => (
           <View key={item.title} style={styles.whyCard}>
             <View style={[styles.whyIconBg, { backgroundColor: item.color + '15' }]}>
@@ -686,15 +752,35 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   // ── Footer CTA ────────────────────────────────────────────
   const renderFooterCta = () => (
     <View style={styles.footerCta}>
-      <Text style={styles.footerCtaEmoji}>🎓</Text>
-      <Text style={styles.footerCtaTitle}>Start Your Journey Today</Text>
+      <Text style={styles.footerCtaEmoji}>🚩</Text>
+      <Text style={styles.footerCtaTitle}>यश मिळवायला आजच सुरुवात करा!</Text>
       <Text style={styles.footerCtaText}>
-        Join 1,00,000+ learners building their dream careers.
+        हजारो विद्यार्थी, नोकरदार आणि उद्योजक यांच्यासोबत सामील व्हा आणि स्वतःचा नवा इतिहास रचा!
       </Text>
       <TouchableOpacity style={styles.footerCtaBtn} onPress={onLoginPress} activeOpacity={0.85}>
-        <Text style={styles.footerCtaBtnText}>Get Started — It&apos;s Free</Text>
+        <Text style={styles.footerCtaBtnText}>ॲप सुरू करा — एकदम फ्री!</Text>
       </TouchableOpacity>
-      <Text style={styles.footerCopyright}>© 2026 JobSkill · All Rights Reserved</Text>
+      <Text style={styles.footerCopyright}>© 2026 गनिमी कावा · All Rights Reserved</Text>
+    </View>
+  );
+
+  // ── Compact Footer ────────────────────────────────────────
+  const renderCompactFooter = () => (
+    <View style={styles.compactFooter}>
+      <View style={styles.compactFooterBrand}>
+        <Image source={require('../../assets/images/logo1.jpeg')} style={styles.compactFooterLogo} />
+        <Text style={styles.compactFooterName}>गनिमी कावा</Text>
+      </View>
+      <View style={styles.compactFooterLinks}>
+        <TouchableOpacity onPress={onLoginPress}><Text style={styles.compactFooterLink}>Privacy Policy</Text></TouchableOpacity>
+        <Text style={styles.compactFooterDot}>•</Text>
+        <TouchableOpacity onPress={onLoginPress}><Text style={styles.compactFooterLink}>Terms of Service</Text></TouchableOpacity>
+        <Text style={styles.compactFooterDot}>•</Text>
+        <TouchableOpacity onPress={() => Alert.alert('Contact Support', 'Email: support@ganimikawa.in')}><Text style={styles.compactFooterLink}>Support</Text></TouchableOpacity>
+      </View>
+      <Text style={styles.compactFooterCopyright}>
+        © 2026 गनिमी कावा. All rights reserved.
+      </Text>
     </View>
   );
 
@@ -721,6 +807,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
         {isJobsVisible && renderFeaturedJobs()}
         {renderWhyUs()}
         {!user && renderFooterCta()}
+        {renderCompactFooter()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -750,6 +837,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  logoImageSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   logoIconBg: {
     width: 32,
@@ -842,21 +934,140 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   heroTitle: {
-    fontSize: 34,
+    fontSize: 26,
     fontWeight: '900',
     color: '#111827',
-    lineHeight: 42,
-    marginBottom: 10,
-    letterSpacing: -0.5,
+    lineHeight: 36,
+    marginBottom: 14,
+    letterSpacing: -0.3,
+  },
+  marathiHeroTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#0F172A',
+    lineHeight: 28,
+    textAlign: 'center',
+    marginBottom: 12,
+    letterSpacing: -0.3,
+  },
+  roseText: {
+    color: '#EC4899',
+  },
+  orangeText: {
+    color: '#F97316',
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+    backgroundColor: '#FAF5FF',
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  featureItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  featureTitleBlue: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#4F46E5',
+    marginBottom: 2,
+  },
+  featureTitleGreen: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#10B981',
+    marginBottom: 2,
+  },
+  featureTitlePink: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#EC4899',
+    marginBottom: 2,
+  },
+  featureSub: {
+    fontSize: 9,
+    color: '#6B7280',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  featureDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#E2E8F0',
+  },
+  heroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16,
+  },
+  heroCardText: {
+    fontSize: 12.5,
+    color: '#334155',
+    lineHeight: 18.5,
+  },
+  blueLinkText: {
+    color: '#3B82F6',
+    textDecorationLine: 'underline',
+    fontWeight: 'bold',
+  },
+  orangeHighlightText: {
+    color: '#F97316',
+    fontWeight: 'bold',
+  },
+  quoteBlock: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 8,
+    marginTop: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#E2E8F0',
+  },
+  quoteText: {
+    fontSize: 11.5,
+    fontStyle: 'italic',
+    fontWeight: '600',
+    color: '#475569',
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  orangeCtaBtn: {
+    backgroundColor: '#F97316',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F97316',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+    width: '100%',
+  },
+  orangeCtaBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    fontWeight: 'bold',
   },
   heroHighlight: {
     color: '#10B981',
   },
   heroSub: {
-    fontSize: 13,
-    color: '#6B7280',
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 22,
     marginBottom: 20,
-    lineHeight: 20,
   },
   heroCtas: {
     flexDirection: 'row',
@@ -1503,5 +1714,51 @@ const styles = StyleSheet.create({
     color: '#475569',
     lineHeight: 18,
     fontStyle: 'italic',
+  },
+  compactFooter: {
+    backgroundColor: '#0F172A',
+    paddingVertical: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderColor: '#1E293B',
+    marginTop: 16,
+  },
+  compactFooterBrand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  compactFooterLogo: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+  },
+  compactFooterName: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  compactFooterLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  compactFooterLink: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  compactFooterDot: {
+    color: '#475569',
+    fontSize: 12,
+  },
+  compactFooterCopyright: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '500',
   },
 });

@@ -7,7 +7,8 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,10 +89,8 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({
 
           {/* Branding Section */}
           <View style={styles.brandingSection}>
-            <View style={styles.logoCircle}>
-              <Ionicons name="school" size={40} color="#1E3A8A" />
-            </View>
-            <Text style={styles.brandTitle}>JobSkill</Text>
+            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.authLogoImage} />
+            <Text style={styles.brandTitle}>गनिमी कावा</Text>
             <Text style={styles.brandSubtitle}>Account Recovery</Text>
           </View>
 
@@ -171,6 +170,14 @@ const styles = StyleSheet.create({
   brandingSection: {
     alignItems: 'center',
     marginBottom: 32,
+  },
+  authLogoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   logoCircle: {
     width: 80,

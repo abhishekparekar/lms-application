@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Image } from 'react-native';
 
 const LinkCol = ({ title, links }: { title: string, links: string[] }) => (
   <View style={styles.col}>
@@ -21,9 +21,9 @@ export const Footer: React.FC = () => {
         {/* Brand Column */}
         <View style={[styles.brandCol, isMobile && styles.brandColMobile]}>
           <View style={styles.logoRow}>
-            <Text style={styles.logoIcon}>💼</Text>
+            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.footerLogo} />
             <View>
-              <Text style={styles.logoName}>JobSkill</Text>
+              <Text style={styles.logoName}>गनिमी कावा</Text>
               <Text style={styles.logoTagline}>Find Your Dream Career</Text>
             </View>
           </View>
@@ -61,7 +61,7 @@ export const Footer: React.FC = () => {
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, isMobile && styles.bottomBarMobile]}>
-        <Text style={styles.copyright}>© 2026 JobSkill. All rights reserved.</Text>
+        <Text style={styles.copyright}>© 2026 गनिमी कावा. All rights reserved.</Text>
         
         <View style={styles.socialRow}>
           <TouchableOpacity style={styles.socialBtn}><Text style={styles.socialIcon}>f</Text></TouchableOpacity>
@@ -114,6 +114,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 16,
+  },
+  footerLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
   },
   logoIcon: {
     fontSize: 32,

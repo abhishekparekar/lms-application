@@ -488,10 +488,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* Header Bar */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
-          <View style={styles.logoIconBg}>
-            <Ionicons name="briefcase" size={16} color="#4F46E5" />
-          </View>
-          <Text style={styles.logoText}>JobSkill</Text>
+          <Image source={require('../../assets/images/logo1.jpeg')} style={styles.logoImageSmall} />
+          <Text style={styles.logoText}>गनिमी कावा</Text>
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={onLogout} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={16} color="#EF4444" />
@@ -2167,6 +2165,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  logoImageSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   logoIconBg: {
     width: 32,

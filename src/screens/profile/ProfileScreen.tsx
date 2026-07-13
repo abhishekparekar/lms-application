@@ -705,7 +705,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           label: 'Help & Support',
           sub: 'Contact our team',
           color: '#6B7280',
-          onPress: () => Alert.alert('Support', 'Email: support@jobskill.in'),
+          onPress: () => Alert.alert('Support', 'Email: support@ganimikawa.in'),
         },
       ],
     },
@@ -1166,7 +1166,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>JobSkill v1.1 · © 2026</Text>
+        <Text style={styles.version}>गनिमी कावा v1.1 · © 2026</Text>
       </ScrollView>
 
       {/* ── MODAL: Preset Avatar Selector & Simulated Uploader ── */}

@@ -63,22 +63,25 @@ export const CourseCard: React.FC<CourseCardProps> = ({
           <Text style={[styles.price, { color: colors.text }]}>
             {course.price === 0 ? 'Free' : `₹${course.price}`}
           </Text>
-          {onEnroll && (
-            <TouchableOpacity
-              style={[
-                styles.enrollButton,
-                (isEnrolled || course.price === 0) ? styles.enrolledButton : null
-              ]}
-              onPress={(e) => {
-                e.stopPropagation();
+          <TouchableOpacity
+            style={[
+              styles.enrollButton,
+              isEnrolled ? styles.enrolledButton : null,
+              (!isEnrolled && course.price > 0) ? styles.buyButton : null
+            ]}
+            onPress={(e) => {
+              e.stopPropagation();
+              if (onEnroll) {
                 onEnroll();
-              }}
-            >
-              <Text style={styles.enrollButtonText}>
-                {isEnrolled ? '▶️ Play' : course.price === 0 ? '▶️ Watch' : 'Buy'}
-              </Text>
-            </TouchableOpacity>
-          )}
+              } else {
+                onPress();
+              }
+            }}
+          >
+            <Text style={styles.enrollButtonText}>
+              {isEnrolled ? '▶️ Watch' : course.price === 0 ? 'Enroll Free' : 'Enroll Now'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -87,19 +90,20 @@ export const CourseCard: React.FC<CourseCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 12,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     elevation: 3,
     backgroundColor: '#ffffff',
   },
   horizontalCard: {
-    height: 380,
+    height: 350,
     marginBottom: 0,
   },
   image: {
@@ -115,45 +119,46 @@ const styles = StyleSheet.create({
   },
   horizontalContent: {
     flex: 1,
-    padding: 16,
+    padding: 14,
     justifyContent: 'space-between',
   },
   categoryContainer: {
     alignSelf: 'flex-start',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#FAF5FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#F3E8FF',
     marginBottom: 8,
   },
   categoryText: {
-    color: '#4F46E5',
-    fontSize: 11,
+    color: '#8B5CF6',
+    fontSize: 10.5,
     fontWeight: '700',
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#111827',
+    color: '#1E293B',
+    lineHeight: 20,
     marginBottom: 4,
   },
   instructor: {
-    fontSize: 13,
-    color: '#4B5563',
+    fontSize: 12.5,
+    color: '#64748B',
     fontWeight: '500',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 10,
   },
   metaItem: {
-    fontSize: 12,
-    color: '#6B7280',
+    fontSize: 11,
+    color: '#64748B',
     fontWeight: '600',
   },
   footer: {
@@ -161,26 +166,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 16,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 12,
   },
   price: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
-    color: '#111827',
+    color: '#0F172A',
   },
   enrollButton: {
     backgroundColor: '#4F46E5',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   enrolledButton: {
     backgroundColor: '#10B981',
+    shadowColor: '#10B981',
+  },
+  buyButton: {
+    backgroundColor: '#F97316',
+    shadowColor: '#F97316',
   },
   enrollButtonText: {
     color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12.5,
+    fontWeight: '800',
   },
 });

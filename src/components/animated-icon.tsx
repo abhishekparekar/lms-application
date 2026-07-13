@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Dimensions, StyleSheet, View, Text, StatusBar } from 'react-native';
+import { Dimensions, StyleSheet, View, Text, StatusBar, Image } from 'react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
+  useSharedValue as dummySharedValue, // reanimated utilities
   withTiming, 
   withDelay, 
   Easing, 
@@ -80,14 +81,14 @@ export function AnimatedSplashOverlay() {
     <Animated.View style={[styles.overlayContainer, bgAnimatedStyle]}>
       <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
       <View style={styles.contentWrap}>
-        {/* Animated briefcase logo container */}
-        <Animated.View style={[styles.logoCircle, logoAnimatedStyle]}>
-          <Ionicons name="briefcase" size={54} color="#4F46E5" />
+        {/* Animated logo image container */}
+        <Animated.View style={logoAnimatedStyle}>
+          <Image source={require('../assets/images/logo1.jpeg')} style={styles.logoImage} />
         </Animated.View>
 
         {/* Animated Brand Text */}
         <Animated.View style={textAnimatedStyle}>
-          <Text style={styles.brandText}>JobSkill</Text>
+          <Text style={styles.brandText}>गनिमी कावा</Text>
         </Animated.View>
 
         {/* Animated tagline */}
@@ -118,6 +119,14 @@ const styles = StyleSheet.create({
   contentWrap: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logoImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    marginBottom: 20,
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
   },
   logoCircle: {
     width: 110,

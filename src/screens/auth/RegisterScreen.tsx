@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -180,10 +181,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
           {/* Branding Section */}
           <View style={styles.brandingSection}>
-            <View style={styles.logoCircle}>
-              <Ionicons name="school" size={40} color="#1E3A8A" />
-            </View>
-            <Text style={styles.brandTitle}>JobSkill</Text>
+            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.authLogoImage} />
+            <Text style={styles.brandTitle}>गनिमी कावा</Text>
             <Text style={styles.brandSubtitle}>Empowering your career journey</Text>
           </View>
 
@@ -401,6 +400,14 @@ const styles = StyleSheet.create({
   brandingSection: {
     alignItems: 'center',
     marginBottom: 15,
+  },
+  authLogoImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   logoCircle: {
     width: 60,

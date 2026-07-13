@@ -119,10 +119,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
           {/* Branding Section */}
           <View style={styles.brandingSection}>
-            <View style={styles.logoCircle}>
-              <Ionicons name="school" size={40} color="#1E3A8A" />
-            </View>
-            <Text style={styles.brandTitle}>JobSkill</Text>
+            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.authLogoImage} />
+            <Text style={styles.brandTitle}>गनिमी कावा</Text>
             <Text style={styles.brandSubtitle}>Empowering your career journey</Text>
           </View>
 
@@ -318,6 +316,14 @@ const styles = StyleSheet.create({
   brandingSection: {
     alignItems: 'center',
     marginBottom: 32,
+  },
+  authLogoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   logoCircle: {
     width: 80,

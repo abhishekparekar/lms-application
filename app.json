@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "LMSJobPortal1",
-    "slug": "LMSJobPortal1",
+    "name": "गनिमी कावा",
+    "slug": "ganimi-kawa",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo1.jpeg",
     "scheme": "lmsjobportal1",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -13,8 +13,8 @@
     "android": {
       "package": "com.lmsjobportal1.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#01010b",
+        "foregroundImage": "./assets/images/logo1.jpeg",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -35,10 +35,10 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#01010b",
           "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "image": "./assets/images/logo1.jpeg",
+            "imageWidth": 120
           }
         }
       ],
