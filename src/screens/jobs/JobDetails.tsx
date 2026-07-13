@@ -13,7 +13,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { jobService, Job } from '@/services/jobs/jobService';
 import { lmsService } from '@/services/lms/lmsService';
-import { Spinner } from '@/components/loaders/Spinner';
 import { Button } from '@/components/common/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { formatLocation } from '@/utils';
@@ -52,8 +51,6 @@ export const JobDetails: React.FC<JobDetailsProps> = ({
   }, []);
 
   useEffect(() => {
-    setLoading(job === null);
-
     const unsubscribeJob = onSnapshot(
       doc(db, 'jobs', jobId),
       (docSnap) => {

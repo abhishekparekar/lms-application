@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { jobService, Job } from '@/services/jobs/jobService';
 import { lmsService } from '@/services/lms/lmsService';
 import { JobCard } from '@/components/cards/JobCard';
-import { Spinner } from '@/components/loaders/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { collection, onSnapshot, doc, query, where } from 'firebase/firestore';

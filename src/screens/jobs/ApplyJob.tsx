@@ -12,7 +12,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
-import { jobService, Job } from '@/services/jobs/jobService';
+import { jobService } from '@/services/jobs/jobService';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { db } from '@/services/firebase/config';

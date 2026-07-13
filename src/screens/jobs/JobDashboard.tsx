@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TextInput, 
-  TouchableOpacity, 
-  useColorScheme,
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
   Alert,
   ActivityIndicator,
 } from 'react-native';
@@ -15,8 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { jobService, Job } from '@/services/jobs/jobService';
 import { lmsService } from '@/services/lms/lmsService';
 import { JobCard } from '@/components/cards/JobCard';
-import { Colors } from '@/constants/theme';
-import { Spinner } from '@/components/loaders/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { collection, onSnapshot, doc, query, where } from 'firebase/firestore';
@@ -39,8 +36,6 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
   onRedirectToProfile,
 }) => {
   const { user } = useAuth();
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
@@ -63,8 +58,6 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    setLoading(jobs.length === 0);
-
     const jobsQ = (user && user.role === 'recruiter')
       ? query(collection(db, 'jobs'), where('recruiterId', '==', user.uid))
       : collection(db, 'jobs');
@@ -177,17 +170,17 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
   };
 
   const filteredJobs = jobs.filter((job) => {
-    const matchesSearch = 
+    const matchesSearch =
       (typeof job.title === 'string' ? job.title.toLowerCase() : '').includes(search.toLowerCase()) ||
       (typeof job.company === 'string' ? job.company.toLowerCase() : '').includes(search.toLowerCase()) ||
       formatLocation(job.location).toLowerCase().includes(search.toLowerCase());
-    
-    const matchesType = 
-      selectedType === 'All' || 
+
+    const matchesType =
+      selectedType === 'All' ||
       job.type === selectedType;
 
     const formattedLoc = formatLocation(job.location).toLowerCase();
-    const matchesWorkspace = 
+    const matchesWorkspace =
       selectedWorkspace === 'All' ||
       (selectedWorkspace === 'Remote' && formattedLoc.includes('remote')) ||
       (selectedWorkspace === 'Hybrid' && formattedLoc.includes('hybrid')) ||
@@ -211,8 +204,6 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC' }]} edges={['top']}>
-     
-
       {/* Search & Actions Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
@@ -230,13 +221,13 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
             </TouchableOpacity>
           ) : null}
         </View>
-        
+
         {isRecruiter && onPostJobPress && (
           <TouchableOpacity style={styles.postJobBtn} onPress={onPostJobPress}>
             <Text style={styles.postJobBtnText}>+ Post</Text>
           </TouchableOpacity>
         )}
-        
+
         {!isRecruiter && (
           <TouchableOpacity style={styles.savedJobsBtn} onPress={onSavedJobsPress}>
             <Ionicons name="bookmark" size={16} color="#4F46E5" />
@@ -451,7 +442,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   emptyContainer: {
     padding: 48,

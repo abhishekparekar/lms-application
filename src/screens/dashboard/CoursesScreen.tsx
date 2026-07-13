@@ -1,4 +1,3 @@
-import { Colors } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { Course, courseService } from '@/services/lms/lmsService';
@@ -10,7 +9,6 @@ import {
   Alert,
   FlatList,
   Image,
-  ImageBackground,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -20,7 +18,6 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props {
   onCoursePress: (courseId: string) => void;
@@ -28,7 +25,6 @@ interface Props {
 }
 
 const CATS = ['All', 'Development', 'Design', 'Business', 'Marketing', 'Personal Development'];
-const SORT_OPTIONS = ['Popular', 'Newest', 'Price: Low', 'Price: High', 'Rating'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Premium Main Course Card
@@ -150,9 +146,9 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [priceFilter, setPriceFilter] = useState<'All' | 'Free' | 'Paid'>('All');
-  const [sortBy, setSortBy] = useState('Popular');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const sortBy: string = 'Popular';
 
   // ── Firestore real-time ────────────────────────────────────────
   useEffect(() => {
@@ -319,7 +315,11 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
             onPress={() => onCoursePress(item.id)}
             onAction={() => {
               if (isEnrolled(item)) {
-                onWatchVideo ? onWatchVideo(item.id, 0) : onCoursePress(item.id);
+                if (onWatchVideo) {
+                  onWatchVideo(item.id, 0);
+                } else {
+                  onCoursePress(item.id);
+                }
               } else if (item.price === 0 || (item as any).isFree) {
                 handleEnroll(item.id);
               } else {

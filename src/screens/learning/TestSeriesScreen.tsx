@@ -12,7 +12,6 @@ import {
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '@/services/firebase/config';
 import { Colors } from '@/constants/theme';
-import { Button } from '@/components/common/Button';
 import { quizService, QuizQuestion } from '@/services/lms/quizService';
 import { courseService } from '@/services/lms/lmsService';
 import { useAuth } from '@/hooks/useAuth';
@@ -174,13 +173,18 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
     finishQuiz();
   };
 
+  const autoSubmitRef = useRef(handleAutoSubmit);
+  useEffect(() => {
+    autoSubmitRef.current = handleAutoSubmit;
+  });
+
   useEffect(() => {
     if (screen !== 'quiz' || quizFinished) return;
     timerRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current!);
-          handleAutoSubmit();
+          autoSubmitRef.current();
           return 0;
         }
         return prev - 1;

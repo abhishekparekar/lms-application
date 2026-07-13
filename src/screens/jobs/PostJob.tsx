@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -102,9 +102,10 @@ export const PostJob: React.FC<PostJobProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch company profile on mount
+  const hasLoadedCompanyRef = useRef(false);
   useEffect(() => {
+    if (!user || hasLoadedCompanyRef.current) return;
     const loadCompanyData = async () => {
-      if (!user) return;
       try {
         const compRef = doc(db, 'companies', user.uid);
         const compSnap = await getDoc(compRef);
@@ -116,12 +117,13 @@ export const PostJob: React.FC<PostJobProps> = ({
         } else if (user.recruiterProfile) {
           if (user.recruiterProfile.industry && !industry) setIndustry(user.recruiterProfile.industry);
         }
+        hasLoadedCompanyRef.current = true;
       } catch (err) {
         console.warn('Could not auto-fill company data:', err);
       }
     };
     loadCompanyData();
-  }, [user]);
+  }, [user, industry, city, state]);
 
   // Load existing job details for editing
   useEffect(() => {
@@ -191,7 +193,8 @@ export const PostJob: React.FC<PostJobProps> = ({
   }, [editingJobId]);
 
   // Draft auto-save and recovery
-  const getDraftKey = () => `postJobDraft_${user?.uid || 'guest'}`;
+  // Draft auto-save and recovery
+  const getDraftKey = useCallback(() => `postJobDraft_${user?.uid || 'guest'}`, [user?.uid]);
 
   useEffect(() => {
     const restoreDraft = async () => {
@@ -243,9 +246,9 @@ export const PostJob: React.FC<PostJobProps> = ({
       }
     };
     restoreDraft();
-  }, [user]);
+  }, [user, getDraftKey]);
 
-  const saveDraft = async () => {
+  const saveDraft = useCallback(async () => {
     try {
       const draft = {
         title, industry, jobType, workMode, expLevel, experienceRequired, gender, department,
@@ -257,16 +260,16 @@ export const PostJob: React.FC<PostJobProps> = ({
     } catch (err) {
       console.warn('Could not save draft:', err);
     }
-  };
-
-  useEffect(() => {
-    saveDraft();
   }, [
     title, industry, jobType, workMode, expLevel, experienceRequired, gender, department,
     city, state, country, remote, hybrid, salaryMin, salaryMax, salaryPeriod, negotiable,
     requiredSkills, preferredSkills, benefits, requirements, description,
-    applicationInstructions, applicationDeadline, featured, urgent
+    applicationInstructions, applicationDeadline, featured, urgent, getDraftKey
   ]);
+
+  useEffect(() => {
+    saveDraft();
+  }, [saveDraft]);
 
   // Validation
   const validateStep = (stepNum: number) => {

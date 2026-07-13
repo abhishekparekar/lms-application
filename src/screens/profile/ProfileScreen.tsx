@@ -109,7 +109,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onSavedJobsPress,
   onPostJobPress,
 }) => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, switchRoleMode } = useAuth();
   const isSeeker = user?.role === 'seeker';
   const completeness = user?.profileCompleteness ?? 0;
 
@@ -390,9 +390,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     if (!user) return;
     setProfileLoading(true);
     try {
-      // Recompute completeness based on edited inputs
-      let pct = completeness;
-      
       const updatedSeekerProfile = {
         ...(user.seekerProfile || {}),
         fullName: editName,
@@ -435,7 +432,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         avatarUrl: url,
       });
       setAvatarModalVisible(false);
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'Could not save profile picture.');
     }
   };
@@ -751,7 +748,29 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     },
   ];
 
-  const menu = isSeeker ? seekerMenu : recruiterMenu;
+  const adminSection = {
+    title: 'Admin View Options',
+    items: [
+      {
+        icon: 'swap-horizontal-outline' as const,
+        label: isSeeker ? 'Switch to Employer Mode' : 'Switch to Seeker Mode',
+        sub: `Change view to ${isSeeker ? 'Employer/Recruiter' : 'Jobseeker'} mode`,
+        color: '#8B5CF6',
+        onPress: () => {
+          if (switchRoleMode) {
+            const target = isSeeker ? 'recruiter' : 'seeker';
+            switchRoleMode(target);
+            Alert.alert('View Mode Switched 🔄', `You are now viewing the application as a ${target === 'seeker' ? 'Jobseeker' : 'Employer (Recruiter)'}.`);
+          }
+        }
+      }
+    ]
+  };
+
+  const menu = [
+    ...((user?.originalRole === 'superadmin' || user?.originalRole === 'admin' || user?.role === 'admin') ? [adminSection] : []),
+    ...(isSeeker ? seekerMenu : recruiterMenu)
+  ];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -1577,41 +1596,43 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F8F9FC' },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { paddingBottom: 100 },
 
   // ── Hero ──────────────────────────────────────────────────
   heroHeader: {
     alignItems: 'center',
     backgroundColor: '#4F46E5',
-    paddingTop: 28,
-    paddingBottom: 32,
-    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 48,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   avatarWrap: { position: 'relative', marginBottom: 12 },
   avatarCircle: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#C7D2FE',
+    borderColor: '#E0E7FF',
     overflow: 'hidden',
   },
   avatarImage: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
-  avatarText: { fontSize: 28, fontWeight: '900', color: '#4F46E5' },
+  avatarText: { fontSize: 32, fontWeight: '900', color: '#4F46E5' },
   avatarEditBtn: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    right: -4,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1619,54 +1640,57 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   heroName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
     color: '#ffffff',
     marginBottom: 4,
     letterSpacing: -0.3,
   },
-  heroEmail: { fontSize: 13, color: '#C7D2FE', marginBottom: 10 },
+  heroEmail: { fontSize: 14, color: '#E0E7FF', marginBottom: 10, fontWeight: '500' },
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 20,
   },
-  roleBadgeSeeker: { backgroundColor: '#EEF2FF' },
-  roleBadgeRecruiter: { backgroundColor: '#D1FAE5' },
-  roleBadgeText: { fontSize: 11, fontWeight: '800' },
+  roleBadgeSeeker: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  roleBadgeRecruiter: { backgroundColor: '#10B981' },
+  roleBadgeText: { fontSize: 12, fontWeight: '800', color: '#ffffff' },
 
   // ── Stats card ────────────────────────────────────────────
   statsCard: {
     backgroundColor: '#ffffff',
     marginHorizontal: 16,
-    marginTop: -16,
-    borderRadius: 18,
+    marginTop: -28,
+    borderRadius: 20,
     padding: 16,
-    shadowColor: '#4F46E5',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 12,
-    elevation: 6,
-    marginBottom: 4,
+    elevation: 3,
+    marginBottom: 8,
   },
   statsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  statsDivider: { width: 1, height: 90, backgroundColor: '#F3F4F6', marginHorizontal: 16 },
+  statsDivider: { width: 1, height: 90, backgroundColor: '#F1F5F9', marginHorizontal: 16 },
   statsRight: { flex: 1, gap: 8 },
-  statRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  statRowText: { fontSize: 12, color: '#374151', fontWeight: '600', flex: 1 },
+  statRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  statRowText: { fontSize: 12, color: '#334155', fontWeight: '600', flex: 1 },
   completeNudge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#EEF2FF',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: 8,
+    backgroundColor: '#F5F3FF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 4,
   },
-  completeNudgeText: { flex: 1, fontSize: 12, color: '#4F46E5', fontWeight: '700' },
+  completeNudgeText: { flex: 1, fontSize: 12, color: '#6D28D9', fontWeight: '800' },
 
   // ── Section ───────────────────────────────────────────────
   section: {
@@ -1697,11 +1721,11 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 20,
   },
   loadingText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#64748B',
     marginTop: 8,
     fontWeight: '600',
   },
@@ -1709,20 +1733,20 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#F1F5F9',
   },
   emptyAppsTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#1F2937',
-    marginTop: 10,
+    color: '#1E293B',
+    marginTop: 12,
     marginBottom: 4,
   },
   emptyAppsSub: {
-    fontSize: 12,
-    color: '#6B7280',
+    fontSize: 13,
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -1731,48 +1755,53 @@ const styles = StyleSheet.create({
   },
   appCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 14,
+    borderColor: '#F1F5F9',
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   appCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   appCompanyLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#F1F5F9',
   },
   logoLetter: {
     fontSize: 16,
     fontWeight: '900',
-    color: '#4B5563',
+    color: '#475569',
   },
   appHeaderInfo: {
     flex: 1,
   },
   appJobTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#111827',
+    color: '#1E293B',
   },
   appCompanyName: {
-    fontSize: 12,
-    color: '#6B7280',
+    fontSize: 13,
+    color: '#64748B',
     fontWeight: '600',
     marginTop: 2,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   statusText: {
@@ -1781,9 +1810,9 @@ const styles = StyleSheet.create({
   },
   appCardFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    marginTop: 10,
-    paddingTop: 8,
+    borderTopColor: '#F8FAFC',
+    marginTop: 12,
+    paddingTop: 10,
   },
   appDateRow: {
     flexDirection: 'row',
@@ -1791,8 +1820,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   appDateText: {
-    fontSize: 11,
-    color: '#9CA3AF',
+    fontSize: 12,
+    color: '#94A3B8',
     fontWeight: '600',
   },
 
@@ -1814,55 +1843,66 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   infoIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#EEF2FF',
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   infoContent: { flex: 1 },
-  infoLabel: { fontSize: 9, color: '#9CA3AF', fontWeight: '800', textTransform: 'uppercase', marginBottom: 2 },
-  infoValue: { fontSize: 13, color: '#111827', fontWeight: '700' },
+  infoLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '800', textTransform: 'uppercase', marginBottom: 2, letterSpacing: 0.5 },
+  infoValue: { fontSize: 14, color: '#1E293B', fontWeight: '700' },
 
   // ── Menu card ─────────────────────────────────────────────
   menuCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F1F5F9',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    minHeight: 64,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    minHeight: 72,
   },
   menuItemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
+    borderBottomColor: '#F8FAFC',
   },
   menuIconWrap: {
-    width: 38,
-    height: 38,
+    width: 42,
+    height: 42,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   menuTextBlock: { flex: 1 },
-  menuLabel: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  menuSub: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
+  menuLabel: { fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
+  menuSub: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
 
   // ── Bio ───────────────────────────────────────────────────
   bioText: {
@@ -2116,11 +2156,16 @@ const styles = StyleSheet.create({
   },
   recruiterAppCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 14,
+    borderColor: '#F1F5F9',
+    padding: 16,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   statusSelectorLabel: {
     fontSize: 11,

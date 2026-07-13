@@ -783,137 +783,114 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          {/* Welcome back Header */}
-          {/* ── UNIFIED RECRUITER HERO CARD ── */}
-          <View style={styles.recruiterHeroCard}>
-            <View style={styles.heroHeaderTop}>
-              <View style={styles.heroLogoCircle}>
-                <Text style={styles.heroLogoText}>{companyInitials}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroWelcomeSub}>EMPLOYER PORTAL</Text>
-                <Text style={styles.heroCompanyName} numberOfLines={1}>
-                  {companyFromCollection?.name || companyFromCollection?.companyName || user?.recruiterProfile?.companyName || 'Employer Dashboard'}
-                </Text>
-                <Text style={styles.heroWelcomeTitle} numberOfLines={1}>
-                  Hello, {user?.displayName || 'ram'} 👋
-                </Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.heroEditBtnCircle}
-                onPress={() => setCompanyModalVisible(true)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="create-outline" size={18} color="#4F46E5" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Quick Summary Stats Row */}
-            <View style={styles.heroStatsBar}>
-              <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatValue}>{activeJobsCount}</Text>
-                <Text style={styles.heroStatLabel}>Active Jobs</Text>
-              </View>
-              <View style={[styles.heroStatItem, styles.heroStatDivider]}>
-                <Text style={styles.heroStatValue}>{totalAppsCount}</Text>
-                <Text style={styles.heroStatLabel}>Applicants</Text>
-              </View>
-              <View style={[styles.heroStatItem, styles.heroStatDivider]}>
-                <Text style={styles.heroStatValue}>{shortlistedCount}</Text>
-                <Text style={styles.heroStatLabel}>Shortlisted</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* ── UNIFIED ACTION BUTTONS ROW ── */}
-          <View style={styles.heroActionRow}>
-            {onPostJobPress && (
-              <TouchableOpacity 
-                style={styles.heroPrimaryBtn}
-                onPress={() => onPostJobPress()}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={18} color="#ffffff" style={{ marginRight: 4 }} />
-                <Text style={styles.heroPrimaryBtnText}>Post New Job</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity 
-              style={styles.heroSecondaryBtn}
-              onPress={() => setCompanyModalVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="business-outline" size={16} color="#4B5563" style={{ marginRight: 4 }} />
-              <Text style={styles.heroSecondaryBtnText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Segmented sub-tabs list selector */}
-          <View style={styles.recruiterTabsContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recruiterTabsScroll}>
+          {/* Redesigned grid buttons container */}
+          <View style={styles.recruiterGridContainer}>
+            <View style={styles.recruiterGridRow}>
+              {/* Active Jobs Card */}
               <TouchableOpacity
-                style={[styles.recruiterTabBtn, recruiterTab === 'overview' && styles.recruiterTabBtnActive]}
-                onPress={() => setRecruiterTab('overview')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="apps-outline" size={16} color={recruiterTab === 'overview' ? '#4F46E5' : '#6B7280'} />
-                <Text style={[styles.recruiterTabText, recruiterTab === 'overview' && styles.recruiterTabTextActive]}>Overview</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.recruiterTabBtn, recruiterTab === 'my_jobs' && styles.recruiterTabBtnActive]}
+                style={[
+                  styles.recruiterGridCard,
+                  { borderColor: '#3B82F6' },
+                  recruiterTab === 'my_jobs' && { backgroundColor: '#EFF6FF', borderWidth: 2 }
+                ]}
                 onPress={() => setRecruiterTab('my_jobs')}
                 activeOpacity={0.8}
               >
-                <Ionicons name="briefcase-outline" size={16} color={recruiterTab === 'my_jobs' ? '#4F46E5' : '#6B7280'} />
-                <Text style={[styles.recruiterTabText, recruiterTab === 'my_jobs' && styles.recruiterTabTextActive]}>
-                  My Jobs <Text style={styles.badgeText}>({activeJobsCount})</Text>
-                </Text>
+                <View style={[styles.gridIconBg, { backgroundColor: '#DBEAFE' }]}>
+                  <Ionicons name="briefcase" size={20} color="#3B82F6" />
+                </View>
+                <Text style={styles.gridCardCount}>{activeJobsCount}</Text>
+                <Text style={styles.gridCardLabel}>Active Jobs</Text>
               </TouchableOpacity>
 
+              {/* Applications Card */}
               <TouchableOpacity
-                style={[styles.recruiterTabBtn, recruiterTab === 'applications' && styles.recruiterTabBtnActive]}
-                onPress={() => setRecruiterTab('applications')}
+                style={[
+                  styles.recruiterGridCard,
+                  { borderColor: '#10B981' },
+                  (recruiterTab === 'applications' && appsStatusFilter === 'all') && { backgroundColor: '#ECFDF5', borderWidth: 2 }
+                ]}
+                onPress={() => {
+                  setRecruiterTab('applications');
+                  setAppsStatusFilter('all');
+                }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="people-outline" size={16} color={recruiterTab === 'applications' ? '#4F46E5' : '#6B7280'} />
-                <Text style={[styles.recruiterTabText, recruiterTab === 'applications' && styles.recruiterTabTextActive]}>
-                  Applications <Text style={styles.badgeText}>({totalAppsCount})</Text>
-                </Text>
+                <View style={[styles.gridIconBg, { backgroundColor: '#D1FAE5' }]}>
+                  <Ionicons name="people" size={20} color="#10B981" />
+                </View>
+                <Text style={styles.gridCardCount}>{totalAppsCount}</Text>
+                <Text style={styles.gridCardLabel}>Applicants</Text>
               </TouchableOpacity>
+            </View>
 
+            <View style={styles.recruiterGridRow}>
+              {/* Shortlisted Card */}
               <TouchableOpacity
-                style={[styles.recruiterTabBtn, recruiterTab === 'candidates' && styles.recruiterTabBtnActive]}
-                onPress={() => setRecruiterTab('candidates')}
+                style={[
+                  styles.recruiterGridCard,
+                  { borderColor: '#8B5CF6' },
+                  (recruiterTab === 'applications' && appsStatusFilter === 'accepted') && { backgroundColor: '#F5F3FF', borderWidth: 2 }
+                ]}
+                onPress={() => {
+                  setRecruiterTab('applications');
+                  setAppsStatusFilter('accepted');
+                }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="search-outline" size={16} color={recruiterTab === 'candidates' ? '#4F46E5' : '#6B7280'} />
-                <Text style={[styles.recruiterTabText, recruiterTab === 'candidates' && styles.recruiterTabTextActive]}>
-                  Candidates
-                </Text>
+                <View style={[styles.gridIconBg, { backgroundColor: '#F3E8FF' }]}>
+                  <Ionicons name="checkmark-done-circle" size={20} color="#8B5CF6" />
+                </View>
+                <Text style={styles.gridCardCount}>{shortlistedCount}</Text>
+                <Text style={styles.gridCardLabel}>Shortlisted</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.recruiterTabBtn, recruiterTab === 'analytics' && styles.recruiterTabBtnActive]}
-                onPress={() => setRecruiterTab('analytics')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="bar-chart-outline" size={16} color={recruiterTab === 'analytics' ? '#4F46E5' : '#6B7280'} />
-                <Text style={[styles.recruiterTabText, recruiterTab === 'analytics' && styles.recruiterTabTextActive]}>Analytics</Text>
-              </TouchableOpacity>
+              {/* + Post New Job Card (Primary Action) */}
+              {onPostJobPress && (
+                <TouchableOpacity
+                  style={[
+                    styles.recruiterGridCard,
+                    { backgroundColor: '#4F46E5', borderColor: '#4F46E5' }
+                  ]}
+                  onPress={() => onPostJobPress()}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.gridIconBg, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                    <Ionicons name="add" size={22} color="#ffffff" />
+                  </View>
+                  <Text style={[styles.gridCardCount, { color: '#ffffff', fontSize: 18, marginTop: 4 }]}>Post Job</Text>
+                  <Text style={[styles.gridCardLabel, { color: '#E0E7FF' }]}>Create Listing</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
+            <View style={styles.recruiterGridRow}>
+              {/* Edit Profile Card (Full width or spanning bottom row) */}
               <TouchableOpacity
-                style={[styles.recruiterTabBtn, recruiterTab === 'profile' && styles.recruiterTabBtnActive]}
+                style={[
+                  styles.recruiterGridCardFull,
+                  { borderColor: '#64748B' },
+                  recruiterTab === 'profile' && { backgroundColor: '#F8FAFC', borderWidth: 2 }
+                ]}
                 onPress={() => setRecruiterTab('profile')}
                 activeOpacity={0.8}
               >
-                <Ionicons name="person-outline" size={16} color={recruiterTab === 'profile' ? '#4F46E5' : '#6B7280'} />
-                <Text style={[styles.recruiterTabText, recruiterTab === 'profile' && styles.recruiterTabTextActive]}>Profile</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={[styles.gridIconBg, { backgroundColor: '#F1F5F9' }]}>
+                    <Ionicons name="business" size={18} color="#64748B" />
+                  </View>
+                  <View>
+                    <Text style={styles.gridCardLabelFull}>Company Profile & Settings</Text>
+                    <Text style={styles.gridCardDescFull}>Update your profile info & settings</Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="#64748B" />
               </TouchableOpacity>
-            </ScrollView>
+            </View>
           </View>
 
           {/* Render Tab Contents */}
-          <View style={{ paddingVertical: 12 }}>
+          <View style={{ paddingVertical: 4 }}>
             {recruiterTab === 'overview' && (
               <>
                 {/* Application Pipeline */}
@@ -2497,152 +2474,95 @@ const styles = StyleSheet.create({
     color: '#334155',
     textAlign: 'center',
   },
-  // Recruiter Welcome Header
-  // Simplified Recruiter Hero Header Card
-  recruiterHeroCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 20,
-    marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02,
-    shadowRadius: 10,
-    elevation: 2,
+  // Recruiter Grid UI styles
+  recruiterGridHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  heroHeaderTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  heroLogoCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: '#EEF2FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-  },
-  heroLogoText: {
-    fontSize: 20,
+  recruiterGridWelcome: {
+    fontSize: 22,
     fontWeight: '900',
-    color: '#4F46E5',
-  },
-  heroWelcomeSub: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 0.8,
-  },
-  heroCompanyName: {
-    fontSize: 16,
-    fontWeight: '800',
     color: '#0F172A',
-    marginTop: 2,
   },
-  heroWelcomeTitle: {
+  recruiterGridSub: {
     fontSize: 12,
     color: '#64748B',
     fontWeight: '600',
-    marginTop: 1,
+    marginTop: 2,
   },
-  heroEditBtnCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    justifyContent: 'center',
-    alignItems: 'center',
+  recruiterGridContainer: {
+    paddingHorizontal: 0, // remove double padding
+    paddingTop: 0,
+    paddingBottom: 8,
+    gap: 8,
   },
-  heroStatsBar: {
+  recruiterGridRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    marginTop: 16,
-    paddingTop: 14,
+    gap: 8,
   },
-  heroStatItem: {
+  recruiterGridCard: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 10,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    minHeight: 92,
   },
-  heroStatDivider: {
-    borderLeftWidth: 1,
-    borderLeftColor: '#F1F5F9',
+  gridIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  heroStatValue: {
+  gridCardCount: {
     fontSize: 18,
     fontWeight: '900',
     color: '#0F172A',
+    marginTop: 4,
   },
-  heroStatLabel: {
+  gridCardLabel: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#94A3B8',
+    color: '#64748B',
+    fontWeight: '800',
     textTransform: 'uppercase',
     marginTop: 2,
+    textAlign: 'center',
   },
-
-  // Action Buttons Row
-  heroActionRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginTop: 14,
-    gap: 10,
-  },
-  heroPrimaryBtn: {
-    flex: 1.2,
-    backgroundColor: '#4F46E5',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 46,
-    borderRadius: 14,
-    shadowColor: '#4F46E5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  heroPrimaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  heroSecondaryBtn: {
+  recruiterGridCardFull: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: 46,
-    borderRadius: 14,
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  heroSecondaryBtnText: {
-    color: '#4B5563',
-    fontSize: 13,
+  gridCardLabelFull: {
+    fontSize: 12,
     fontWeight: '800',
+    color: '#0F172A',
   },
-
-  // Recruiter Tabs selector
-  recruiterTabsContainer: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    marginTop: 16,
-  },
-  recruiterTabsScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 12,
+  gridCardDescFull: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '600',
+    marginTop: 1,
   },
   recruiterTabBtn: {
     flexDirection: 'row',

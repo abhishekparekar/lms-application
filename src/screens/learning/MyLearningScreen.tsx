@@ -10,14 +10,12 @@ import {
   FlatList,
   Image,
   RefreshControl,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   useColorScheme,
   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface MyLearningScreenProps {
   onResumeCourse: (courseId: string) => void;
@@ -136,12 +134,17 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
     return progressMap[courseId] || 0;
   };
 
-  return (
-    <View style={styles.mainContainer}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
+  const renderHeader = () => (
+    <View style={styles.headerContent}>
+      <Text style={styles.headerTitle}>My Learning</Text>
+      <Text style={styles.headerSubtitle}>Track your lecture progress and achievements</Text>
+    </View>
+  );
 
-      {/* Deep Blue Header Background */}
-      <View style={styles.headerBackground} />
+  return (
+    <View style={[styles.mainContainer, { backgroundColor: colors.backgroundElement }]}>
+      {/* Deep Blue/Indigo Header Background */}
+      <View style={[styles.headerBackground, { backgroundColor: colors.primary }]} />
 
       <View style={styles.safeAreaWrapper}>
         {/* Course List Overlapping the Header */}
@@ -150,6 +153,7 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={renderHeader}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#FFFFFF" />
           }
@@ -159,30 +163,30 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
 
             return (
               <TouchableOpacity
-                style={styles.courseCard}
+                style={[styles.courseCard, { backgroundColor: colors.background }]}
                 onPress={() => onResumeCourse(item.id)}
                 activeOpacity={0.95}
               >
                 <Image source={{ uri: item.imageUrl || item.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop' }} style={styles.courseImage} />
 
                 <View style={styles.courseDetails}>
-                  <Text style={styles.courseTitle} numberOfLines={2}>
+                  <Text style={[styles.courseTitle, { color: colors.text }]} numberOfLines={2}>
                     {item.title}
                   </Text>
 
                   <View style={styles.instructorRow}>
-                    <Ionicons name="person-circle-outline" size={14} color="#6B7280" />
-                    <Text style={styles.instructorName} numberOfLines={1}>{item.instructor}</Text>
+                    <Ionicons name="person-circle-outline" size={14} color={colors.textSecondary} />
+                    <Text style={[styles.instructorName, { color: colors.textSecondary }]} numberOfLines={1}>{item.instructor}</Text>
                   </View>
 
-                  <View style={styles.metaRow}>
+                  <View style={[styles.metaRow, { backgroundColor: colors.backgroundElement }]}>
                     <View style={styles.metaItem}>
-                      <Ionicons name="play-circle-outline" size={14} color="#1E3A8A" />
-                      <Text style={styles.metaText}>{item.lessonsCount} lessons</Text>
+                      <Ionicons name="play-circle-outline" size={14} color={colors.primary} />
+                      <Text style={[styles.metaText, { color: colors.text }]} numberOfLines={1}>{item.lessonsCount} lessons</Text>
                     </View>
                     <View style={styles.metaItem}>
-                      <Ionicons name="time-outline" size={14} color="#1E3A8A" />
-                      <Text style={styles.metaText}>{item.duration}</Text>
+                      <Ionicons name="time-outline" size={14} color={colors.primary} />
+                      <Text style={[styles.metaText, { color: colors.text }]} numberOfLines={1}>{item.duration}</Text>
                     </View>
                   </View>
 
@@ -190,18 +194,18 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
                   <View style={styles.actionRow}>
                     <View style={styles.progressContainer}>
                       <View style={styles.progressLabels}>
-                        <Text style={styles.progressPctText}>{progress}% Completed</Text>
+                        <Text style={[styles.progressPctText, { color: colors.text }]}>{progress}% Completed</Text>
                       </View>
-                      <View style={styles.progressBg}>
+                      <View style={[styles.progressBg, { backgroundColor: colors.backgroundSelected }]}>
                         <View style={[
                           styles.progressFill,
-                          { width: `${progress}%`, backgroundColor: isCompleted ? '#10B981' : '#1E3A8A' }
+                          { width: `${progress}%`, backgroundColor: isCompleted ? '#10B981' : colors.primary }
                         ]} />
                       </View>
                     </View>
 
                     <TouchableOpacity
-                      style={[styles.resumeBtn, isCompleted && styles.resumeBtnCompleted]}
+                      style={[styles.resumeBtn, { backgroundColor: colors.primary }, isCompleted && styles.resumeBtnCompleted]}
                       onPress={() => onResumeCourse(item.id)}
                     >
                       <Ionicons
@@ -221,15 +225,15 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               {loading ? (
-                <ActivityIndicator size="large" color="#FFFFFF" />
+                <ActivityIndicator size="large" color={colors.primary} />
               ) : (
-                <View style={styles.emptyCard}>
-                  <View style={styles.emptyIconBg}>
-                    <Ionicons name="book-outline" size={48} color="#1E3A8A" />
+                <View style={[styles.emptyCard, { backgroundColor: colors.background }]}>
+                  <View style={[styles.emptyIconBg, { backgroundColor: colors.backgroundElement }]}>
+                    <Ionicons name="book-outline" size={48} color={colors.primary} />
                   </View>
-                  <Text style={styles.emptyTitle}>No Enrolled Courses</Text>
-                  <Text style={styles.emptyText}>{"You haven't enrolled in any courses yet. Discover our premium live classes and enhance your skills."}</Text>
-                  <TouchableOpacity style={styles.exploreBtn} onPress={onExploreCourses}>
+                  <Text style={[styles.emptyTitle, { color: colors.text }]}>No Enrolled Courses</Text>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{"You haven't enrolled in any courses yet. Discover our premium live classes and enhance your skills."}</Text>
+                  <TouchableOpacity style={[styles.exploreBtn, { backgroundColor: colors.primary }]} onPress={onExploreCourses}>
                     <Text style={styles.exploreBtnText}>Explore Courses</Text>
                     <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
                   </TouchableOpacity>

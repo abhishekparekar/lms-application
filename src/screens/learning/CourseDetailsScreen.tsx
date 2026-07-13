@@ -11,11 +11,9 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import { courseService, lmsService, Course } from '@/services/lms/lmsService';
+import { courseService, Course } from '@/services/lms/lmsService';
 import { Colors } from '@/constants/theme';
-import { Spinner } from '@/components/loaders/Spinner';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/Input';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -46,15 +44,11 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
   const [course, setCourse] = useState<Course | null>(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [hasQuiz, setHasQuiz] = useState(false);
 
   // Checkout Modal State
   const [checkoutVisible, setCheckoutVisible] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Razorpay States
@@ -62,8 +56,6 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
   const [orderId, setOrderId] = useState('');
 
   useEffect(() => {
-    setLoading(course === null);
-
     const unsubscribeCourse = onSnapshot(
       doc(db, 'courses', courseId),
       (docSnap) => {
@@ -137,7 +129,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
             setIsEnrolled(true);
           }
         },
-        (err) => {}
+        () => {}
       );
     }
 
@@ -153,15 +145,12 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
     if (course.price > 0) {
       setCheckoutVisible(true);
     } else {
-      setActionLoading(true);
       try {
         await courseService.enrollInCourse(user.uid, course.id);
         setIsEnrolled(true);
         Alert.alert('Success', `You have successfully enrolled in ${course.title}!`);
-      } catch (e) {
+      } catch {
         Alert.alert('Enrollment Failed', 'Could not complete enrollment.');
-      } finally {
-        setActionLoading(false);
       }
     }
   };

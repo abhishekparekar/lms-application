@@ -15,7 +15,6 @@ import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
 import { JobDashboard } from '../screens/jobs/JobDashboard';
 import { ResumeBuilderScreen } from '../screens/resume/ResumeBuilderScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
-import { LandingScreen } from '../screens/public/LandingScreen';
 import { MyLearningScreen } from '../screens/learning/MyLearningScreen';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
@@ -316,28 +315,34 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F8FAFC',
   },
   screenContainer: {
     flex: 1,
+    paddingBottom: 88, // Ensures content is not hidden behind the floating tab bar
   },
 
   // ── Tab Bar ─────────────────────────────────────────────
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    height: Platform.OS === 'ios' ? 60 : 62,
-    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    height: 66,
+    paddingHorizontal: 12,
     // Android shadow
-    elevation: 12,
+    elevation: 8,
     // iOS shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
   },
 
   // ── Each Tab ─────────────────────────────────────────────
@@ -353,18 +358,18 @@ const styles = StyleSheet.create({
   // Active background pill (shows behind the icon)
   activePill: {
     position: 'absolute',
-    top: 4,
-    width: 48,
+    top: 6,
+    width: 52,
     height: 32,
     borderRadius: 16,
     backgroundColor: '#EEF2FF',
   },
 
   tabLabel: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '600',
-    marginTop: 3,
-    letterSpacing: 0.2,
+    marginTop: 2,
+    letterSpacing: 0.1,
   },
   tabLabelActive: {
     color: ACTIVE_COLOR,
