@@ -8,7 +8,7 @@
     "scheme": "lmsjobportal1",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/logo1.jpeg"
     },
     "android": {
       "package": "com.lmsjobportal1.app",
