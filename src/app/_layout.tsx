@@ -6,8 +6,6 @@ import { AuthProvider } from '@/context/AuthContext';
 import { Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-
 LogBox.ignoreLogs(['Cannot connect to Expo CLI', 'Setting a timer', 'WebChannelConnection RPC', 'transport errored']);
 
 export default function TabLayout() {
@@ -25,7 +23,6 @@ export default function TabLayout() {
     <AuthProvider>
       <ThemeProvider value={DefaultTheme}>
         <StatusBar style="light" />
-        <AnimatedSplashOverlay />
         <Slot />
       </ThemeProvider>
     </AuthProvider>
