@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
-import { useColorScheme, LogBox, StatusBar } from 'react-native';
+import { useColorScheme, LogBox } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '@/context/AuthContext';
 import { Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -20,11 +21,7 @@ export default function TabLayout() {
   return (
     <AuthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor="#4F46E5"
-          translucent={false}
-        />
+        <StatusBar style="light" />
         <AnimatedSplashOverlay />
         <Slot />
       </ThemeProvider>

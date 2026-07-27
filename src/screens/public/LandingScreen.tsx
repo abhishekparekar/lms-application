@@ -15,13 +15,13 @@ import {
   Image,
   RefreshControl,
   ScrollView,
-  StatusBar,
+  TouchableOpacity,
+  View,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -1005,7 +1005,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   // ── Main Render ───────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
+      <StatusBar style="light" />
       {renderNavbar()}
       <ScrollView
         style={styles.scroll}
