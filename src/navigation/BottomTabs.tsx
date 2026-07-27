@@ -52,6 +52,7 @@ interface BottomTabsProps {
   onLogout: () => void;
   onPostJobPress?: (editingJobId?: string) => void;
   onTakeTest?: (courseId: string) => void;
+  onApplyPress?: (jobId: string) => void;
 }
 
 const ACTIVE_COLOR = '#4F46E5';
@@ -126,6 +127,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
   onLogout,
   onPostJobPress,
   onTakeTest,
+  onApplyPress,
 }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab || 'dashboard');
@@ -184,6 +186,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
             onJobPress={onJobPress}
             onPostJobPress={onPostJobPress}
             onTakeTest={onTakeTest}
+            onApplyPress={onApplyPress}
           />
         );
       case 'courses':
@@ -268,6 +271,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
             onJobPress={onJobPress}
             onSavedJobsPress={onSavedJobsPress}
             onRedirectToProfile={() => handleTabPress('profile')}
+            onApplyPress={onApplyPress}
             onPostJobPress={
               user?.role === 'recruiter'
                 ? onPostJobPress

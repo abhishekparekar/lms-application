@@ -28,6 +28,7 @@ interface JobDashboardProps {
   onPostJobPress?: () => void;
   onSavedJobsPress: () => void;
   onRedirectToProfile?: () => void;
+  onApplyPress?: (jobId: string) => void;
 }
 
 interface FilterOption {
@@ -56,6 +57,7 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
   onPostJobPress,
   onSavedJobsPress,
   onRedirectToProfile,
+  onApplyPress,
 }) => {
   const { user } = useAuth();
 
@@ -323,7 +325,13 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
                   job={item}
                   layoutMode="vertical"
                   onPress={() => onJobPress(item.id)}
-                  onApply={user?.role === 'seeker' ? () => handleApplyDirect(item.id) : undefined}
+                  onApply={user?.role === 'seeker' ? () => {
+                    if (onApplyPress) {
+                      onApplyPress(item.id);
+                    } else {
+                      onJobPress(item.id);
+                    }
+                  } : undefined}
                   hasApplied={appliedIds.includes(item.id)}
                   isSaved={savedJobIds.includes(item.id)}
                   onSaveToggle={user?.role === 'seeker' ? () => handleToggleSave(item.id) : undefined}

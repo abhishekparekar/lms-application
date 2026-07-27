@@ -43,6 +43,7 @@ interface DashboardScreenProps {
   onCoursePress: (courseId: string) => void;
   onJobPress: (jobId: string) => void;
   onTakeTest?: (courseId: string) => void;
+  onApplyPress?: (jobId: string) => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -57,6 +58,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onCoursePress,
   onJobPress,
   onTakeTest,
+  onApplyPress,
 }) => {
   const { user, updateProfile } = useAuth();
   const scheme = useColorScheme();
@@ -726,7 +728,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             job={item}
                             layoutMode="horizontal"
                             onPress={() => onJobPress(item.id)}
-                            onApply={() => handleApplyJob(item.id)}
+                            onApply={() => {
+                              if (onApplyPress) {
+                                onApplyPress(item.id);
+                              } else {
+                                onJobPress(item.id);
+                              }
+                            }}
                             hasApplied={hasApplied}
                             isSaved={isSaved}
                             onSaveToggle={() => handleToggleSaveJob(item.id)}
