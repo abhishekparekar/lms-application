@@ -581,7 +581,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
           <Text style={styles.logoText}>Ganimi Kava</Text>
         </View>
         <TouchableOpacity style={styles.signInBtn} onPress={onLoginPress} activeOpacity={0.85}>
-          <Ionicons name="log-in-outline" size={16} color="#ffffff" />
+          <Ionicons name="log-in-outline" size={16} color="#4F46E5" />
           <Text style={styles.signInBtnText}>Sign In</Text>
         </TouchableOpacity>
       </View>
@@ -1042,14 +1042,14 @@ const styles = StyleSheet.create({
 
   // ── Navbar
   navbar: {
-    height: 58,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: '#1E1B4B',
+    backgroundColor: '#4F46E5',
     borderBottomWidth: 1,
-    borderBottomColor: '#312E81',
+    borderBottomColor: '#4338CA',
   },
   logoRow: {
     flexDirection: 'row',
@@ -1057,15 +1057,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoImageSmall: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 8,
   },
   logoIconBg: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 10,
-    backgroundColor: '#312E81',
+    backgroundColor: '#4338CA',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1073,7 +1073,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   logoText: {
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -0.5,
@@ -1087,18 +1087,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#10B981',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
     shadowRadius: 5,
-    elevation: 4,
+    elevation: 3,
   },
   signInBtnText: {
-    color: '#FFFFFF',
+    color: '#4F46E5',
     fontWeight: '800',
     fontSize: 13,
     letterSpacing: 0.2,
@@ -1107,12 +1107,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   profileNavText: {
     color: '#FFFFFF',
@@ -1124,15 +1122,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: '#FEF2F2',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.4)',
+    borderColor: '#FCA5A5',
   },
   logoutNavBtnText: {
-    color: '#FCA5A5',
+    color: '#EF4444',
     fontWeight: '800',
     fontSize: 11.5,
   },
@@ -1151,7 +1149,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#10B981',
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1172,13 +1170,10 @@ const styles = StyleSheet.create({
 
   // ── Hero
   heroSection: {
-    backgroundColor: '#1E1B4B',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    marginBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 14,
   },
   heroBadgeWrap: {
     alignItems: 'center',
@@ -1188,15 +1183,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.4)',
+    borderColor: '#A7F3D0',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 20,
   },
   heroBadgeText: {
-    color: '#34D399',
+    color: '#065F46',
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.6,
@@ -1204,7 +1199,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#ffffff',
+    color: '#111827',
     lineHeight: 32,
     marginBottom: 10,
     letterSpacing: -0.3,
@@ -1212,10 +1207,10 @@ const styles = StyleSheet.create({
   marathiHeroTitle: {
     fontSize: 19,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#0F172A',
     lineHeight: 26,
     textAlign: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
     letterSpacing: -0.3,
   },
   roseText: {
