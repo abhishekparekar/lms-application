@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -7,16 +7,19 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform,
-  Alert
+  Alert,
+  ActivityIndicator,
+  TextInput,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
-import { jobService } from '@/services/jobs/jobService';
-import { Input } from '@/components/common/Input';
-import { Button } from '@/components/common/Button';
+import { jobService, Job } from '@/services/jobs/jobService';
+import { Colors } from '@/constants/theme';
 import { db } from '@/services/firebase/config';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import * as DocumentPicker from 'expo-document-picker';
 
 interface ApplyJobProps {
   jobId: string;
@@ -31,165 +34,465 @@ export const ApplyJob: React.FC<ApplyJobProps> = ({
 }) => {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const scheme = useColorScheme();
+  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+
+  const [job, setJob] = useState<Job | null>(null);
+  const [loadingJob, setLoadingJob] = useState(true);
+
+  // Auto-Fetched Seeker Profile Fields
+  const [candidateName, setCandidateName] = useState('');
+  const [candidateEmail, setCandidateEmail] = useState('');
+  const [candidatePhone, setCandidatePhone] = useState('');
+  const [candidateBio, setCandidateBio] = useState('');
+  const [candidateSkills, setCandidateSkills] = useState<string[]>([]);
+  const [expectedSalary, setExpectedSalary] = useState('');
   const [coverLetter, setCoverLetter] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const seekerProfile = user?.seekerProfile;
-  const name = seekerProfile?.fullName || user?.displayName || 'Applicant';
-  const email = user?.email || '';
-  const phone = seekerProfile?.phone || '';
-  const bio = seekerProfile?.bio || '';
-  const skills = seekerProfile?.skills || [];
-  const resumeUrl = seekerProfile?.resumeUrl || '';
-  const completeness = user?.profileCompleteness || 0;
+  // Mobile Device File Upload State
+  const [savedResumeUrl, setSavedResumeUrl] = useState('');
+  const [activeResumeUrl, setActiveResumeUrl] = useState('');
+  const [activeResumeName, setActiveResumeName] = useState('');
+  const [activeFileSize, setActiveFileSize] = useState<string>('');
+  const [useCustomUpload, setUseCustomUpload] = useState(false);
 
-  const resumeName = resumeUrl ? resumeUrl.split('/').pop() || 'Resume.pdf' : 'No Resume Uploaded';
+  const [submitting, setSubmitting] = useState(false);
 
-  const initials = name
-    .split(' ')
-    .map((w: string) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  // 1. Fetch Job Details
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'jobs', jobId), (snap) => {
+      if (snap.exists()) {
+        setJob({ id: snap.id, ...snap.data() } as Job);
+      }
+      setLoadingJob(false);
+    }, () => setLoadingJob(false));
+    return () => unsub();
+  }, [jobId]);
 
-  const handleSubmit = async () => {
+  // 2. Fetch & Hydrate Seeker Profile Details Automatically
+  useEffect(() => {
     if (!user) return;
-    if (completeness < 80) {
-      Alert.alert(
-        'Profile Incomplete',
-        `Your profile is only ${completeness}% complete. You need at least 80% completeness to apply for jobs.`,
-        [{ text: 'Build Profile', onPress: onBack }]
-      );
-      return;
+
+    const seeker = user.seekerProfile;
+    setCandidateName(seeker?.fullName || user.displayName || 'Applicant');
+    setCandidateEmail(user.email || '');
+    setCandidatePhone(seeker?.phone || '');
+    setCandidateBio(seeker?.bio || (seeker as any)?.summary || '');
+    setCandidateSkills(seeker?.skills || []);
+    setExpectedSalary((seeker as any)?.expectedSalary || '');
+
+    const rUrl = seeker?.resumeUrl || (user as any).resumeUrl || '';
+    setSavedResumeUrl(rUrl);
+
+    if (rUrl) {
+      const fileName = rUrl.split('/').pop() || 'Saved_Profile_Resume.pdf';
+      setActiveResumeUrl(rUrl);
+      setActiveResumeName(fileName);
+      setActiveFileSize('Profile Resume');
+    } else {
+      setActiveResumeName('');
+      setActiveFileSize('');
     }
-    setLoading(true);
+
+    // Realtime Listener for profile updates
+    const unsubUser = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+      if (snap.exists()) {
+        const uData = snap.data();
+        const sProf = uData.seekerProfile || {};
+        if (sProf.fullName) setCandidateName(sProf.fullName);
+        if (sProf.phone) setCandidatePhone(sProf.phone);
+        if (sProf.bio) setCandidateBio(sProf.bio);
+        if (sProf.skills) setCandidateSkills(sProf.skills);
+        if (sProf.resumeUrl) {
+          setSavedResumeUrl(sProf.resumeUrl);
+          if (!useCustomUpload) {
+            setActiveResumeUrl(sProf.resumeUrl);
+            setActiveResumeName(sProf.resumeUrl.split('/').pop() || 'Saved_Profile_Resume.pdf');
+            setActiveFileSize('Profile Resume');
+          }
+        }
+      }
+    });
+
+    return () => unsubUser();
+  }, [user]);
+
+  const initials = candidateName
+    ? candidateName.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'AP';
+
+  // Direct Mobile Device / Browser File Upload Trigger
+  const handlePickFileFromMobileBrowser = async () => {
     try {
-      // Check application limits inside subscription
-      const subRef = doc(db, 'subscriptions', user.uid);
-      const subSnap = await getDoc(subRef);
-      if (!subSnap.exists()) {
-        Alert.alert('Subscription Required', 'You must have an active subscription package to apply for jobs.');
-        setLoading(false);
-        return;
+      if (DocumentPicker && typeof DocumentPicker.getDocumentAsync === 'function') {
+        const res = await DocumentPicker.getDocumentAsync({
+          type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '*/*'],
+          copyToCacheDirectory: true,
+        });
+
+        if (!res.canceled && res.assets && res.assets.length > 0) {
+          const asset = res.assets[0];
+          const fileName = asset.name || `${candidateName.replace(/\s+/g, '_')}_Resume.pdf`;
+          const sizeKb = asset.size ? Math.round(asset.size / 1024) : 250;
+          const fileUri = asset.uri;
+
+          setActiveResumeName(fileName);
+          setActiveResumeUrl(fileUri);
+          setActiveFileSize(`${sizeKb} KB • Device PDF`);
+          setUseCustomUpload(true);
+          Alert.alert('📄 Resume Uploaded!', `"${fileName}" (${sizeKb} KB) attached from your device.`);
+          return;
+        }
       }
-      const subData = subSnap.data();
-      if (subData?.status !== 'active') {
-        Alert.alert('Subscription Expired', 'Your subscription is expired or inactive. Please renew to apply.');
-        setLoading(false);
-        return;
-      }
-      const maxApplications = subData?.maxApplications || 0;
-      const usage = subData?.usageStats || {};
-      const applicationsUsed = usage?.applicationsUsed || 0;
-
-      if (applicationsUsed >= maxApplications) {
-        Alert.alert('Limit Reached', `You have reached the limit of ${maxApplications} applications in your active plan.`);
-        setLoading(false);
-        return;
-      }
-
-      // Submit application
-      await jobService.applyForJob(user.uid, jobId);
-
-      // Increment applicationsUsed count
-      await updateDoc(subRef, {
-        'usageStats.applicationsUsed': applicationsUsed + 1
-      });
-
-      Alert.alert(
-        'Application Submitted!',
-        'Your profile details and resume have been sent to the recruiter.',
-        [{ text: 'OK', onPress: onSuccess }]
-      );
     } catch (e: any) {
-      Alert.alert('Submission Failed', e.message || 'Could not apply.');
-    } finally {
-      setLoading(false);
+      console.warn('[ApplyJob] Native DocumentPicker error:', e?.message || e);
+    }
+
+    // Web Browser fallback
+    if (typeof document !== 'undefined') {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+
+      fileInput.onchange = (e: any) => {
+        const file = e.target?.files?.[0];
+        if (file) {
+          const fileName = file.name;
+          const sizeKb = Math.round(file.size / 1024);
+
+          const reader = new FileReader();
+          reader.onload = (event: any) => {
+            const dataUrl = event.target?.result || URL.createObjectURL(file);
+            setActiveResumeName(fileName);
+            setActiveResumeUrl(dataUrl);
+            setActiveFileSize(`${sizeKb} KB • Uploaded PDF`);
+            setUseCustomUpload(true);
+            Alert.alert('📄 Resume Selected!', `"${fileName}" (${sizeKb} KB) loaded successfully.`);
+          };
+          reader.onerror = () => {
+            const objectUrl = URL.createObjectURL(file);
+            setActiveResumeName(fileName);
+            setActiveResumeUrl(objectUrl);
+            setActiveFileSize(`${sizeKb} KB • Device File`);
+            setUseCustomUpload(true);
+          };
+          reader.readAsDataURL(file);
+        }
+        if (document.body.contains(fileInput)) {
+          document.body.removeChild(fileInput);
+        }
+      };
+      fileInput.click();
     }
   };
 
+  const handleSelectSavedResume = () => {
+    if (!savedResumeUrl) {
+      Alert.alert('No Profile Resume', 'No saved resume found in profile. Please upload a PDF file from your mobile device.');
+      return;
+    }
+    setActiveResumeUrl(savedResumeUrl);
+    setActiveResumeName(savedResumeUrl.split('/').pop() || 'Saved_Profile_Resume.pdf');
+    setActiveFileSize('Profile Resume');
+    setUseCustomUpload(false);
+  };
+
+  const handleDeleteResume = () => {
+    Alert.alert(
+      'Delete Resume 🗑️',
+      'Are you sure you want to remove the attached resume from this application?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setActiveResumeName('');
+            setActiveResumeUrl('');
+            setActiveFileSize('');
+            setUseCustomUpload(true);
+            Alert.alert('Resume Removed', 'Attached resume file cleared.');
+          }
+        }
+      ]
+    );
+  };
+
+  // Submit Application
+  const handleSubmitApplication = async () => {
+    if (!user) return;
+
+    if (!activeResumeUrl) {
+      Alert.alert(
+        'Upload Resume Required 📄',
+        'Please select a PDF resume file from your device before submitting.',
+        [
+          { text: 'Choose File', onPress: handlePickFileFromMobileBrowser },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await jobService.applyForJob(user.uid, jobId, {
+        candidateName,
+        candidateEmail,
+        candidatePhone,
+        candidateBio,
+        candidateExpectedSalary: expectedSalary,
+        resumeUrl: activeResumeUrl,
+        coverLetter,
+      });
+
+      // Update candidate user record in Firestore
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        'seekerProfile.phone': candidatePhone,
+        'seekerProfile.bio': candidateBio,
+        'seekerProfile.resumeUrl': activeResumeUrl,
+      }).catch(() => {});
+
+      Alert.alert(
+        '🎉 Application Submitted!',
+        `Your application for "${job?.title || 'this position'}" at ${job?.company || 'the company'} was submitted successfully!`,
+        [{ text: 'OK', onPress: onSuccess }]
+      );
+    } catch (e: any) {
+      Alert.alert('Submission Error', e.message || 'Could not submit application.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loadingJob) {
+    return (
+      <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <KeyboardAvoidingView 
-        style={styles.keyboardContainer} 
+        style={{ flex: 1 }} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-      {/* Header */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity onPress={onBack} style={styles.iconButton}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Apply For Job</Text>
-      </View>
+        {/* Top Header */}
+        <View style={styles.headerBar}>
+          <TouchableOpacity onPress={onBack} style={styles.headerBackButton} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
+            <Text style={[styles.headerBackText, { color: colors.text }]}>Back</Text>
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+            Job Application
+          </Text>
+          <View style={{ width: 50 }} />
+        </View>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 20 + insets.bottom }]} showsVerticalScrollIndicator={false}>
-        {/* Applicant Profile Review */}
-        <Text style={styles.sectionLabel}>Review Profile Details</Text>
-        <View style={styles.profileCard}>
-          <View style={styles.profileHeader}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
-            <View style={styles.profileHeaderInfo}>
-              <Text style={styles.applicantName}>{name}</Text>
-              <Text style={styles.applicantMeta}>{email} {phone ? `• ${phone}` : ''}</Text>
-            </View>
-          </View>
-
-          {bio ? (
-            <View style={styles.profileBioSection}>
-              <Text style={styles.subLabel}>Summary</Text>
-              <Text style={styles.bioText} numberOfLines={3}>{bio}</Text>
-            </View>
-          ) : null}
-
-          {skills.length > 0 ? (
-            <View style={styles.profileSkillsSection}>
-              <Text style={styles.subLabel}>Skills</Text>
-              <View style={styles.skillsWrap}>
-                {skills.map((sk: string) => (
-                  <View key={sk} style={styles.skillChip}>
-                    <Text style={styles.skillChipText}>{sk}</Text>
-                  </View>
-                ))}
+        <ScrollView 
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 90 + insets.bottom }]} 
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Target Job Banner */}
+          {job && (
+            <View style={styles.jobSummaryCard}>
+              <View style={styles.jobBadgeBox}>
+                <Ionicons name="briefcase" size={16} color="#4F46E5" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.jobSummaryTitle} numberOfLines={1}>{job.title}</Text>
+                <Text style={styles.jobSummaryCompany} numberOfLines={1}>{job.company} • {job.type || 'Full-time'}</Text>
               </View>
             </View>
-          ) : null}
-        </View>
-
-        <Text style={styles.sectionLabel}>Review Resume</Text>
-        <View style={[styles.resumeCard, !resumeUrl && styles.resumeCardError]}>
-          <Ionicons name="document-text" size={32} color={resumeUrl ? '#4F46E5' : '#EF4444'} />
-          <View style={styles.resumeInfo}>
-            <Text style={styles.resumeName} numberOfLines={1}>{resumeName}</Text>
-            <Text style={styles.resumeSize}>
-              {resumeUrl ? 'PDF File • Ready to Submit' : 'Please upload a resume in the profile builder'}
-            </Text>
-          </View>
-          {resumeUrl ? (
-            <Ionicons name="checkmark-circle" size={22} color="#10B981" />
-          ) : (
-            <Ionicons name="alert-circle" size={22} color="#EF4444" />
           )}
-        </View>
 
-        <Text style={styles.sectionLabel}>Cover Note (Optional)</Text>
-        <Input
-          placeholder="Briefly introduce yourself and explain why you're a great fit for this role..."
-          value={coverLetter}
-          onChangeText={setCoverLetter}
-          multiline
-          numberOfLines={6}
-          inputStyle={styles.coverNoteInput}
-        />
+          {/* Section 1: Auto-Fetched Applicant Profile Details */}
+          <Text style={styles.sectionHeaderLabel}>1. CANDIDATE PROFILE DETAILS</Text>
+          <View style={styles.profileCard}>
+            <View style={styles.profileHeaderRow}>
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.profileName}>{candidateName}</Text>
+                <Text style={styles.profileEmail}>{candidateEmail}</Text>
+                <View style={styles.autoFetchTag}>
+                  <Ionicons name="sparkles" size={10} color="#10B981" />
+                  <Text style={styles.autoFetchText}>Auto-Fetched Seeker Profile</Text>
+                </View>
+              </View>
+            </View>
 
-        <Button 
-          title="Submit Application" 
-          onPress={handleSubmit} 
-          loading={loading}
-          style={styles.submitBtn}
-        />
-      </ScrollView>
+            {/* Editable Info Fields */}
+            <View style={styles.fieldRow}>
+              <View style={styles.fieldHalf}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={candidateName}
+                  onChangeText={setCandidateName}
+                  placeholder="Full name"
+                  placeholderTextColor="#94A3B8"
+                />
+              </View>
+
+              <View style={styles.fieldHalf}>
+                <Text style={styles.inputLabel}>Phone Number</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={candidatePhone}
+                  onChangeText={setCandidatePhone}
+                  placeholder="Phone number"
+                  keyboardType="phone-pad"
+                  placeholderTextColor="#94A3B8"
+                />
+              </View>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.inputLabel}>Expected Salary / CTC</Text>
+              <TextInput
+                style={styles.textInput}
+                value={expectedSalary}
+                onChangeText={setExpectedSalary}
+                placeholder="e.g. ₹6,00,000 / year"
+                placeholderTextColor="#94A3B8"
+              />
+            </View>
+
+            {candidateSkills.length > 0 && (
+              <View style={styles.skillsSection}>
+                <Text style={styles.inputLabel}>Profile Skills</Text>
+                <View style={styles.skillsWrap}>
+                  {candidateSkills.map((skill, idx) => (
+                    <View key={idx} style={styles.skillChip}>
+                      <Text style={styles.skillChipTxt}>{skill}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.inputLabel}>Profile Summary / Bio</Text>
+              <TextInput
+                style={[styles.textInput, styles.multilineInput]}
+                value={candidateBio}
+                onChangeText={setCandidateBio}
+                placeholder="Summary of experience..."
+                multiline
+                numberOfLines={2}
+                placeholderTextColor="#94A3B8"
+              />
+            </View>
+          </View>
+
+          {/* Section 2: Direct Mobile Device Resume Upload */}
+          <Text style={styles.sectionHeaderLabel}>2. UPLOAD RESUME FROM DEVICE</Text>
+          <View style={styles.resumeSectionCard}>
+            {/* Display Active Selected / Uploaded File */}
+            <View style={[styles.activeResumeBox, !activeResumeUrl && styles.activeResumeBoxEmpty]}>
+              <View style={styles.pdfIconWrap}>
+                <Ionicons name="document-text" size={24} color="#EF4444" />
+              </View>
+              
+              <View style={{ flex: 1 }}>
+                <Text style={styles.activeResumeTitle} numberOfLines={1}>
+                  {activeResumeName || 'No Resume Selected'}
+                </Text>
+                <Text style={styles.activeResumeSub}>
+                  {activeFileSize || (activeResumeUrl ? 'Ready to Submit' : 'Tap button below to select PDF file from device')}
+                </Text>
+              </View>
+
+              {activeResumeUrl ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={styles.readyBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                    <Text style={styles.readyBadgeTxt}>Ready</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.deleteIconBtn}
+                    onPress={handleDeleteResume}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Ionicons name="alert-circle" size={20} color="#EF4444" />
+              )}
+            </View>
+
+            {/* Direct Mobile Browser Upload Button */}
+            <View style={styles.resumeActionGrid}>
+              <TouchableOpacity
+                style={styles.uploadMainBtn}
+                onPress={handlePickFileFromMobileBrowser}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.uploadMainBtnTxt}>
+                  {activeResumeUrl ? 'Choose Different PDF File 📄' : 'Upload Resume File (PDF/DOC)'}
+                </Text>
+              </TouchableOpacity>
+
+              {savedResumeUrl ? (
+                <TouchableOpacity
+                  style={[styles.savedResumeToggleBtn, !useCustomUpload && styles.savedResumeToggleBtnActive]}
+                  onPress={handleSelectSavedResume}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons 
+                    name={!useCustomUpload ? "checkmark-circle" : "document-text-outline"} 
+                    size={14} 
+                    color={!useCustomUpload ? "#4F46E5" : "#64748B"} 
+                  />
+                  <Text style={[styles.savedResumeToggleTxt, !useCustomUpload && styles.savedResumeToggleTxtActive]}>
+                    Use Saved Profile Resume
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+
+          {/* Section 3: Cover Note */}
+          <Text style={styles.sectionHeaderLabel}>3. COVER NOTE (OPTIONAL)</Text>
+          <View style={styles.coverNoteCard}>
+            <TextInput
+              style={styles.coverNoteArea}
+              value={coverLetter}
+              onChangeText={setCoverLetter}
+              placeholder="Introduce yourself to the employer and share why you are a great fit..."
+              multiline
+              numberOfLines={4}
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={[styles.submitPrimaryBtn, submitting && { opacity: 0.7 }]}
+            onPress={handleSubmitApplication}
+            disabled={submitting}
+            activeOpacity={0.85}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
+                <Text style={styles.submitPrimaryBtnTxt}>Submit Application 🚀</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -198,175 +501,319 @@ export const ApplyJob: React.FC<ApplyJobProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FC',
+    backgroundColor: '#FFFFFF',
   },
-  keyboardContainer: {
-    flex: 1,
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
-    paddingHorizontal: 16,
-    backgroundColor: '#ffffff',
+    height: 52,
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
   },
-  iconButton: {
-    paddingRight: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#4B5563',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-    marginTop: 15,
-  },
-  // Profile Card
-  profileCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  profileHeader: {
+  headerBackButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#EEF2FF',
+  headerBackText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 2,
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    flex: 1,
+    textAlign: 'center',
+  },
+  scrollContent: {
+    padding: 12,
+  },
+  jobSummaryCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#EEF2FF',
+    padding: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#C7D2FE',
-  },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#4F46E5',
-  },
-  profileHeaderInfo: {
-    flex: 1,
-  },
-  applicantName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  applicantMeta: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  subLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  profileBioSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
     marginBottom: 12,
   },
-  bioText: {
+  jobBadgeBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  jobSummaryTitle: {
     fontSize: 13,
-    color: '#4B5563',
-    lineHeight: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  jobSummaryCompany: {
+    fontSize: 11,
+    color: '#4F46E5',
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  sectionHeaderLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: '#94A3B8',
+    marginBottom: 6,
+    marginTop: 2,
+  },
+  profileCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+  },
+  profileHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    marginBottom: 10,
+  },
+  avatarCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  profileName: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  profileEmail: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  autoFetchTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+  },
+  autoFetchText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  fieldRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  fieldHalf: {
+    flex: 1,
+  },
+  fieldGroup: {
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 3,
+  },
+  textInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 12,
+    color: '#0F172A',
     fontWeight: '500',
   },
-  profileSkillsSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
+  multilineInput: {
+    height: 52,
+    textAlignVertical: 'top',
+  },
+  skillsSection: {
+    marginBottom: 8,
   },
   skillsWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 5,
+    marginTop: 2,
   },
   skillChip: {
     backgroundColor: '#EEF2FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#C7D2FE',
   },
-  skillChipText: {
-    fontSize: 11,
-    color: '#4F46E5',
+  skillChipTxt: {
+    fontSize: 10,
     fontWeight: '700',
+    color: '#4F46E5',
   },
-  // Resume Card
-  resumeCard: {
+  resumeSectionCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+  },
+  activeResumeBox: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: '#ffffff',
-    marginBottom: 16,
-    gap: 12,
+    borderColor: '#CBD5E1',
+    marginBottom: 10,
   },
-  resumeCardError: {
+  activeResumeBoxEmpty: {
     borderColor: '#FCA5A5',
     backgroundColor: '#FEF2F2',
   },
-  resumeInfo: {
-    flex: 1,
+  pdfIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  resumeName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  resumeSize: {
+  activeResumeTitle: {
     fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-    fontWeight: '500',
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  coverNoteInput: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+  activeResumeSub: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  readyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    height: 120,
-    alignItems: 'flex-start',
-    paddingTop: 12,
-    paddingHorizontal: 14,
+    borderColor: '#BBF7D0',
   },
-  submitBtn: {
-    marginTop: 24,
-    borderRadius: 14,
-    height: 50,
+  readyBadgeTxt: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#166534',
+  },
+  deleteIconBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resumeActionGrid: {
+    gap: 6,
+  },
+  uploadMainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#4F46E5',
+    paddingVertical: 10,
+    borderRadius: 10,
+    elevation: 2,
+  },
+  uploadMainBtnTxt: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  savedResumeToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  savedResumeToggleBtnActive: {
+    borderColor: '#4F46E5',
+    backgroundColor: '#EEF2FF',
+  },
+  savedResumeToggleTxt: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  savedResumeToggleTxtActive: {
+    color: '#4F46E5',
+  },
+  coverNoteCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 10,
+    marginBottom: 14,
+  },
+  coverNoteArea: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 12,
+    color: '#0F172A',
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  submitPrimaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#4F46E5',
+    paddingVertical: 12,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  submitPrimaryBtnTxt: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

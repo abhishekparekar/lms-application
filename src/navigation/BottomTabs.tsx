@@ -185,41 +185,54 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
       case 'learning':
         return (
           <SafeAreaView style={styles.learningWrapper} edges={['top']}>
-            <View style={styles.segmentContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.segmentBtn,
-                  learningSubTab === 'explore' && styles.segmentBtnActive,
-                ]}
-                onPress={() => setLearningSubTab('explore')}
-                activeOpacity={0.8}
-              >
-                <Text
+            <View style={styles.segmentHeaderWrapper}>
+              <View style={styles.segmentContainer}>
+                <TouchableOpacity
                   style={[
-                    styles.segmentText,
-                    learningSubTab === 'explore' && styles.segmentTextActive,
+                    styles.segmentBtn,
+                    learningSubTab === 'explore' && styles.segmentBtnActive,
                   ]}
+                  onPress={() => setLearningSubTab('explore')}
+                  activeOpacity={0.85}
                 >
-                  Explore Courses
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.segmentBtn,
-                  learningSubTab === 'my_learning' && styles.segmentBtnActive,
-                ]}
-                onPress={() => setLearningSubTab('my_learning')}
-                activeOpacity={0.8}
-              >
-                <Text
+                  <Ionicons
+                    name={learningSubTab === 'explore' ? 'compass' : 'compass-outline'}
+                    size={18}
+                    color={learningSubTab === 'explore' ? '#4F46E5' : '#64748B'}
+                  />
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      learningSubTab === 'explore' && styles.segmentTextActive,
+                    ]}
+                  >
+                    Explore Courses
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   style={[
-                    styles.segmentText,
-                    learningSubTab === 'my_learning' && styles.segmentTextActive,
+                    styles.segmentBtn,
+                    learningSubTab === 'my_learning' && styles.segmentBtnActive,
                   ]}
+                  onPress={() => setLearningSubTab('my_learning')}
+                  activeOpacity={0.85}
                 >
-                  My Learning
-                </Text>
-              </TouchableOpacity>
+                  <Ionicons
+                    name={learningSubTab === 'my_learning' ? 'book' : 'book-outline'}
+                    size={18}
+                    color={learningSubTab === 'my_learning' ? '#4F46E5' : '#64748B'}
+                  />
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      learningSubTab === 'my_learning' && styles.segmentTextActive,
+                    ]}
+                  >
+                    My Learning
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {learningSubTab === 'explore' ? (
@@ -263,6 +276,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
             onLogout={onLogout}
             onSavedJobsPress={onSavedJobsPress}
             onPostJobPress={onPostJobPress}
+            onResumeBuilderPress={() => setActiveTab('resume')}
           />
         );
       default:
@@ -380,32 +394,47 @@ const styles = StyleSheet.create({
   },
   learningWrapper: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // cleaner background
+    backgroundColor: '#F8FAFC',
+  },
+  segmentHeaderWrapper: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
   segmentContainer: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
   },
   segmentBtn: {
     flex: 1,
-    paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
   },
   segmentBtnActive: {
-    borderBottomColor: '#6C63FF',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   segmentText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: '#64748B',
   },
   segmentTextActive: {
-    color: '#6C63FF',
+    color: '#4F46E5',
     fontWeight: '800',
   },
 });

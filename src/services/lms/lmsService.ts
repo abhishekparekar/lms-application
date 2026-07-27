@@ -659,6 +659,16 @@ export const lmsService = {
             [`courseProgress.${courseId}`]: courseProgressPercent,
           });
 
+          // Sync to enrollment record
+          const enrollRef = doc(db, 'enrollments', `${userId}_${courseId}`);
+          await setDoc(enrollRef, {
+            userId,
+            courseId,
+            progress: courseProgressPercent,
+            completedLessons: completedList,
+            lastAccessed: new Date().toISOString(),
+          }, { merge: true });
+
           // Generate certificate automatically if completion >= 80%
           if (courseProgressPercent >= 80) {
             const certId = `cert_${userId}_${courseId}`;

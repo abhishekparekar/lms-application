@@ -250,6 +250,7 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [vimeoVol, setVimeoVol] = useState(1);
+  const [showVolToast, setShowVolToast] = useState(false);
   const webViewRef = useRef<any>(null);
   const videoViewRef = useRef<any>(null);
   const syncRef = useRef<any>(null);
@@ -466,12 +467,12 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
   const goToLesson = useCallback((idx: number) => {
     if (idx < 0 || idx >= syllabus.length) return;
     setCurrentLesson(idx);
-    setProgress(0);
+    setProgress(completed.includes(idx) ? 100 : 0);
     setPreviewExpired(false);
     setPreviewLeft(300);
     setIsPlaying(false);
     setWvKey(k => k + 1);
-  }, [syllabus.length]);
+  }, [syllabus.length, completed]);
 
   const markComplete = useCallback(async () => {
     if (!user || !course) return;
@@ -510,24 +511,34 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
     }
   }, [isFullscreen]);
 
+  const setVolumeLevel = useCallback((targetVol: number) => {
+    const clamped = Math.max(0, Math.min(1, Math.round(targetVol * 100) / 100));
+    setVimeoVol(clamped);
+    setShowVolToast(true);
+    setTimeout(() => setShowVolToast(false), 1600);
+
+    if (useWV) {
+      webViewRef.current?.injectJavaScript(`
+        if (window.setVimeoVolume) window.setVimeoVolume(${clamped});
+        if (window.setYouTubeVolume) window.setYouTubeVolume(${clamped * 100});
+        if (window.setMp4Volume) window.setMp4Volume(${clamped});
+        var v = document.querySelector('video');
+        if (v) { v.volume = ${clamped}; v.muted = ${clamped === 0}; }
+        true;
+      `);
+    } else if (expoPlayer) {
+      expoPlayer.volume = clamped;
+      expoPlayer.muted = (clamped === 0);
+    }
+  }, [useWV, expoPlayer]);
+
   const changeVolume = useCallback((delta: number) => {
     setVimeoVol(prev => {
-      const next = Math.max(0, Math.min(1, prev + delta));
-      console.log('[VideoPlayer] changeVolume -> prev:', prev, 'delta:', delta, 'next:', next);
-
-      if (useWV) {
-        webViewRef.current?.injectJavaScript(`
-          if (window.setVimeoVolume) window.setVimeoVolume(${next});
-          if (window.setYouTubeVolume) window.setYouTubeVolume(${next});
-          if (window.setMp4Volume) window.setMp4Volume(${next});
-          true;
-        `);
-      } else if (expoPlayer) {
-        expoPlayer.volume = next;
-      }
+      const next = Math.max(0, Math.min(1, Math.round((prev + delta) * 10) / 10));
+      setVolumeLevel(next);
       return next;
     });
-  }, [useWV, expoPlayer]);
+  }, [setVolumeLevel]);
 
   // WebView message handler — receives events from all 3 HTML embeds
   const onMsg = useCallback((e: any) => {
@@ -570,7 +581,7 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
   const BORDER = isDark ? '#252540' : '#E8EAFF';
   const TXT = isDark ? '#EEEEFF' : '#1A1040';
   const TXT2 = isDark ? '#8080AA' : '#6B6B8A';
-  const ACCENT = '#6C63FF';
+  const ACCENT = '#4F46E5';
   const GREEN = '#10B981';
 
   // ── build HTML for current lesson ────────────────────────────────────────
@@ -684,6 +695,20 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
                 activeOpacity={1}
                 onPress={() => { /* consume touch to prevent interacting with video */ }}
               />
+            )}
+
+            {/* Volume HUD Toast Notification */}
+            {showVolToast && (
+              <View style={st.volToastHUD}>
+                <Ionicons
+                  name={vimeoVol === 0 ? "volume-mute" : vimeoVol < 0.5 ? "volume-low" : "volume-high"}
+                  size={20}
+                  color="#FFFFFF"
+                />
+                <Text style={st.volToastText}>
+                  {vimeoVol === 0 ? 'Muted' : `Volume ${Math.round(vimeoVol * 100)}%`}
+                </Text>
+              </View>
             )}
 
             {/* Lock Button (Top Left) */}
@@ -823,45 +848,114 @@ const st = StyleSheet.create({
   root: { flex: 1 },
   center: { justifyContent: 'center', alignItems: 'center' },
   // header
-  header: { flexDirection: 'row', alignItems: 'center', height: 56, paddingHorizontal: 12, borderBottomWidth: 1, gap: 8 },
-  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', borderRadius: 18 },
+  header: { flexDirection: 'row', alignItems: 'center', height: 54, paddingHorizontal: 14, borderBottomWidth: 1, gap: 10 },
+  backBtn: { width: 34, height: 34, justifyContent: 'center', alignItems: 'center', borderRadius: 17 },
   headerMid: { flex: 1 },
-  headerTitle: { fontSize: 14, fontWeight: '700', lineHeight: 18 },
-  headerSub: { fontSize: 11, lineHeight: 14, marginTop: 1 },
-  accessBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 20, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
-  accessBadgeText: { fontSize: 9, fontWeight: '800' },
+  headerTitle: { fontSize: 14, fontWeight: '800', lineHeight: 18 },
+  headerSub: { fontSize: 11, lineHeight: 14, marginTop: 1, fontWeight: '500' },
+  accessBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 20, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
+  accessBadgeText: { fontSize: 10, fontWeight: '800' },
   // player
-  playerBox: { height: 240, backgroundColor: '#000', position: 'relative' },
-  progressBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: 'rgba(255,255,255,0.12)' },
-  progressFill: { height: 3 },
-  previewBadge: { position: 'absolute', top: 10, right: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(239,68,68,0.88)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  previewBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  playerBox: { height: 235, backgroundColor: '#000', position: 'relative' },
+  progressBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, backgroundColor: 'rgba(255,255,255,0.15)' },
+  progressFill: { height: 4 },
+  previewBadge: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(239,68,68,0.9)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  previewBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   // lock
-  lockWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 28, backgroundColor: 'rgba(0,0,0,0.92)' },
+  lockWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 28, backgroundColor: 'rgba(0,0,0,0.94)' },
   lockCircle: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  lockTitle: { color: '#fff', fontSize: 17, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
+  lockTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
   lockMsg: { color: '#AAAACC', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
   enrollCta: { paddingHorizontal: 28, paddingVertical: 12, borderRadius: 24 },
-  enrollCtaText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  enrollCtaText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   // no player
   noPlayer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   noPlayerText: { color: '#8080AA', fontSize: 13, textAlign: 'center' },
   // info row
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, gap: 10 },
-  infoTitle: { fontSize: 13, fontWeight: '700', lineHeight: 19 },
-  infoSub: { fontSize: 11, marginTop: 2 },
-  markBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
-  markBtnText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  infoRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, gap: 12 },
+  infoTitle: { fontSize: 14, fontWeight: '800', lineHeight: 19 },
+  infoSub: { fontSize: 11, marginTop: 2, fontWeight: '500' },
+  markBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, elevation: 2 },
+  markBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  // sound / volume
+  volToastHUD: {
+    position: 'absolute',
+    top: '40%',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.88)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    zIndex: 99,
+  },
+  volToastText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  volumeStrip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  volumeStripLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  volumePillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  volumePillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  volumePillTxt: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  volumeStepBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  volumeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  volumeBadgeTxt: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
   // nav row
-  navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 7, borderBottomWidth: 1 },
-  navBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  navBtnText: { fontSize: 12, fontWeight: '600' },
-  navMid: { fontSize: 11, fontWeight: '600' },
+  navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1 },
+  navBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  navBtnText: { fontSize: 12, fontWeight: '700' },
+  navMid: { fontSize: 11, fontWeight: '700' },
   // syllabus
-  sylLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: 10 },
-  lessonRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 7 },
-  lessonNum: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  lessonNumText: { fontSize: 11, fontWeight: '700' },
+  sylLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 10 },
+  lessonRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 8 },
+  lessonNum: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  lessonNumText: { fontSize: 11, fontWeight: '800' },
   lessonTitle: { fontSize: 13, lineHeight: 18 },
-  nowPlaying: { fontSize: 10, fontWeight: '600', marginTop: 2 },
+  nowPlaying: { fontSize: 11, fontWeight: '700', marginTop: 3 },
 });

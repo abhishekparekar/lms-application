@@ -339,7 +339,7 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
   const renderHeader = () => (
     <View>
       <View style={styles.searchWrap}>
-        <View style={[styles.searchBox, { backgroundColor: cardBg, shadowColor: accent }]}>
+        <View style={[styles.searchBox, { backgroundColor: cardBg, borderColor: border, borderWidth: 1 }]}>
           <Ionicons name="search" size={20} color={accent} />
           <TextInput
             style={[styles.searchInput, { color: textPrimary }]}
@@ -350,8 +350,8 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
             returnKeyType="search"
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={20} color={textSec} />
+            <TouchableOpacity onPress={() => setSearch('')} activeOpacity={0.7} style={{ padding: 2 }}>
+              <Ionicons name="close-circle" size={18} color={textSec} />
             </TouchableOpacity>
           )}
         </View>
@@ -486,11 +486,19 @@ const styles = StyleSheet.create({
   // Search
   searchWrap: { paddingHorizontal: 20, paddingVertical: 8 },
   searchBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 20,
-    paddingHorizontal: 16, height: 50, elevation: 4,
-    shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    height: 48,
+    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
-  searchInput: { flex: 1, fontSize: 15, fontWeight: '500' },
+  searchInput: { flex: 1, fontSize: 14, fontWeight: '500' },
 
   // Featured Carousel
   featSection: { marginTop: 4, paddingBottom: 5 },

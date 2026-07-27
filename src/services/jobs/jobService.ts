@@ -372,11 +372,11 @@ export const jobService = {
   /**
    * Apply for a job (seeker only)
    */
-  async applyForJob(seekerId: string, jobId: string): Promise<JobApplication> {
+  async applyForJob(seekerId: string, jobId: string, customData?: Partial<JobApplication>): Promise<JobApplication> {
     const job = await this.getJobById(jobId);
     if (!job) throw new Error('Job not found');
 
-    // Fetch all candidate details using the robust resolver
+    // Fetch candidate details using the robust resolver
     const candidateDetails = await this.getCandidateDetails(seekerId);
 
     const newApp: JobApplication = {
@@ -388,23 +388,26 @@ export const jobService = {
       appliedDate: new Date().toISOString().split('T')[0],
       status: 'pending',
       employerId: job.recruiterId || '',
-      candidateName: candidateDetails.candidateName,
-      candidateEmail: candidateDetails.candidateEmail,
-      candidatePhone: candidateDetails.candidatePhone,
+      candidateName: customData?.candidateName || candidateDetails.candidateName,
+      candidateEmail: customData?.candidateEmail || candidateDetails.candidateEmail,
+      candidatePhone: customData?.candidatePhone || candidateDetails.candidatePhone,
       candidateLocation: candidateDetails.candidateLocation,
-      candidateBio: candidateDetails.candidateBio,
+      candidateBio: customData?.candidateBio || candidateDetails.candidateBio,
       candidateSkills: candidateDetails.candidateSkills,
       candidateExpectedSalary: candidateDetails.candidateExpectedSalary,
       candidateNoticePeriod: candidateDetails.candidateNoticePeriod,
-      resumeUrl: candidateDetails.resumeUrl,
+      resumeUrl: customData?.resumeUrl || candidateDetails.resumeUrl,
+      coverLetter: customData?.coverLetter || '',
+      ...customData,
     };
 
     try {
       await setDoc(doc(db, 'applications', newApp.id), newApp);
+      await setDoc(doc(db, 'job_applications', newApp.id), newApp).catch(() => {});
       const jobRef = doc(db, 'jobs', jobId);
       await updateDoc(jobRef, {
         applicantsCount: (job.applicantsCount || 0) + 1
-      });
+      }).catch(() => {});
       return newApp;
     } catch (e) {
       mockApplications.unshift(newApp);

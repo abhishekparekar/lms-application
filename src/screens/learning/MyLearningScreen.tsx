@@ -4,7 +4,7 @@ import { db } from '@/services/firebase/config';
 import { Course } from '@/services/lms/lmsService';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,6 +12,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   useColorScheme,
   View
@@ -33,15 +34,19 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [enrolledIds, setEnrolledIds] = useState<string[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusTab, setStatusTab] = useState<'all' | 'in_progress' | 'completed'>('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const enrolled = allCourses.filter(c =>
-    enrolledIds.includes(c.id) ||
-    (user && c.enrolledUsers && c.enrolledUsers.includes(user.uid)) ||
-    c.price === 0 ||
-    (c as any).isFree
-  );
+  const enrolled = useMemo(() => {
+    return allCourses.filter(c =>
+      enrolledIds.includes(c.id) ||
+      (user && c.enrolledUsers && c.enrolledUsers.includes(user.uid)) ||
+      c.price === 0 ||
+      (c as any).isFree
+    );
+  }, [allCourses, enrolledIds, user]);
 
   useEffect(() => {
     if (!user) {
@@ -73,7 +78,6 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
         if (docSnap.exists()) {
           const data = docSnap.data();
 
-          // Extract enrolled IDs robustly from various user doc formats
           const ids = new Set<string>();
           ['enrolledCourses', 'purchasedCourses', 'courses'].forEach((field) => {
             const val = data[field];
@@ -125,31 +129,117 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 600);
+    setTimeout(() => setRefreshing(false), 600);
   }, []);
 
   const getProgress = (courseId: string): number => {
     return progressMap[courseId] || 0;
   };
 
+  const inProgressCount = useMemo(() => {
+    return enrolled.filter(c => getProgress(c.id) < 100).length;
+  }, [enrolled, progressMap]);
+
+  const completedCount = useMemo(() => {
+    return enrolled.filter(c => getProgress(c.id) >= 100).length;
+  }, [enrolled, progressMap]);
+
+  const filteredEnrolled = useMemo(() => {
+    return enrolled.filter(c => {
+      const progress = getProgress(c.id);
+      const isCompleted = progress >= 100;
+
+      if (statusTab === 'in_progress' && isCompleted) return false;
+      if (statusTab === 'completed' && !isCompleted) return false;
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        c.title?.toLowerCase().includes(q) ||
+        c.instructor?.toLowerCase().includes(q) ||
+        c.category?.toLowerCase().includes(q)
+      );
+    });
+  }, [enrolled, statusTab, searchQuery, progressMap]);
+
   const renderHeader = () => (
     <View style={styles.headerContent}>
       <Text style={styles.headerTitle}>My Learning</Text>
-      <Text style={styles.headerSubtitle}>Track your lecture progress and achievements</Text>
+      <Text style={styles.headerSubtitle}>Track your active lectures & video progress</Text>
+
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={18} color="#4F46E5" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search enrolled courses..."
+          placeholderTextColor="#94A3B8"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7} style={{ padding: 2 }}>
+            <Ionicons name="close-circle" size={18} color="#94A3B8" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.statsStrip}>
+        <View style={styles.statPill}>
+          <Ionicons name="book-outline" size={14} color="#4F46E5" />
+          <Text style={styles.statPillText}>{enrolled.length} Enrolled</Text>
+        </View>
+        <View style={[styles.statPill, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]}>
+          <Ionicons name="time-outline" size={14} color="#16A34A" />
+          <Text style={[styles.statPillText, { color: '#16A34A' }]}>{inProgressCount} In Progress</Text>
+        </View>
+        <View style={[styles.statPill, { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5' }]}>
+          <Ionicons name="trophy-outline" size={14} color="#D97706" />
+          <Text style={[styles.statPillText, { color: '#D97706' }]}>{completedCount} Completed</Text>
+        </View>
+      </View>
+
+      <View style={styles.filterBar}>
+        <TouchableOpacity
+          style={[styles.filterChip, statusTab === 'all' && styles.filterChipActive]}
+          onPress={() => setStatusTab('all')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.filterChipText, statusTab === 'all' && styles.filterChipTextActive]}>
+            All ({enrolled.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, statusTab === 'in_progress' && styles.filterChipActive]}
+          onPress={() => setStatusTab('in_progress')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.filterChipText, statusTab === 'in_progress' && styles.filterChipTextActive]}>
+            In Progress ({inProgressCount})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, statusTab === 'completed' && styles.filterChipActive]}
+          onPress={() => setStatusTab('completed')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.filterChipText, statusTab === 'completed' && styles.filterChipTextActive]}>
+            Completed ({completedCount})
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.backgroundElement }]}>
-      {/* Deep Blue/Indigo Header Background */}
       <View style={[styles.headerBackground, { backgroundColor: colors.primary }]} />
 
       <View style={styles.safeAreaWrapper}>
-        {/* Course List Overlapping the Header */}
         <FlatList
-          data={enrolled}
+          data={filteredEnrolled}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -157,90 +247,117 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#FFFFFF" />
           }
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIconBg}>
+                  <Ionicons name="book-outline" size={36} color="#4F46E5" />
+                </View>
+                <Text style={styles.emptyTitle}>
+                  {searchQuery || statusTab !== 'all' ? 'No matching courses' : 'No Enrolled Courses Yet'}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {searchQuery || statusTab !== 'all'
+                    ? 'Try clearing your search query or filter tab to view all courses.'
+                    : 'Explore our catalog of top-rated courses and start building your skills today!'}
+                </Text>
+                <TouchableOpacity
+                  style={styles.exploreBtn}
+                  onPress={onExploreCourses}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="compass-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.exploreBtnText}>Explore Courses Catalog</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <ActivityIndicator size="large" color="#4F46E5" style={{ marginTop: 40 }} />
+            )
+          }
           renderItem={({ item }) => {
             const progress = getProgress(item.id);
             const isCompleted = progress >= 100;
+            const imgUri = item.imageUrl || item.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop';
 
             return (
               <TouchableOpacity
-                style={[styles.courseCard, { backgroundColor: colors.background }]}
+                style={styles.formattedCard}
                 onPress={() => onResumeCourse(item.id)}
-                activeOpacity={0.95}
+                activeOpacity={0.92}
               >
-                <Image source={{ uri: item.imageUrl || item.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop' }} style={styles.courseImage} />
-
-                <View style={styles.courseDetails}>
-                  <Text style={[styles.courseTitle, { color: colors.text }]} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-
-                  <View style={styles.instructorRow}>
-                    <Ionicons name="person-circle-outline" size={14} color={colors.textSecondary} />
-                    <Text style={[styles.instructorName, { color: colors.textSecondary }]} numberOfLines={1}>{item.instructor}</Text>
+                <View style={styles.cardHeaderRow}>
+                  <View style={[styles.statusTagPill, isCompleted ? styles.completedPill : styles.inProgressPill]}>
+                    <Ionicons
+                      name={isCompleted ? "checkmark-circle" : "time"}
+                      size={12}
+                      color={isCompleted ? "#059669" : "#4F46E5"}
+                    />
+                    <Text style={[styles.statusTagText, { color: isCompleted ? "#059669" : "#4F46E5" }]}>
+                      {isCompleted ? "Completed 🏆" : "In Progress"}
+                    </Text>
                   </View>
+                  <Text style={styles.categoryBadgeText}>{item.category || 'Course'}</Text>
+                </View>
 
-                  <View style={[styles.metaRow, { backgroundColor: colors.backgroundElement }]}>
-                    <View style={styles.metaItem}>
-                      <Ionicons name="play-circle-outline" size={14} color={colors.primary} />
-                      <Text style={[styles.metaText, { color: colors.text }]} numberOfLines={1}>{item.lessonsCount} lessons</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Ionicons name="time-outline" size={14} color={colors.primary} />
-                      <Text style={[styles.metaText, { color: colors.text }]} numberOfLines={1}>{item.duration}</Text>
-                    </View>
-                  </View>
+                <View style={styles.cardBody}>
+                  <Image source={{ uri: imgUri }} style={styles.cardThumbnail} resizeMode="cover" />
+                  
+                  <View style={styles.cardDetails}>
+                    <Text style={styles.cardCourseTitle} numberOfLines={2}>
+                      {item.title}
+                    </Text>
 
-                  {/* Integrated Progress Bar & Resume Button */}
-                  <View style={styles.actionRow}>
-                    <View style={styles.progressContainer}>
-                      <View style={styles.progressLabels}>
-                        <Text style={[styles.progressPctText, { color: colors.text }]}>{progress}% Completed</Text>
-                      </View>
-                      <View style={[styles.progressBg, { backgroundColor: colors.backgroundSelected }]}>
-                        <View style={[
-                          styles.progressFill,
-                          { width: `${progress}%`, backgroundColor: isCompleted ? '#10B981' : colors.primary }
-                        ]} />
-                      </View>
-                    </View>
-
-                    <TouchableOpacity
-                      style={[styles.resumeBtn, { backgroundColor: colors.primary }, isCompleted && styles.resumeBtnCompleted]}
-                      onPress={() => onResumeCourse(item.id)}
-                    >
-                      <Ionicons
-                        name={progress === 0 ? "play" : isCompleted ? "checkmark-circle" : "refresh"}
-                        size={16}
-                        color="#FFFFFF"
-                      />
-                      <Text style={styles.resumeBtnText}>
-                        {progress === 0 ? 'Start' : isCompleted ? 'Review' : 'Resume'}
+                    <View style={styles.instructorMetaRow}>
+                      <Ionicons name="person" size={12} color="#64748B" />
+                      <Text style={styles.instructorMetaText} numberOfLines={1}>
+                        {item.instructor || 'Instructor'}
                       </Text>
-                    </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.durationLessonRow}>
+                      <Text style={styles.metaChipText}>🕒 {item.duration || '2h 30m'}</Text>
+                      <Text style={styles.metaChipDot}>•</Text>
+                      <Text style={styles.metaChipText}>📖 {item.lessonsCount || 10} lessons</Text>
+                    </View>
                   </View>
+                </View>
+
+                <View style={styles.progressCtaRow}>
+                  <View style={styles.progressTrackWrapper}>
+                    <View style={styles.progressLabelRow}>
+                      <Text style={styles.progressPercentText}>{progress}% Complete</Text>
+                    </View>
+                    <View style={styles.progressBarTrack}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            width: `${progress}%`,
+                            backgroundColor: isCompleted ? '#10B981' : '#4F46E5',
+                          }
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.ctaButton, isCompleted ? styles.ctaButtonCompleted : styles.ctaButtonActive]}
+                    onPress={() => onResumeCourse(item.id)}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons
+                      name={progress === 0 ? "play" : isCompleted ? "refresh" : "play-forward"}
+                      size={15}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.ctaButtonText}>
+                      {progress === 0 ? 'Start' : isCompleted ? 'Revisit' : 'Resume'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             );
           }}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              {loading ? (
-                <ActivityIndicator size="large" color={colors.primary} />
-              ) : (
-                <View style={[styles.emptyCard, { backgroundColor: colors.background }]}>
-                  <View style={[styles.emptyIconBg, { backgroundColor: colors.backgroundElement }]}>
-                    <Ionicons name="book-outline" size={48} color={colors.primary} />
-                  </View>
-                  <Text style={[styles.emptyTitle, { color: colors.text }]}>No Enrolled Courses</Text>
-                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{"You haven't enrolled in any courses yet. Discover our premium live classes and enhance your skills."}</Text>
-                  <TouchableOpacity style={[styles.exploreBtn, { backgroundColor: colors.primary }]} onPress={onExploreCourses}>
-                    <Text style={styles.exploreBtnText}>Explore Courses</Text>
-                    <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          }
         />
       </View>
     </View>
@@ -250,155 +367,251 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F8FAFC',
   },
   headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 220,
-    backgroundColor: '#1E3A8A',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    height: 250,
+    backgroundColor: '#4F46E5',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   safeAreaWrapper: {
     flex: 1,
   },
   headerContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
     paddingTop: 10,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 3,
+    letterSpacing: 0.3,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)',
     fontWeight: '500',
+    marginBottom: 12,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 46,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#0F172A',
+  },
+  statsStrip: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  statPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EEF2FF',
+    borderColor: '#C7D2FE',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  statPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4F46E5',
+  },
+  filterBar: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+  },
+  filterChipActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  filterChipTextActive: {
+    color: '#4F46E5',
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 40,
-    paddingTop: 10,
+    paddingTop: 8,
   },
-  courseCard: {
+  formattedCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 4,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  courseImage: {
-    width: '100%',
-    height: 140,
-    backgroundColor: '#E5E7EB',
-    resizeMode: 'cover',
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  courseDetails: {
-    padding: 20,
-  },
-  courseTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 8,
-    lineHeight: 22,
-  },
-  instructorRow: {
+  statusTagPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  instructorName: {
-    fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '500',
+  inProgressPill: {
+    backgroundColor: '#EEF2FF',
   },
-  metaRow: {
+  completedPill: {
+    backgroundColor: '#ECFDF5',
+  },
+  statusTagText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  cardBody: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 14,
+  },
+  cardThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 14,
+    backgroundColor: '#E2E8F0',
+  },
+  cardDetails: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  cardCourseTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  instructorMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    backgroundColor: '#F9FAFB',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 20,
+    gap: 4,
+    marginBottom: 4,
   },
-  metaItem: {
+  instructorMetaText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  durationLessonRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  metaText: {
-    fontSize: 12,
-    color: '#4B5563',
-    fontWeight: '600',
+  metaChipText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
   },
-  actionRow: {
+  metaChipDot: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  progressCtaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
-  progressContainer: {
+  progressTrackWrapper: {
     flex: 1,
   },
-  progressLabels: {
+  progressLabelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  progressPctText: {
-    fontSize: 12,
+  progressPercentText: {
+    fontSize: 11,
     fontWeight: '800',
-    color: '#374151',
+    color: '#475569',
   },
-  progressBg: {
+  progressBarTrack: {
     height: 6,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     borderRadius: 3,
     overflow: 'hidden',
   },
-  progressFill: {
+  progressBarFill: {
     height: '100%',
     borderRadius: 3,
   },
-  resumeBtn: {
+  ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1E3A8A',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderRadius: 12,
-    gap: 6,
-    minWidth: 100,
+    elevation: 2,
   },
-  resumeBtnCompleted: {
+  ctaButtonActive: {
+    backgroundColor: '#4F46E5',
+  },
+  ctaButtonCompleted: {
     backgroundColor: '#10B981',
   },
-  resumeBtnText: {
-    fontSize: 13,
-    fontWeight: 'bold',
+  ctaButtonText: {
     color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
   emptyContainer: {
-    paddingTop: 40,
-    alignItems: 'center',
-  },
-  emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 32,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },

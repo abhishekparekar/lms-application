@@ -12,6 +12,7 @@ import {
   TextInput,
   ActivityIndicator,
   Linking,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { jobService, JobApplication } from '@/services/jobs/jobService';
 import { db } from '@/services/firebase/config';
 import { collection, doc, onSnapshot, query, where, getDocs, setDoc } from 'firebase/firestore';
+import * as ImagePicker from 'expo-image-picker';
 
 // Profile Wizard Steps
 import { Step1Personal } from './SeekerProfileBuilder/Step1Personal';
@@ -39,6 +41,7 @@ interface ProfileScreenProps {
   onLogout: () => void;
   onSavedJobsPress?: () => void;
   onPostJobPress?: () => void;
+  onResumeBuilderPress?: () => void;
 }
 
 type Section = 'home' | 'builder';
@@ -108,6 +111,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onLogout,
   onSavedJobsPress,
   onPostJobPress,
+  onResumeBuilderPress,
 }) => {
   const { user, updateProfile, switchRoleMode } = useAuth();
   const isSeeker = user?.role === 'seeker';
@@ -133,14 +137,41 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     return () => unsub();
   }, []);
 
-  // ── Modals state ────────────────────────────────────────
+  // ── Tab & Modals state ────────────────────────────────────────
+  const [profileActiveTab, setProfileActiveTab] = useState<'overview' | 'applications' | 'tools'>('overview');
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [recruiterApps, setRecruiterApps] = useState<JobApplication[]>([]);
   const [recruiterAppsLoading, setRecruiterAppsLoading] = useState(false);
   const [recruiterAppsModalVisible, setRecruiterAppsModalVisible] = useState(false);
+  const [appsModalVisible, setAppsModalVisible] = useState(false);
   const [companyFromCollection, setCompanyFromCollection] = useState<any>(null);
+
+  // ── Certificates state ──────────────────────────────────
+  const [certificatesList, setCertificatesList] = useState<any[]>([]);
+  const [certModalVisible, setCertModalVisible] = useState(false);
+  const [certsLoading, setCertsLoading] = useState(false);
+
+  const fetchCertificates = async () => {
+    if (!user?.uid) return;
+    try {
+      setCertsLoading(true);
+      const q = query(collection(db, 'certificates'), where('userId', '==', user.uid));
+      const snap = await getDocs(q);
+      const list: any[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      setCertificatesList(list);
+    } catch (e) {
+      console.warn('Failed to fetch certificates:', e);
+    } finally {
+      setCertsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCertificates();
+  }, [user?.uid]);
 
   // ── Wizard state ────────────────────────────────────────
   const [section, setSection] = useState<Section>('home');
@@ -437,17 +468,60 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  // ── Simulated Image Upload from Library ──────────────────
-  const simulateImageUpload = () => {
-    setUploadingImage(true);
-    setTimeout(async () => {
+  // ── Device Gallery Image Pick & Upload ──────────────────
+  const pickImageFromGallery = async () => {
+    try {
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e: any) => {
+          const file = e.target?.files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = async (evt: any) => {
+              const dataUrl = evt.target?.result;
+              if (dataUrl) {
+                setUploadingImage(true);
+                await selectAvatar(dataUrl);
+                setUploadingImage(false);
+                Alert.alert('🎉 Profile Photo Updated!', 'Your new profile picture has been saved.');
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+        input.click();
+        return;
+      }
+
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'Please allow access to your media library to select a profile picture.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const imageUrl = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+        
+        setUploadingImage(true);
+        await selectAvatar(imageUrl);
+        setUploadingImage(false);
+        Alert.alert('🎉 Profile Photo Updated!', 'Your new profile picture has been saved.');
+      }
+    } catch (e: any) {
       setUploadingImage(false);
-      // Pick a random gorgeous portrait URL as simulation
-      const randomId = Math.floor(Math.random() * 100);
-      const url = `https://randomuser.me/api/portraits/men/${randomId}.jpg`;
-      await selectAvatar(url);
-      Alert.alert('🎉 Success', 'Image uploaded successfully from your device library.');
-    }, 2000);
+      Alert.alert('Photo Upload Error', e.message || 'Could not pick image from gallery.');
+    }
   };
 
   const openQuickEdit = () => {
@@ -665,45 +739,54 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   // Menu sections
   const seekerMenu = [
     {
-      title: 'Career Tools',
+      title: 'Career & Learning Tools',
       items: [
         {
-          icon: 'construct-outline' as const,
-          label: user?.profileCompleted ? 'Edit Profile Builder' : 'Start Profile Builder',
-          sub: user?.profileCompleted ? 'Update your professional profile' : '8 quick steps to get hired',
+          icon: 'briefcase-outline' as const,
+          label: 'Applied Jobs History',
+          sub: applications.length > 0 ? `${applications.length} active application(s) tracked` : 'View your job applications & status',
           color: '#4F46E5',
-          onPress: () => { setStep(1); setSection('builder'); },
+          onPress: () => {
+            fetchApplications();
+            setAppsModalVisible(true);
+          },
+        },
+        {
+          icon: 'document-text-outline' as const,
+          label: 'ATS Resume Builder & Generator',
+          sub: 'Generate, edit & download corporate PDF resume',
+          color: '#10B981',
+          onPress: onResumeBuilderPress || (() => { setStep(1); setSection('builder'); }),
         },
         ...(isJobsVisible ? [{
           icon: 'bookmark-outline' as const,
-          label: 'Saved Jobs',
-          sub: 'View bookmarked opportunities',
+          label: 'Saved Opportunities',
+          sub: 'View bookmarked jobs',
           color: '#D97706',
           onPress: onSavedJobsPress || (() => Alert.alert('Saved Jobs', 'No saved jobs yet.')),
         }] : []),
         {
           icon: 'ribbon-outline' as const,
-          label: 'My Certificates',
-          sub: 'View earned certificates',
+          label: 'My Course Certificates',
+          sub: certificatesList.length > 0 ? `${certificatesList.length} certificate(s) earned` : 'View earned certificates',
           color: '#DB2777',
-          onPress: onViewCertificates,
+          onPress: () => {
+            if (onViewCertificates) {
+              onViewCertificates();
+            }
+            fetchCertificates();
+            setCertModalVisible(true);
+          },
         },
       ],
     },
     {
-      title: 'Account & Plans',
+      title: 'Support & Security',
       items: [
-        {
-          icon: 'card-outline' as const,
-          label: 'Subscription Plans',
-          sub: isJobsVisible ? 'Upgrade to apply unlimited jobs' : 'Upgrade your learning plan limits',
-          color: '#7C3AED',
-          onPress: onViewSubscription,
-        },
         {
           icon: 'help-circle-outline' as const,
           label: 'Help & Support',
-          sub: 'Contact our team',
+          sub: 'Contact our support team',
           color: '#6B7280',
           onPress: () => Alert.alert('Support', 'Email: support@ganimikawa.in'),
         },
@@ -735,14 +818,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       ],
     },
     {
-      title: 'Account',
+      title: 'Support & Security',
       items: [
         {
-          icon: 'card-outline' as const,
-          label: 'Subscription Plans',
-          sub: 'Upgrade your recruiter plan',
-          color: '#7C3AED',
-          onPress: onViewSubscription,
+          icon: 'help-circle-outline' as const,
+          label: 'Help & Support',
+          sub: 'Contact our support team',
+          color: '#6B7280',
+          onPress: () => Alert.alert('Support', 'Email: support@ganimikawa.in'),
         },
       ],
     },
@@ -824,31 +907,24 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         </View>
 
-        {/* ── Seeker Stats strip ────────────────────────────── */}
+        {/* ── Seeker Stats Card ────────────────────────────── */}
         {isSeeker && (
           <View style={styles.statsCard}>
             <View style={styles.statsRow}>
               {/* Completeness Ring */}
               <CompletenessRing pct={completeness} />
-
               <View style={styles.statsDivider} />
-
-              {/* Quick stats */}
               <View style={styles.statsRight}>
                 <View style={styles.statRow}>
                   <Ionicons name="briefcase-outline" size={14} color="#4F46E5" />
                   <Text style={styles.statRowText}>
-                    {hasExp
-                      ? `${(user?.seekerProfile?.experience || []).length} Experience(s)`
-                      : 'No experience added'}
+                    {hasExp ? `${(user?.seekerProfile?.experience || []).length} Experience(s)` : 'No experience added'}
                   </Text>
                 </View>
                 <View style={styles.statRow}>
                   <Ionicons name="school-outline" size={14} color="#059669" />
                   <Text style={styles.statRowText}>
-                    {hasEdu
-                      ? `${(user?.seekerProfile?.education || []).length} Education(s)`
-                      : 'No education added'}
+                    {hasEdu ? `${(user?.seekerProfile?.education || []).length} Education(s)` : 'No education added'}
                   </Text>
                 </View>
                 <View style={styles.statRow}>
@@ -866,7 +942,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </View>
             </View>
 
-            {/* Completeness bar */}
+            {/* Completeness Nudge Button */}
             {completeness < 100 && (
               <TouchableOpacity
                 style={styles.completeNudge}
@@ -876,7 +952,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <Ionicons name="rocket-outline" size={15} color="#4F46E5" />
                 <Text style={styles.completeNudgeText}>
                   {completeness === 0
-                    ? 'Start Profile Builder to get hired!'
+                    ? 'Start 8-Step Profile Builder to get hired!'
                     : completeness < 80
                     ? `${80 - completeness}% more needed to apply for jobs`
                     : `${100 - completeness}% more to reach 100%`}
@@ -887,91 +963,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         )}
 
-        {/* ── Applied Jobs History Section ─────────────────── */}
-        {isSeeker && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Applied Jobs History ({applications.length})</Text>
-              <TouchableOpacity onPress={fetchApplications} style={styles.refreshBtn}>
-                <Ionicons name="refresh" size={16} color="#4F46E5" />
-              </TouchableOpacity>
-            </View>
-
-            {appsLoading ? (
-              <View style={styles.loadingBox}>
-                <ActivityIndicator size="small" color="#4F46E5" />
-                <Text style={styles.loadingText}>Loading applications...</Text>
-              </View>
-            ) : applications.length === 0 ? (
-              <View style={styles.emptyAppsCard}>
-                <Ionicons name="briefcase-outline" size={28} color="#9CA3AF" />
-                <Text style={styles.emptyAppsTitle}>No Applications Yet</Text>
-                <Text style={styles.emptyAppsSub}>Apply to jobs and they will be listed here.</Text>
-              </View>
-            ) : (
-              <View style={styles.appsList}>
-                {applications.map((app) => {
-                  const statusColors: Record<string, { bg: string, txt: string }> = {
-                    pending: { bg: '#FEF3C7', txt: '#D97706' },
-                    reviewing: { bg: '#EEF2FF', txt: '#4F46E5' },
-                    interviewing: { bg: '#F3E8FF', txt: '#7C3AED' },
-                    accepted: { bg: '#D1FAE5', txt: '#059669' },
-                    rejected: { bg: '#FEE2E2', txt: '#DC2626' },
-                  };
-                  const colors = statusColors[app.status] || { bg: '#F3F4F6', txt: '#374151' };
-
-                  return (
-                    <View key={app.id} style={styles.appCard}>
-                      <View style={styles.appCardHeader}>
-                        <View style={styles.appCompanyLogo}>
-                          <Text style={styles.logoLetter}>
-                            {app.company ? app.company[0].toUpperCase() : 'J'}
-                          </Text>
-                        </View>
-                        <View style={styles.appHeaderInfo}>
-                          <Text style={styles.appJobTitle} numberOfLines={1}>{app.jobTitle || 'Job'}</Text>
-                          <Text style={styles.appCompanyName}>{app.company || '—'}</Text>
-                        </View>
-                        <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
-                          <Text style={[styles.statusText, { color: colors.txt }]}>
-                            {(app.status || 'pending').toUpperCase()}
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.appCardFooter}>
-                        <View style={styles.appDateRow}>
-                          <Ionicons name="calendar-outline" size={13} color="#9CA3AF" />
-                          <Text style={styles.appDateText}>Applied on {app.appliedDate}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* ── Skills preview ──────────────────────────────── */}
+        {/* ── Skills Preview ──────────────────────────────── */}
         {isSeeker && skills.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Skills</Text>
+              <Text style={styles.sectionTitle}>Skills & Expertise</Text>
               <TouchableOpacity onPress={() => { setStep(6); setSection('builder'); }}>
-                <Text style={styles.sectionEdit}>Edit</Text>
+                <Text style={styles.sectionEdit}>Edit Skills</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.skillsWrap}>
-              {skills.slice(0, 8).map((sk) => (
+              {skills.map((sk) => (
                 <View key={sk} style={styles.skillChip}>
                   <Text style={styles.skillChipText}>{sk}</Text>
                 </View>
               ))}
-              {skills.length > 8 && (
-                <View style={[styles.skillChip, styles.skillChipMore]}>
-                  <Text style={styles.skillChipText}>+{skills.length - 8} more</Text>
-                </View>
-              )}
             </View>
           </View>
         )}
@@ -984,7 +990,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <TouchableOpacity onPress={openQuickEdit}>
                 <View style={styles.editRow}>
                   <Ionicons name="create-outline" size={14} color="#4F46E5" />
-                  <Text style={styles.sectionEdit}>Edit Info</Text>
+                  <Text style={styles.sectionEdit}>Edit Bio</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -999,7 +1005,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         )}
 
-        {/* ── Recruiter Company Profile details ──────────────── */}
+        {/* ── Recruiter Company Profile Details ──────────────── */}
         {!isSeeker && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -1106,7 +1112,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         )}
 
-        {/* ── Account Info summary ─────────────────────────── */}
+        {/* ── Account Info Summary ─────────────────────────── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Info</Text>
           {infoItems.map((item) => (
@@ -1122,7 +1128,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           ))}
         </View>
 
-        {/* ── Menu sections ───────────────────────────────── */}
+        {/* ── Menu Sections (Career & Account Tools) ───────── */}
         {menu.map((group) => (
           <View key={group.title} style={styles.section}>
             <Text style={styles.sectionTitle}>{group.title}</Text>
@@ -1151,7 +1157,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         ))}
 
-        {/* ── Logout ──────────────────────────────────────── */}
+        {/* ── Logout Button ─────────────────────────────────── */}
         <TouchableOpacity
           style={styles.logoutBtn}
           onPress={() =>
@@ -1188,15 +1194,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <ScrollView contentContainerStyle={styles.avatarModalContent}>
               <TouchableOpacity 
                 style={styles.uploadLibraryBtn} 
-                onPress={simulateImageUpload}
+                onPress={pickImageFromGallery}
                 disabled={uploadingImage}
               >
                 {uploadingImage ? (
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <>
-                    <Ionicons name="cloud-upload" size={20} color="#ffffff" />
-                    <Text style={styles.uploadLibraryText}>Upload from Phone Gallery</Text>
+                    <Ionicons name="images" size={20} color="#ffffff" />
+                    <Text style={styles.uploadLibraryText}>Upload from Device Gallery 🖼️</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -1588,6 +1594,162 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </View>
       </Modal>
 
+      {/* ── MODAL: Applied Jobs History (Candidate View) ── */}
+      <Modal
+        visible={appsModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setAppsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.editModalContainer}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="briefcase" size={22} color="#4F46E5" />
+                <Text style={styles.modalTitle}>Applied Jobs History ({applications.length})</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <TouchableOpacity onPress={fetchApplications} style={styles.refreshBtn}>
+                  <Ionicons name="refresh" size={18} color="#4F46E5" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setAppsModalVisible(false)}>
+                  <Ionicons name="close" size={24} color="#374151" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <ScrollView contentContainerStyle={{ padding: 16 }}>
+              {appsLoading ? (
+                <View style={styles.loadingBox}>
+                  <ActivityIndicator size="small" color="#4F46E5" />
+                  <Text style={styles.loadingText}>Loading applications...</Text>
+                </View>
+              ) : applications.length === 0 ? (
+                <View style={styles.emptyAppsCard}>
+                  <Ionicons name="briefcase-outline" size={32} color="#9CA3AF" />
+                  <Text style={styles.emptyAppsTitle}>No Applications Yet</Text>
+                  <Text style={styles.emptyAppsSub}>Apply to jobs and they will be listed here.</Text>
+                </View>
+              ) : (
+                <View style={styles.appsList}>
+                  {applications.map((app) => {
+                    const statusColors: Record<string, { bg: string, txt: string }> = {
+                      pending: { bg: '#FEF3C7', txt: '#D97706' },
+                      reviewing: { bg: '#EEF2FF', txt: '#4F46E5' },
+                      interviewing: { bg: '#F3E8FF', txt: '#7C3AED' },
+                      accepted: { bg: '#D1FAE5', txt: '#059669' },
+                      rejected: { bg: '#FEE2E2', txt: '#DC2626' },
+                    };
+                    const colors = statusColors[app.status] || { bg: '#F3F4F6', txt: '#374151' };
+
+                    return (
+                      <View key={app.id} style={styles.appCard}>
+                        <View style={styles.appCardHeader}>
+                          <View style={styles.appCompanyLogo}>
+                            <Text style={styles.logoLetter}>
+                              {app.company ? app.company[0].toUpperCase() : 'J'}
+                            </Text>
+                          </View>
+                          <View style={styles.appHeaderInfo}>
+                            <Text style={styles.appJobTitle} numberOfLines={1}>{app.jobTitle || 'Job'}</Text>
+                            <Text style={styles.appCompanyName}>{app.company || '—'}</Text>
+                          </View>
+                          <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
+                            <Text style={[styles.statusText, { color: colors.txt }]}>
+                              {(app.status || 'pending').toUpperCase()}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.appCardFooter}>
+                          <View style={styles.appDateRow}>
+                            <Ionicons name="calendar-outline" size={13} color="#9CA3AF" />
+                            <Text style={styles.appDateText}>Applied on {app.appliedDate}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── MODAL: Certificate History ── */}
+      <Modal
+        visible={certModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setCertModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.editModalContainer}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="ribbon" size={22} color="#DB2777" />
+                <Text style={styles.modalTitle}>My Certificate History</Text>
+              </View>
+              <TouchableOpacity onPress={() => setCertModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={{ padding: 16 }}>
+              {certsLoading ? (
+                <View style={styles.loadingBox}>
+                  <ActivityIndicator size="small" color="#DB2777" />
+                  <Text style={styles.loadingText}>Loading certificates...</Text>
+                </View>
+              ) : certificatesList.length === 0 ? (
+                <View style={styles.emptyAppsCard}>
+                  <Ionicons name="ribbon-outline" size={32} color="#9CA3AF" />
+                  <Text style={styles.emptyAppsTitle}>No Certificates Earned Yet</Text>
+                  <Text style={styles.emptyAppsSub}>Complete course lessons and quizzes to earn verified certificates.</Text>
+                </View>
+              ) : (
+                <View style={{ gap: 12 }}>
+                  {certificatesList.map((cert) => (
+                    <View key={cert.id} style={{
+                      backgroundColor: '#FFF1F2',
+                      borderRadius: 16,
+                      padding: 16,
+                      borderWidth: 1,
+                      borderColor: '#FECDD3',
+                    }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#DB2777', alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="ribbon" size={20} color="#FFFFFF" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 16, fontWeight: '800', color: '#881337' }}>
+                            {cert.courseTitle || 'Certificate of Completion'}
+                          </Text>
+                          <Text style={{ fontSize: 12, color: '#9F1239', fontWeight: '600' }}>
+                            Credential ID: {cert.credentialId || cert.id}
+                          </Text>
+                        </View>
+                      </View>
+                      
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderColor: '#FFE4E6' }}>
+                        <Text style={{ fontSize: 12, color: '#BE123C' }}>
+                          📅 Issued: {cert.issuedDate || 'N/A'}
+                        </Text>
+                        {cert.score !== undefined && (
+                          <Text style={{ fontSize: 12, fontWeight: '800', color: '#047857' }}>
+                            Score: {cert.score}% ✓
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -1598,32 +1760,78 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
 
+  // ── Tab Bar ───────────────────────────────────────────────
+  profileTabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: -22,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    elevation: 4,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  profileTabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  profileTabBtnActive: {
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  profileTabTxt: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  profileTabTxtActive: {
+    color: '#4F46E5',
+    fontWeight: '800',
+  },
+
   // ── Hero ──────────────────────────────────────────────────
   heroHeader: {
     alignItems: 'center',
-    backgroundColor: '#4F46E5',
-    paddingTop: 40,
-    paddingBottom: 48,
+    backgroundColor: '#FFFFFF',
+    paddingTop: 24,
+    paddingBottom: 24,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    borderBottomWidth: 1,
+    borderColor: '#E2E8F0',
+    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
   },
   avatarWrap: { position: 'relative', marginBottom: 12 },
   avatarCircle: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    backgroundColor: '#ffffff',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#E0E7FF',
+    borderColor: '#4F46E5',
     overflow: 'hidden',
   },
   avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
   },
   avatarText: { fontSize: 32, fontWeight: '900', color: '#4F46E5' },
   avatarEditBtn: {
@@ -1642,11 +1850,11 @@ const styles = StyleSheet.create({
   heroName: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#ffffff',
+    color: '#0F172A',
     marginBottom: 4,
     letterSpacing: -0.3,
   },
-  heroEmail: { fontSize: 14, color: '#E0E7FF', marginBottom: 10, fontWeight: '500' },
+  heroEmail: { fontSize: 14, color: '#64748B', marginBottom: 10, fontWeight: '500' },
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1655,15 +1863,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
   },
-  roleBadgeSeeker: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  roleBadgeRecruiter: { backgroundColor: '#10B981' },
-  roleBadgeText: { fontSize: 12, fontWeight: '800', color: '#ffffff' },
+  roleBadgeSeeker: { backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#C7D2FE' },
+  roleBadgeRecruiter: { backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#A7F3D0' },
+  roleBadgeText: { fontSize: 12, fontWeight: '800', color: '#4F46E5' },
 
   // ── Stats card ────────────────────────────────────────────
   statsCard: {
     backgroundColor: '#ffffff',
     marginHorizontal: 16,
-    marginTop: -28,
+    marginTop: 16,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
