@@ -15,6 +15,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
 import { jobService, JobApplication } from '@/services/jobs/jobService';
@@ -857,6 +858,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar style="light" />
+      <View style={styles.topHeaderBar}>
+        <Text style={styles.topHeaderBarTitle}>My Profile</Text>
+      </View>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -1756,8 +1761,23 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
 // ─────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F9FC' },
-  scroll: { flex: 1 },
+  safe: { flex: 1, backgroundColor: '#4F46E5' },
+  topHeaderBar: {
+    height: 52,
+    backgroundColor: '#4F46E5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#4338CA',
+  },
+  topHeaderBarTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3,
+  },
+  scroll: { flex: 1, backgroundColor: '#F8F9FC' },
   scrollContent: { paddingBottom: 100 },
 
   // ── Tab Bar ───────────────────────────────────────────────

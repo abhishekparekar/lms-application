@@ -14,6 +14,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -452,10 +453,11 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: '#4F46E5' }]} edges={['top']}>
+      <StatusBar style="light" />
       {/* Top Header */}
       <View style={styles.headerBar}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>ATS Resume Builder</Text>
+        <Text style={styles.headerTitle}>ATS Resume Builder</Text>
       </View>
 
       {/* Segmented Mode Selector: Edit Form vs Preview */}
@@ -942,12 +944,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#4338CA',
+    backgroundColor: '#4F46E5',
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   tabBar: {
     flexDirection: 'row',

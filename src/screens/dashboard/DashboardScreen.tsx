@@ -25,6 +25,7 @@ import {
   Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_W = SCREEN_WIDTH * 0.75;
@@ -485,6 +486,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar style="light" />
       {/* Header Bar */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
@@ -2175,7 +2177,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#4F46E5',
   },
   container: {
     flex: 1,
@@ -2189,10 +2191,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#4338CA',
   },
   logoRow: {
     flexDirection: 'row',
@@ -2208,14 +2210,14 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#4338CA',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoText: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#4F46E5',
+    fontWeight: '900',
+    color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   logoutBtn: {

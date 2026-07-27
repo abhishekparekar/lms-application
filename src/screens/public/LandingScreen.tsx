@@ -954,48 +954,6 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
           <Text style={styles.footerCtaBtnText}>ॲप सुरू करा — एकदम फ्री!</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Dark Footer Bar */}
-      <View style={styles.compactFooter}>
-        {/* Brand Row */}
-        <View style={styles.compactFooterBrand}>
-          <Image
-            source={require('../../assets/images/logoimg22.png')}
-            style={styles.compactFooterLogo}
-            resizeMode="contain"
-          />
-          <View>
-            <Text style={styles.compactFooterName}>Ganimi Kava</Text>
-            <Text style={styles.compactFooterTagline}>Strategic Learning & Placement</Text>
-          </View>
-        </View>
-
-        {/* Divider */}
-        <View style={styles.footerDivider} />
-
-        {/* Links */}
-        <View style={styles.compactFooterLinks}>
-          <TouchableOpacity onPress={onLoginPress} activeOpacity={0.7}>
-            <Text style={styles.compactFooterLink}>Privacy Policy</Text>
-          </TouchableOpacity>
-          <Text style={styles.compactFooterDot}>·</Text>
-          <TouchableOpacity onPress={onLoginPress} activeOpacity={0.7}>
-            <Text style={styles.compactFooterLink}>Terms of Service</Text>
-          </TouchableOpacity>
-          <Text style={styles.compactFooterDot}>·</Text>
-          <TouchableOpacity
-            onPress={() => Alert.alert('Contact Support', 'Email: support@ganimikawa.in')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.compactFooterLink}>Support</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Copyright */}
-        <Text style={styles.compactFooterCopyright}>
-          © 2026 Ganimi Kava · All Rights Reserved
-        </Text>
-      </View>
     </View>
   );
 
