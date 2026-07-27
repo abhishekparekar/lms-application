@@ -1005,7 +1005,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   // ── Main Render ───────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
       {renderNavbar()}
       <ScrollView
         style={styles.scroll}
@@ -1037,7 +1037,7 @@ const CARD_W = SCREEN_WIDTH * 0.72;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#4F46E5',
   },
 
   // ── Navbar
