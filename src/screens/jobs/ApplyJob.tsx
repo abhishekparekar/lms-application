@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { StatusBar as RNStatusBar } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/hooks/useAuth';
 import { jobService, Job } from '@/services/jobs/jobService';
 import { Colors } from '@/constants/theme';
@@ -39,6 +41,14 @@ export const ApplyJob: React.FC<ApplyJobProps> = ({
 
   const [job, setJob] = useState<Job | null>(null);
   const [loadingJob, setLoadingJob] = useState(true);
+
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content');
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5');
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
 
   // Auto-Fetched Seeker Profile Fields
   const [candidateName, setCandidateName] = useState('');
@@ -277,18 +287,20 @@ export const ApplyJob: React.FC<ApplyJobProps> = ({
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
       <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+        style={{ flex: 1, backgroundColor: colors.background }} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Top Header */}
         <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.headerBackButton} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
-            <Text style={[styles.headerBackText, { color: colors.text }]}>Back</Text>
+          <TouchableOpacity onPress={onBack} style={styles.headerBackButton} activeOpacity={0.75}>
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            <Text style={styles.headerBackText}>Back</Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
             Job Application
           </Text>
           <View style={{ width: 50 }} />
@@ -510,11 +522,11 @@ const styles = StyleSheet.create({
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
+    height: 54,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#4338CA',
+    backgroundColor: '#4F46E5',
   },
   headerBackButton: {
     flexDirection: 'row',
@@ -522,12 +534,14 @@ const styles = StyleSheet.create({
   },
   headerBackText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#FFFFFF',
     marginLeft: 2,
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
+    color: '#FFFFFF',
     flex: 1,
     textAlign: 'center',
   },

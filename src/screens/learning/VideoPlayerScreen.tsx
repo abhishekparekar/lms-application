@@ -15,7 +15,10 @@ import {
   TouchableOpacity,
   useColorScheme,
   View,
+  Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
@@ -435,7 +438,15 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
     setProgress(0);
     setIsPlaying(false);
 
-    // For expo-video, we must explicitly replace the source when it changes (only for non-Webview direct video URLs)
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content');
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5');
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
+
+  // For expo-video, we must explicitly replace the source when it changes (only for non-Webview direct video URLs)
     if (expoPlayer && !useWV) {
       expoPlayer.replaceAsync(resolvedUrl)
         .then(() => {
@@ -593,6 +604,8 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
 
   return (
     <SafeAreaView style={[st.root, { backgroundColor: BG }]} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
 
       {/* ─── Header ────────────────────────────────────────────────── */}
       <View style={[st.header, { backgroundColor: BG, borderBottomColor: BORDER }]}>
