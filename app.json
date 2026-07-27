@@ -28,6 +28,7 @@
     },
     "android": {
       "package": "com.lmsjobportal1.app",
+      "versionCode": 1,
       "backgroundColor": "#4F46E5",
       "splash": {
         "image": "./assets/images/logoimg22.png",
