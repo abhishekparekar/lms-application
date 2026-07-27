@@ -81,7 +81,6 @@ export function AnimatedSplashOverlay() {
 
   return (
     <Animated.View style={[styles.overlayContainer, bgAnimatedStyle]} pointerEvents="none">
-      <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
       <View style={styles.contentWrap}>
         {/* Animated logo image container */}
         <Animated.View style={[logoAnimatedStyle, styles.logoCircle]}>
