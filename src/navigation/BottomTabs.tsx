@@ -5,7 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CoursesScreen } from '../screens/dashboard/CoursesScreen';
@@ -145,6 +147,14 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
     );
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setTranslucent(false);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (initialTab && initialTab !== activeTab) {
