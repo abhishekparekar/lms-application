@@ -20,6 +20,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -963,6 +964,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   // ── Main Render ───────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
       <StatusBar style="light" />
       {renderNavbar()}
       <ScrollView

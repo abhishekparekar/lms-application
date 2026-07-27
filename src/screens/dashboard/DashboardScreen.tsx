@@ -22,7 +22,8 @@ import {
   View,
   Modal,
   TextInput,
-  Linking
+  Linking,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -486,6 +487,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
       <StatusBar style="light" />
       {/* Header Bar */}
       <View style={styles.header}>

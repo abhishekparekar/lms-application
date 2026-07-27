@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -858,6 +859,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
       <StatusBar style="light" />
       <View style={styles.topHeaderBar}>
         <Text style={styles.topHeaderBarTitle}>My Profile</Text>

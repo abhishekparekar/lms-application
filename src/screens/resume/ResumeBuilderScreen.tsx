@@ -12,6 +12,7 @@ import {
   Modal,
   TextInput,
   useColorScheme,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -454,6 +455,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
       <StatusBar style="light" />
       {/* Top Header */}
       <View style={styles.headerBar}>
