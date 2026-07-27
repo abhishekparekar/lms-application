@@ -11,7 +11,10 @@ import {
   RefreshControl,
   Linking,
   Alert,
+  StatusBar as RNStatusBar,
+  Platform,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/theme';
 import { lmsService, StudyResource } from '@/services/lms/lmsService';
 import { useAuth } from '@/hooks/useAuth';
@@ -114,14 +117,25 @@ export const ResourcesScreen: React.FC = () => {
     );
   }
 
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
-      }
-    >
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
+        }
+      >
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>📂 Study Resources</Text>
@@ -232,6 +246,7 @@ export const ResourcesScreen: React.FC = () => {
         </Text>
       </View>
     </ScrollView>
+    </View>
   );
 };
 

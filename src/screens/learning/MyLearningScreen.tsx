@@ -17,6 +17,7 @@ import {
   useColorScheme,
   View,
   StatusBar as RNStatusBar,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -233,8 +234,18 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
     </View>
   );
 
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
       <FlatList
         data={filteredEnrolled}
         keyExtractor={(item) => item.id}
