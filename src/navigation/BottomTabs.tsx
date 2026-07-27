@@ -197,7 +197,10 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
           <SafeAreaView style={[styles.learningWrapper, { backgroundColor: '#4F46E5' }]} edges={['top']}>
             <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
             <StatusBar style="light" />
-            <View style={styles.segmentHeaderWrapper}>
+
+            {/* Blue Header with title and segment tabs */}
+            <View style={styles.learningHeader}>
+              <Text style={styles.learningHeaderTitle}>📚 Learning</Text>
               <View style={styles.segmentContainer}>
                 <TouchableOpacity
                   style={[
@@ -209,13 +212,13 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
                 >
                   <Ionicons
                     name={learningSubTab === 'explore' ? 'compass' : 'compass-outline'}
-                    size={18}
-                    color={learningSubTab === 'explore' ? '#4F46E5' : '#64748B'}
+                    size={16}
+                    color={learningSubTab === 'explore' ? '#4F46E5' : 'rgba(255,255,255,0.75)'}
                   />
                   <Text
                     style={[
                       styles.segmentText,
-                      learningSubTab === 'explore' && styles.segmentTextActive,
+                      learningSubTab === 'explore' ? styles.segmentTextActive : styles.segmentTextInactive,
                     ]}
                   >
                     Explore Courses
@@ -232,13 +235,13 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
                 >
                   <Ionicons
                     name={learningSubTab === 'my_learning' ? 'book' : 'book-outline'}
-                    size={18}
-                    color={learningSubTab === 'my_learning' ? '#4F46E5' : '#64748B'}
+                    size={16}
+                    color={learningSubTab === 'my_learning' ? '#4F46E5' : 'rgba(255,255,255,0.75)'}
                   />
                   <Text
                     style={[
                       styles.segmentText,
-                      learningSubTab === 'my_learning' && styles.segmentTextActive,
+                      learningSubTab === 'my_learning' ? styles.segmentTextActive : styles.segmentTextInactive,
                     ]}
                   >
                     My Learning
@@ -408,16 +411,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#4F46E5',
   },
+  learningHeader: {
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 14,
+  },
+  learningHeaderTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    letterSpacing: 0.3,
+  },
   segmentHeaderWrapper: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   segmentContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 14,
     padding: 4,
     gap: 4,
@@ -436,17 +450,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
   segmentText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748B',
   },
   segmentTextActive: {
     color: '#4F46E5',
     fontWeight: '800',
+  },
+  segmentTextInactive: {
+    color: 'rgba(255,255,255,0.80)',
   },
 });
