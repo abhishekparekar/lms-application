@@ -18,7 +18,10 @@ import {
   TouchableOpacity,
   useColorScheme,
   View,
+  StatusBar as RNStatusBar,
+  Platform,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 
 interface Props {
   onCoursePress: (courseId: string) => void;
@@ -258,6 +261,14 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
   const [refreshing, setRefreshing] = useState(false);
   const sortBy: string = 'Popular';
 
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
+
   // ── Firestore real-time ────────────────────────────────────────
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'courses'),
@@ -415,6 +426,8 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
 
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
       <ScrollView
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
