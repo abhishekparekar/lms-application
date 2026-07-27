@@ -429,6 +429,14 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
     };
   }, []);
 
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content');
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5');
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
+
   // ── sync video URL → state + WebView remount ─────────────────────────────
   useEffect(() => {
     console.log('[VideoPlayer] resolvedUrl =', resolvedUrl);
@@ -438,15 +446,7 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
     setProgress(0);
     setIsPlaying(false);
 
-  useEffect(() => {
-    RNStatusBar.setBarStyle('light-content');
-    if (Platform.OS === 'android') {
-      RNStatusBar.setBackgroundColor('#4F46E5');
-      RNStatusBar.setTranslucent(false);
-    }
-  }, []);
-
-  // For expo-video, we must explicitly replace the source when it changes (only for non-Webview direct video URLs)
+    // For expo-video, we must explicitly replace the source when it changes (only for non-Webview direct video URLs)
     if (expoPlayer && !useWV) {
       expoPlayer.replaceAsync(resolvedUrl)
         .then(() => {
