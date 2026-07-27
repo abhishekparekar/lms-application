@@ -26,7 +26,7 @@ export default function TabLayout() {
 
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={DefaultTheme}>
         <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
         <StatusBar style="light" />
         <AnimatedSplashOverlay />
