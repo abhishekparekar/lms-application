@@ -154,42 +154,46 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Background Curved Header */}
       <View style={styles.headerBackground} />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={[
-            styles.scrollContent, 
-            { paddingTop: Math.max(insets.top, 10), paddingBottom: Math.max(insets.bottom, 24) }
+            styles.scrollContent,
+            { paddingTop: Math.max(insets.top + 8, 14), paddingBottom: Math.max(insets.bottom + 30, 40) }
           ]}
           keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}
           showsVerticalScrollIndicator={false}
-          bounces={false}
+          bounces={true}
         >
-          
           {/* Top Bar with Back Button */}
           <View style={styles.topBar}>
             {onBack ? (
-              <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+              <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
                 <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             ) : <View style={{ width: 40 }} />}
           </View>
 
-          {/* Branding Section */}
+          {/* Compact Branding Section */}
           <View style={styles.brandingSection}>
-            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.authLogoImage} />
-            <Text style={styles.brandTitle}>गनिमी कावा</Text>
+            <View style={styles.logoBadgeContainer}>
+              <Image source={require('../../assets/images/logoimg22.png')} style={styles.authLogoImage} resizeMode="contain" />
+            </View>
+            <Text style={styles.brandTitle}>Ganimi Kava</Text>
             <Text style={styles.brandSubtitle}>Empowering your career journey</Text>
           </View>
 
           {/* Register Form Card */}
           <View style={styles.formCard}>
             <Text style={styles.cardTitle}>Create Account</Text>
-            <Text style={styles.cardDesc}>Fill details below to get started</Text>
+            <Text style={styles.cardDesc}>Fill in your details below to get started</Text>
 
             {/* Role/UserType Selector */}
             <Text style={styles.fieldLabel}>Join As</Text>
@@ -200,7 +204,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 activeOpacity={0.8}
               >
                 <Text style={[styles.roleEmoji, userType === 'jobseeker' && styles.roleEmojiActive]}>🎓</Text>
-                <Text style={[styles.roleText, userType === 'jobseeker' && styles.roleTextActive]}>Seeker</Text>
+                <Text style={[styles.roleText, userType === 'jobseeker' && styles.roleTextActive]}>Student</Text>
               </TouchableOpacity>
 
               {isJobsVisible && (
@@ -210,7 +214,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.roleEmoji, userType === 'employer' && styles.roleEmojiActive]}>🏢</Text>
-                  <Text style={[styles.roleText, userType === 'employer' && styles.roleTextActive]}>Recruiter</Text>
+                  <Text style={[styles.roleText, userType === 'employer' && styles.roleTextActive]}>Employer</Text>
                 </TouchableOpacity>
               )}
 
@@ -235,6 +239,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                     if (errors.firstName) setErrors({ ...errors, firstName: '' });
                   }}
                   error={errors.firstName}
+                  leftIcon="person-outline"
                   returnKeyType="next"
                   onSubmitEditing={() => lastNameRef.current?.focus()}
                   containerStyle={styles.inputContainer}
@@ -252,6 +257,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                     if (errors.lastName) setErrors({ ...errors, lastName: '' });
                   }}
                   error={errors.lastName}
+                  leftIcon="person-outline"
                   returnKeyType="next"
                   onSubmitEditing={() => emailRef.current?.focus()}
                   containerStyle={styles.inputContainer}
@@ -271,6 +277,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               }}
               error={errors.email}
               keyboardType="email-address"
+              leftIcon="mail-outline"
               autoCapitalize="none"
               returnKeyType="next"
               onSubmitEditing={() => phoneRef.current?.focus()}
@@ -288,6 +295,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 if (errors.phone) setErrors({ ...errors, phone: '' });
               }}
               error={errors.phone}
+              leftIcon="call-outline"
               keyboardType="number-pad"
               maxLength={10}
               returnKeyType="next"
@@ -306,6 +314,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 if (errors.password) setErrors({ ...errors, password: '' });
               }}
               error={errors.password}
+              leftIcon="lock-closed-outline"
               secureTextEntry
               returnKeyType="next"
               onSubmitEditing={() => confirmPasswordRef.current?.focus()}
@@ -323,6 +332,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                 if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: '' });
               }}
               error={errors.confirmPassword}
+              leftIcon="shield-checkmark-outline"
               secureTextEntry
               returnKeyType="next"
               onSubmitEditing={() => referralRef.current?.focus()}
@@ -336,6 +346,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
               placeholder="Franchise or Agent code"
               value={referralCode}
               onChangeText={setReferralCode}
+              leftIcon="gift-outline"
               autoCapitalize="characters"
               returnKeyType="done"
               onSubmitEditing={handleRegister}
@@ -355,7 +366,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
           {/* Bottom Login Link */}
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Already have an account? </Text>
-            <TouchableOpacity onPress={onLoginPress}>
+            <TouchableOpacity onPress={onLoginPress} activeOpacity={0.7}>
               <Text style={styles.signupLink}>Log In</Text>
             </TouchableOpacity>
           </View>
@@ -368,135 +379,136 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F8FAFC',
   },
   headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 250,
-    backgroundColor: '#1E3A8A',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    height: 240,
+    backgroundColor: '#4F46E5',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
   },
   topBar: {
-    height: 48,
+    height: 40,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   backBtn: {
-    padding: 8,
-    marginLeft: -8,
+    padding: 6,
+    marginLeft: -6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   brandingSection: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 14,
+  },
+  logoBadgeContainer: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    marginBottom: 8,
   },
   authLogoImage: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    marginBottom: 8,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
-  },
-  logoCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
   },
   brandTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 2,
+    letterSpacing: 0.2,
   },
   brandSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   formCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 4,
-    marginBottom: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.8)',
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 4,
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 3,
   },
   cardDesc: {
     fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 16,
+    color: '#64748B',
+    marginBottom: 14,
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '700',
+    color: '#334155',
     marginBottom: 8,
   },
   roleSelector: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   roleOption: {
     flex: 1,
-    height: 44,
+    height: 42,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#F9FAFB',
+    gap: 5,
+    backgroundColor: '#F8FAFC',
   },
   roleOptionActive: {
-    borderColor: '#1E3A8A',
-    backgroundColor: '#EFF6FF',
+    borderColor: '#4F46E5',
+    backgroundColor: '#EEF2FF',
   },
   roleEmoji: {
     fontSize: 14,
-    opacity: 0.6,
+    opacity: 0.7,
   },
   roleEmojiActive: {
     opacity: 1,
   },
   roleText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#64748B',
   },
   roleTextActive: {
-    color: '#1E3A8A',
-    fontWeight: 'bold',
+    color: '#4F46E5',
+    fontWeight: '800',
   },
   rowInputs: {
     flexDirection: 'row',
@@ -505,38 +517,44 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   modernInput: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
     borderWidth: 1,
     height: 44,
   },
   loginBtn: {
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: '#1E3A8A',
-    elevation: 2,
-    marginTop: 10,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: '#4F46E5',
+    elevation: 3,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    marginTop: 6,
   },
   loginBtnText: {
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
+    paddingVertical: 6,
+    marginBottom: 14,
   },
   signupText: {
-    color: '#6B7280',
+    color: '#64748B',
     fontSize: 14,
   },
   signupLink: {
-    color: '#1E3A8A',
+    color: '#4F46E5',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
 });
+

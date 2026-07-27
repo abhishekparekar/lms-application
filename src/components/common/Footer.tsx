@@ -21,9 +21,9 @@ export const Footer: React.FC = () => {
         {/* Brand Column */}
         <View style={[styles.brandCol, isMobile && styles.brandColMobile]}>
           <View style={styles.logoRow}>
-            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.footerLogo} />
+            <Image source={require('../../assets/images/logoimg22.png')} style={styles.footerLogo} resizeMode="contain" />
             <View>
-              <Text style={styles.logoName}>गनिमी कावा</Text>
+              <Text style={styles.logoName}>Ganimi Kava</Text>
               <Text style={styles.logoTagline}>Find Your Dream Career</Text>
             </View>
           </View>

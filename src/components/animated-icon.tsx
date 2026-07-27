@@ -3,13 +3,12 @@ import { Dimensions, StyleSheet, View, Text, StatusBar, Image } from 'react-nati
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
-  useSharedValue as dummySharedValue, // reanimated utilities
   withTiming, 
   withDelay, 
   Easing, 
   runOnJS 
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import * as SplashScreen from 'expo-splash-screen';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -25,30 +24,33 @@ export function AnimatedSplashOverlay() {
   const taglineOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // Start animation sequence
+    // Hide native splash screen immediately when React Native splash overlay mounts
+    SplashScreen.hideAsync().catch(() => {});
+
+    // Fast, responsive animation sequence (~1.1 seconds total)
     logoScale.value = withTiming(1.0, {
-      duration: 1000,
-      easing: Easing.out(Easing.back(1.5)),
+      duration: 450,
+      easing: Easing.out(Easing.back(1.4)),
     });
     logoOpacity.value = withTiming(1, {
-      duration: 800,
+      duration: 350,
     });
 
-    textTranslateY.value = withDelay(400, withTiming(0, {
-      duration: 800,
+    textTranslateY.value = withDelay(150, withTiming(0, {
+      duration: 400,
       easing: Easing.out(Easing.quad),
     }));
-    textOpacity.value = withDelay(400, withTiming(1, {
-      duration: 800,
+    textOpacity.value = withDelay(150, withTiming(1, {
+      duration: 400,
     }));
 
-    taglineOpacity.value = withDelay(900, withTiming(1, {
-      duration: 600,
+    taglineOpacity.value = withDelay(350, withTiming(1, {
+      duration: 350,
     }));
 
-    // Fade out and close splash after 2.3 seconds
-    bgOpacity.value = withDelay(2300, withTiming(0, {
-      duration: 600,
+    // Fade out and close splash screen after 900ms delay
+    bgOpacity.value = withDelay(850, withTiming(0, {
+      duration: 300,
       easing: Easing.inOut(Easing.quad),
     }, (finished) => {
       if (finished) {
@@ -78,17 +80,17 @@ export function AnimatedSplashOverlay() {
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.overlayContainer, bgAnimatedStyle]}>
+    <Animated.View style={[styles.overlayContainer, bgAnimatedStyle]} pointerEvents="none">
       <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
       <View style={styles.contentWrap}>
         {/* Animated logo image container */}
-        <Animated.View style={logoAnimatedStyle}>
-          <Image source={require('../assets/images/logo1.jpeg')} style={styles.logoImage} />
+        <Animated.View style={[logoAnimatedStyle, styles.logoCircle]}>
+          <Image source={require('../../assets/images/logoimg22.png')} style={styles.logoImage} resizeMode="contain" />
         </Animated.View>
 
         {/* Animated Brand Text */}
         <Animated.View style={textAnimatedStyle}>
-          <Text style={styles.brandText}>गनिमी कावा</Text>
+          <Text style={styles.brandText}>Ganimi Kava</Text>
         </Animated.View>
 
         {/* Animated tagline */}
@@ -121,26 +123,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    marginBottom: 20,
-    borderWidth: 2.5,
-    borderColor: '#FFFFFF',
+    width: 104,
+    height: 104,
+    borderRadius: 52,
   },
   logoCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 22,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   brandText: {
     color: '#FFFFFF',
@@ -148,7 +149,15 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1.2,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 2,
+  },
+  subBrandText: {
+    color: '#FCD34D', // Amber/gold highlight for Marathi branding
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    marginBottom: 12,
   },
   taglineWrap: {
     alignItems: 'center',

@@ -41,100 +41,90 @@ export const JobCard: React.FC<JobCardProps> = ({
   const formattedLoc = formatLocation(job.location);
   const isRemote = formattedLoc.toLowerCase().includes('remote');
   const workspaceText = isRemote ? 'REMOTE' : (formattedLoc.toLowerCase().includes('hybrid') ? 'HYBRID' : 'OFFICE');
-  const expText = job.experienceLevel === 'Entry Level' ? '0-2 YR EXP' : '2 YR EXP';
 
-  const descSnippet = job.description 
-    ? `About the Opportunity: ${job.company} is seeking an exceptional ${typeof job.title === 'string' ? job.title.toLowerCase() : ''} to join...`
-    : '';
-  
   return (
     <TouchableOpacity
-      activeOpacity={0.95}
+      activeOpacity={0.92}
       onPress={onPress}
       style={[
         styles.card,
         isHorizontal ? styles.horizontalCard : null,
-        { backgroundColor: colors.background, borderColor: colors.backgroundSelected }
+        { backgroundColor: scheme === 'dark' ? '#1E293B' : '#FFFFFF', borderColor: scheme === 'dark' ? '#334155' : '#EEF2FF' }
       ]}
     >
-      <View style={isHorizontal ? styles.horizontalBody : null}>
-        {/* Top Row: Logo & Heart Button */}
-        <View style={styles.topRow}>
-          {hasLogo ? (
-            <Image source={{ uri: job.logoUrl }} style={styles.logo} />
-          ) : (
-            <View style={[styles.avatarCircle, { backgroundColor: '#4F46E5' }]}>
-              <Text style={styles.avatarLetter}>{initial}</Text>
-            </View>
-          )}
-          
+      {/* Top Row: Logo & Top Right Badges */}
+      <View style={styles.topRow}>
+        {hasLogo ? (
+          <Image source={{ uri: job.logoUrl }} style={styles.logo} resizeMode="cover" />
+        ) : (
+          <View style={[styles.avatarCircle, { backgroundColor: '#4F46E5' }]}>
+            <Text style={styles.avatarLetter}>{initial}</Text>
+          </View>
+        )}
+
+        <View style={styles.topRightGroup}>
+          <View style={styles.salaryBadge}>
+            <Text style={styles.salaryText}>{job.salaryRange || 'Best Pay'}</Text>
+          </View>
           {onSaveToggle && (
             <TouchableOpacity 
               style={[styles.favBtn, isSaved && styles.favBtnActive]}
-              onPress={onSaveToggle}
+              onPress={(e) => {
+                e.stopPropagation();
+                onSaveToggle();
+              }}
+              activeOpacity={0.8}
             >
               <Ionicons 
                 name={isSaved ? 'heart' : 'heart-outline'} 
-                size={18} 
+                size={14} 
                 color={isSaved ? '#EF4444' : '#9CA3AF'} 
               />
             </TouchableOpacity>
           )}
         </View>
-
-        {/* Title & Company */}
-        <View style={styles.infoContainer}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-            {job.title}
-          </Text>
-          <Text style={styles.company}>{job.company}</Text>
-        </View>
-
-        {/* Badge Tags */}
-        <View style={styles.tagsContainer}>
-          <View style={[styles.tag, styles.typeTag]}>
-            <Text style={[styles.tagText, styles.typeTagText]}>{job.type ? job.type.toUpperCase() : 'FULL-TIME'}</Text>
-          </View>
-          <View style={[styles.tag, styles.workspaceTag]}>
-            <Text style={[styles.tagText, styles.workspaceTagText]}>{workspaceText}</Text>
-          </View>
-          <View style={[styles.tag, styles.expTag]}>
-            <Text style={[styles.tagText, styles.expTagText]}>{expText}</Text>
-          </View>
-        </View>
-
-        {/* Description Snippet */}
-        {descSnippet ? (
-          <Text style={styles.description} numberOfLines={2}>
-            {descSnippet}
-          </Text>
-        ) : null}
       </View>
 
-      {/* Bottom Row: Post Date, Salary Badge & Apply Button */}
-      <View style={styles.footer}>
-        <Text style={styles.postedDate}>Posted {job.postedDate || 'recently'}</Text>
-        
-        <View style={styles.footerRight}>
-          <View style={styles.salaryBadge}>
-            <Text style={styles.salaryText}>{job.salaryRange || '₹0.1L-0.3L'}</Text>
-          </View>
-          
-          {onApply && (
-            <TouchableOpacity
-              style={[
-                styles.applyButton,
-                hasApplied ? styles.appliedButton : null
-              ]}
-              onPress={onApply}
-              disabled={hasApplied}
-            >
-              <Text style={styles.applyButtonText}>
-                {hasApplied ? 'Applied' : 'Apply'}
-              </Text>
-            </TouchableOpacity>
-          )}
+      {/* Info Container */}
+      <View style={styles.infoContainer}>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          {job.title}
+        </Text>
+        <Text style={styles.company} numberOfLines={1}>{job.company}</Text>
+      </View>
+
+      {/* Tags */}
+      <View style={styles.tagsContainer}>
+        <View style={[styles.tag, styles.typeTag]}>
+          <Text style={[styles.tagText, styles.typeTagText]}>{job.type ? job.type.toUpperCase() : 'FULL-TIME'}</Text>
         </View>
+        <View style={[styles.tag, styles.workspaceTag]}>
+          <Text style={[styles.tagText, styles.workspaceTagText]}>{workspaceText}</Text>
+        </View>
+      </View>
+
+      {/* Full-width Footer Action */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[
+            styles.applyButton,
+            hasApplied ? styles.appliedButton : null
+          ]}
+          onPress={(e) => {
+            e.stopPropagation();
+            if (onApply) {
+              onApply();
+            } else {
+              onPress();
+            }
+          }}
+          disabled={hasApplied}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.applyButtonText}>
+            {hasApplied ? '✓ Applied' : 'Apply Now'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -142,83 +132,111 @@ export const JobCard: React.FC<JobCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    height: 215,
+    justifyContent: 'space-between',
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 3,
     backgroundColor: '#ffffff',
+  },
+  horizontalCard: {
+    height: 'auto',
+    minHeight: 140,
+    marginBottom: 10,
+    justifyContent: 'space-between',
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     backgroundColor: '#F3F4F6',
   },
   avatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarLetter: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
   },
+  topRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  salaryBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+  },
+  salaryText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#059669',
+  },
   favBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F9FAFB',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#F1F5F9',
   },
   favBtnActive: {
     backgroundColor: '#FEE2E2',
     borderColor: '#FCA5A5',
   },
   infoContainer: {
-    marginBottom: 14,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 13.5,
     fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
+    color: '#0F172A',
+    lineHeight: 18,
+    marginBottom: 2,
   },
   company: {
-    fontSize: 13,
-    color: '#4B5563',
+    fontSize: 11.5,
+    color: '#64748B',
     fontWeight: '600',
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 14,
+    gap: 4,
+    marginBottom: 10,
   },
   tag: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
   },
   tagText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
   },
   typeTag: {
@@ -235,71 +253,33 @@ const styles = StyleSheet.create({
   workspaceTagText: {
     color: '#D97706',
   },
-  expTag: {
-    backgroundColor: '#F0F9FF',
-    borderColor: '#E0F2FE',
-  },
-  expTagText: {
-    color: '#0284C7',
-  },
-  description: {
-    fontSize: 12,
-    color: '#6B7280',
-    lineHeight: 18,
-    marginBottom: 16,
-    fontWeight: '500',
-  },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  postedDate: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    fontWeight: '600',
-  },
-  footerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  salaryBadge: {
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#D1FAE5',
-  },
-  salaryText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#059669',
+    borderTopColor: '#F1F5F9',
+    paddingTop: 10,
+    marginTop: 2,
   },
   applyButton: {
     backgroundColor: '#4F46E5',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
+    width: '100%',
+    paddingVertical: 8,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   appliedButton: {
     backgroundColor: '#10B981',
+    shadowColor: '#10B981',
   },
   applyButtonText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
-  },
-  horizontalCard: {
-    height: 275,
-    marginBottom: 0,
-    justifyContent: 'space-between',
-  },
-  horizontalBody: {
-    flex: 1,
+    letterSpacing: 0.3,
   },
 });

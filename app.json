@@ -1,28 +1,45 @@
 {
   "expo": {
-    "name": "गनिमी कावा",
+    "name": "Ganimi Kava",
     "slug": "ganimi-kawa",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo1.jpeg",
+    "backgroundColor": "#4F46E5",
+    "icon": "./assets/images/logoimg22.png",
     "scheme": "lmsjobportal1",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/logoimg22.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    },
     "ios": {
-      "icon": "./assets/images/logo1.jpeg"
+      "icon": "./assets/images/logoimg22.png",
+      "splash": {
+        "image": "./assets/images/logoimg22.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4F46E5"
+      }
     },
     "android": {
       "package": "com.lmsjobportal1.app",
+      "backgroundColor": "#4F46E5",
+      "splash": {
+        "image": "./assets/images/logoimg22.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4F46E5"
+      },
       "adaptiveIcon": {
-        "backgroundColor": "#01010b",
-        "foregroundImage": "./assets/images/logo1.jpeg",
+        "backgroundColor": "#4F46E5",
+        "foregroundImage": "./assets/images/logoimg22.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
       "statusBar": {
-        "barStyle": "dark-content",
-        "backgroundColor": "#ffffff",
+        "barStyle": "light-content",
+        "backgroundColor": "#4F46E5",
         "translucent": false
       }
     },
@@ -35,11 +52,10 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#01010b",
-          "android": {
-            "image": "./assets/images/logo1.jpeg",
-            "imageWidth": 120
-          }
+          "backgroundColor": "#4F46E5",
+          "image": "./assets/images/logoimg22.png",
+          "imageWidth": 140,
+          "resizeMode": "contain"
         }
       ],
       "expo-video"

@@ -331,7 +331,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
           } else {
             Alert.alert('Sharing Unavailable', 'Native sharing is not supported on this device.');
           }
-        } catch (innerErr: any) {
+        } catch (_innerErr: any) {
           setIsGeneratingPdf(false);
           Alert.alert('Share Failed', 'Unable to initiate sharing overlay.');
         }

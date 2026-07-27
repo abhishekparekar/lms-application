@@ -89,8 +89,8 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({
 
           {/* Branding Section */}
           <View style={styles.brandingSection}>
-            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.authLogoImage} />
-            <Text style={styles.brandTitle}>गनिमी कावा</Text>
+            <Image source={require('../../assets/images/logoimg22.png')} style={styles.authLogoImage} resizeMode="contain" />
+            <Text style={styles.brandTitle}>Ganimi Kava</Text>
             <Text style={styles.brandSubtitle}>Account Recovery</Text>
           </View>
 

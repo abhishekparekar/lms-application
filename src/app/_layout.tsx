@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { useColorScheme, LogBox, StatusBar } from 'react-native';
 import { AuthProvider } from '@/context/AuthContext';
 import { Slot } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 
@@ -9,12 +11,18 @@ LogBox.ignoreLogs(['Cannot connect to Expo CLI', 'Setting a timer', 'WebChannelC
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    // Hide native splash screen as soon as React component mounts
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <AuthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <StatusBar
-          barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
-          backgroundColor={colorScheme === 'dark' ? '#0F172A' : '#ffffff'}
+          barStyle="light-content"
+          backgroundColor="#4F46E5"
           translucent={false}
         />
         <AnimatedSplashOverlay />

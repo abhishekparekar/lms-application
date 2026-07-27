@@ -488,11 +488,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* Header Bar */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
-          <Image source={require('../../assets/images/logo1.jpeg')} style={styles.logoImageSmall} />
-          <Text style={styles.logoText}>गनिमी कावा</Text>
+          <Image source={require('../../assets/images/logoimg22.png')} style={styles.logoImageSmall} resizeMode="contain" />
+          <Text style={styles.logoText}>Ganimi Kava</Text>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={onLogout} activeOpacity={0.8}>
-          <Ionicons name="log-out-outline" size={16} color="#EF4444" />
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => {
+            Alert.alert(
+              'Log Out',
+              'Are you sure you want to log out of your account?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Log Out', style: 'destructive', onPress: onLogout }
+              ]
+            );
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="log-out-outline" size={16} color="#FFFFFF" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -500,199 +513,168 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {isSeeker ? (
         <>
           {/* ════════════════════════════════════════════════════════════
-          // SEEKER DASHBOARD VIEW
+          // SEEKER / STUDENT DASHBOARD VIEW
           // ════════════════════════════════════════════════════════════ */}
           <ScrollView
-          style={[styles.container, { backgroundColor: '#F8FAFC' }]}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Stats Cards */}
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}>
-              <Ionicons name="book" size={24} color="#4F46E5" style={styles.statIcon} />
-              <Text style={styles.statNumber}>{enrolledCourses.length}</Text>
-              <Text style={styles.statLabel}>Courses Enrolled</Text>
+            style={[styles.container, { backgroundColor: '#F8FAFC' }]}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Student Welcome Hero Card */}
+            <View style={styles.seekerWelcomeCard}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.seekerBadgePill}>
+                  <Ionicons name="sparkles" size={12} color="#4F46E5" />
+                  <Text style={styles.seekerBadgePillText}>Student Dashboard</Text>
+                </View>
+                <Text style={styles.seekerGreetingTitle}>
+                  Welcome back, {user?.firstName || 'Student'} 👋
+                </Text>
+                <Text style={styles.seekerGreetingSubtitle}>
+                  Track your course progress & upcoming exam preparations
+                </Text>
+              </View>
+              <View style={styles.seekerAvatarCircle}>
+                <Text style={styles.seekerAvatarText}>
+                  {(user?.firstName?.[0] || 'S').toUpperCase()}
+                </Text>
+              </View>
             </View>
-            {isJobsVisible && (
-              <TouchableOpacity
-                style={[styles.statCard, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}
-                onPress={onViewApplications}
-                activeOpacity={0.9}
-              >
-                <Ionicons name="paper-plane" size={24} color="#059669" style={styles.statIcon} />
-                <Text style={styles.statNumber}>{applications.length}</Text>
-                <Text style={styles.statLabel}>Applications</Text>
-              </TouchableOpacity>
-            )}
-          </View>
 
-          {/* Action Row */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnSolid]} onPress={onBrowseCourses}>
-              <Ionicons name="book-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.actionBtnTextSolid}>Explore Courses</Text>
-            </TouchableOpacity>
-            {isJobsVisible && (
-              <TouchableOpacity style={[styles.actionBtn, styles.actionBtnOutline]} onPress={onBrowseJobs}>
-                <Ionicons name="briefcase-outline" size={18} color="#4F46E5" />
-                <Text style={styles.actionBtnTextOutline}>Find Jobs</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Study Resources */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Study Resources</Text>
-            <View style={styles.toolsGrid}>
-              <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]} onPress={onViewNews}>
-                <Ionicons name="newspaper-outline" size={22} color="#16A34A" style={styles.toolIcon} />
-                <Text style={styles.toolLabel}>Current Affairs</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5' }]} onPress={onViewResources}>
-                <Ionicons name="folder-open-outline" size={22} color="#D97706" style={styles.toolIcon} />
-                <Text style={styles.toolLabel}>Study Files</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.toolItem, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]} 
-                onPress={() => setTestSeriesModalVisible(true)}
-              >
-                <Ionicons name="school-outline" size={22} color="#4F46E5" style={styles.toolIcon} />
-                <Text style={styles.toolLabel}>Test Series</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F5F3FF', borderColor: '#EDE9FE' }]} onPress={onViewSupport}>
-                <Ionicons name="chatbubbles-outline" size={22} color="#7C3AED" style={styles.toolIcon} />
-                <Text style={styles.toolLabel}>Support Desk</Text>
-              </TouchableOpacity>
+            {/* Stats Cards */}
+            <View style={styles.statsGrid}>
+              <View style={[styles.statCard, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}>
+                <Ionicons name="book" size={24} color="#4F46E5" style={styles.statIcon} />
+                <Text style={styles.statNumber}>{enrolledCourses.length}</Text>
+                <Text style={styles.statLabel}>Courses Enrolled</Text>
+              </View>
+              {isJobsVisible && (
+                <TouchableOpacity
+                  style={[styles.statCard, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}
+                  onPress={onViewApplications}
+                  activeOpacity={0.9}
+                >
+                  <Ionicons name="paper-plane" size={24} color="#059669" style={styles.statIcon} />
+                  <Text style={styles.statNumber}>{applications.length}</Text>
+                  <Text style={styles.statLabel}>Applications</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          </View>
 
-          {/* My Lecture Progress */}
-          {enrolledCourses.length > 0 && (
+            {/* Action Row */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={[styles.actionBtn, styles.actionBtnSolid]} onPress={onBrowseCourses} activeOpacity={0.85}>
+                <Ionicons name="book-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.actionBtnTextSolid}>Explore Courses</Text>
+              </TouchableOpacity>
+              {isJobsVisible && (
+                <TouchableOpacity style={[styles.actionBtn, styles.actionBtnOutline]} onPress={onBrowseJobs} activeOpacity={0.85}>
+                  <Ionicons name="briefcase-outline" size={18} color="#4F46E5" />
+                  <Text style={styles.actionBtnTextOutline}>Find Jobs</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Study Resources */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>My Lecture Progress</Text>
-              {enrolledCourses.slice(0, 3).map((course) => {
-                const progress = progressMap[course.id] || 0;
-                return (
-                  <TouchableOpacity
-                    key={course.id}
-                    style={styles.enrolledCourseCard}
-                    onPress={() => onCoursePress(course.id)}
-                    activeOpacity={0.9}
-                  >
-                    <Image source={{ uri: course.imageUrl }} style={styles.enrolledCourseImg} />
-                    <View style={styles.enrolledCourseInfo}>
-                      <Text style={[styles.enrolledCourseTitle, { color: colors.text }]} numberOfLines={1}>
-                        {course.title}
-                      </Text>
-                      <Text style={styles.enrolledCourseInstructor}>By {course.instructor}</Text>
-                      <View style={styles.progressBarTrack}>
-                        <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
-                      </View>
-                      <View style={styles.rowBetween}>
-                        <Text style={styles.progressPctText}>{progress}% Complete</Text>
-                        <Text style={styles.resumeLearningText}>Resume Lecture</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-
-          {/* Popular Live Courses */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 2 }]}>Popular Live Courses</Text>
-                <Text style={styles.sectionSubtitle}>Expand your expertise with superadmin classes</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Study Resources</Text>
+              <View style={styles.toolsGrid}>
+                <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]} onPress={onViewNews} activeOpacity={0.8}>
+                  <Ionicons name="newspaper-outline" size={22} color="#16A34A" style={styles.toolIcon} />
+                  <Text style={styles.toolLabel}>Current Affairs</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5' }]} onPress={onViewResources} activeOpacity={0.8}>
+                  <Ionicons name="folder-open-outline" size={22} color="#D97706" style={styles.toolIcon} />
+                  <Text style={styles.toolLabel}>Study Files</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.toolItem, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]} 
+                  onPress={() => setTestSeriesModalVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="school-outline" size={22} color="#4F46E5" style={styles.toolIcon} />
+                  <Text style={styles.toolLabel}>Test Series</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F5F3FF', borderColor: '#EDE9FE' }]} onPress={onViewSupport} activeOpacity={0.8}>
+                  <Ionicons name="chatbubbles-outline" size={22} color="#7C3AED" style={styles.toolIcon} />
+                  <Text style={styles.toolLabel}>Support Desk</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={onBrowseCourses} style={styles.seeAllLink}>
-                <Text style={styles.seeAllLinkText}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color="#4F46E5" />
-              </TouchableOpacity>
             </View>
 
-            {allCourses.length === 0 ? (
-              <View style={styles.emptyCard}>
-                {loading ? (
-                  <ActivityIndicator size="small" color="#4F46E5" />
-                ) : (
-                  <>
-                    <Ionicons name="book-outline" size={32} color="#94A3B8" />
-                    <Text style={styles.emptyText}>No available courses yet.</Text>
-                  </>
-                )}
-              </View>
-            ) : (
-              <FlatList
-                data={allCourses}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => `all-c-${item.id}`}
-                contentContainerStyle={styles.horizontalList}
-                renderItem={({ item }) => {
-                  const isEnrolled = enrolledIds.includes(item.id);
+            {/* My Lecture Progress */}
+            {enrolledCourses.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>My Lecture Progress</Text>
+                {enrolledCourses.slice(0, 3).map((course) => {
+                  const progress = progressMap[course.id] || 0;
                   return (
-                    <View style={{ width: 280, marginRight: 16 }}>
-                      <CourseCard
-                        course={item}
-                        layoutMode="horizontal"
-                        onPress={() => onCoursePress(item.id)}
-                        onEnroll={item.price === 0 ? () => handleEnroll(item.id) : () => onCoursePress(item.id)}
-                        isEnrolled={isEnrolled}
-                      />
-                    </View>
+                    <TouchableOpacity
+                      key={course.id}
+                      style={styles.enrolledCourseCard}
+                      onPress={() => onCoursePress(course.id)}
+                      activeOpacity={0.9}
+                    >
+                      <Image source={{ uri: course.imageUrl }} style={styles.enrolledCourseImg} />
+                      <View style={styles.enrolledCourseInfo}>
+                        <Text style={[styles.enrolledCourseTitle, { color: colors.text }]} numberOfLines={1}>
+                          {course.title}
+                        </Text>
+                        <Text style={styles.enrolledCourseInstructor}>By {course.instructor}</Text>
+                        <View style={styles.progressBarTrack}>
+                          <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+                        </View>
+                        <View style={styles.rowBetween}>
+                          <Text style={styles.progressPctText}>{progress}% Complete</Text>
+                          <Text style={styles.resumeLearningText}>Resume Lecture</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
                   );
-                }}
-              />
+                })}
+              </View>
             )}
-          </View>
 
-          {isJobsVisible && (
+            {/* Popular Live Courses */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View>
-                  <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 2 }]}>Featured Job Openings</Text>
-                  <Text style={styles.sectionSubtitle}>Find jobs matching your skills and experience</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 2 }]}>Popular Live Courses</Text>
                 </View>
-                <TouchableOpacity onPress={onBrowseJobs} style={styles.seeAllLink}>
+                <TouchableOpacity onPress={onBrowseCourses} style={styles.seeAllLink} activeOpacity={0.7}>
                   <Text style={styles.seeAllLinkText}>See All</Text>
                   <Ionicons name="chevron-forward" size={14} color="#4F46E5" />
                 </TouchableOpacity>
               </View>
 
-              {activeJobs.length === 0 ? (
+              {allCourses.length === 0 ? (
                 <View style={styles.emptyCard}>
                   {loading ? (
                     <ActivityIndicator size="small" color="#4F46E5" />
                   ) : (
                     <>
-                      <Ionicons name="briefcase-outline" size={32} color="#94A3B8" />
-                      <Text style={styles.emptyText}>No active job listings found.</Text>
+                      <Ionicons name="book-outline" size={32} color="#94A3B8" />
+                      <Text style={styles.emptyText}>No available courses yet.</Text>
                     </>
                   )}
                 </View>
               ) : (
                 <FlatList
-                  data={activeJobs}
+                  data={allCourses}
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  keyExtractor={(item) => `all-j-${item.id}`}
+                  keyExtractor={(item) => `all-c-${item.id}`}
                   contentContainerStyle={styles.horizontalList}
                   renderItem={({ item }) => {
-                    const hasApplied = appliedJobIds.includes(item.id);
-                    const isSaved = savedJobIds.includes(item.id);
+                    const isEnrolled = enrolledIds.includes(item.id);
                     return (
-                      <View style={{ width: 300, marginRight: 16 }}>
-                        <JobCard
-                          job={item}
+                      <View style={{ width: 280, marginRight: 16 }}>
+                        <CourseCard
+                          course={item}
                           layoutMode="horizontal"
-                          onPress={() => onJobPress(item.id)}
-                          onApply={() => handleApplyJob(item.id)}
-                          hasApplied={hasApplied}
-                          isSaved={isSaved}
-                          onSaveToggle={() => handleToggleSaveJob(item.id)}
+                          onPress={() => onCoursePress(item.id)}
+                          onEnroll={item.price === 0 ? () => handleEnroll(item.id) : () => onCoursePress(item.id)}
+                          isEnrolled={isEnrolled}
                         />
                       </View>
                     );
@@ -700,8 +682,59 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 />
               )}
             </View>
-          )}
-        </ScrollView>
+
+            {isJobsVisible && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <View>
+                    <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 2 }]}>Featured Job Openings</Text>
+                  </View>
+                  <TouchableOpacity onPress={onBrowseJobs} style={styles.seeAllLink} activeOpacity={0.7}>
+                    <Text style={styles.seeAllLinkText}>See All</Text>
+                    <Ionicons name="chevron-forward" size={14} color="#4F46E5" />
+                  </TouchableOpacity>
+                </View>
+
+                {activeJobs.length === 0 ? (
+                  <View style={styles.emptyCard}>
+                    {loading ? (
+                      <ActivityIndicator size="small" color="#4F46E5" />
+                    ) : (
+                      <>
+                        <Ionicons name="briefcase-outline" size={32} color="#94A3B8" />
+                        <Text style={styles.emptyText}>No active job listings found.</Text>
+                      </>
+                    )}
+                  </View>
+                ) : (
+                  <FlatList
+                    data={activeJobs}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item) => `all-j-${item.id}`}
+                    contentContainerStyle={styles.horizontalList}
+                    renderItem={({ item }) => {
+                      const hasApplied = appliedJobIds.includes(item.id);
+                      const isSaved = savedJobIds.includes(item.id);
+                      return (
+                        <View style={{ width: 300, marginRight: 16 }}>
+                          <JobCard
+                            job={item}
+                            layoutMode="horizontal"
+                            onPress={() => onJobPress(item.id)}
+                            onApply={() => handleApplyJob(item.id)}
+                            hasApplied={hasApplied}
+                            isSaved={isSaved}
+                            onSaveToggle={() => handleToggleSaveJob(item.id)}
+                          />
+                        </View>
+                      );
+                    }}
+                  />
+                )}
+              </View>
+            )}
+          </ScrollView>
 
         {/* Test Series Modal */}
         <Modal
@@ -2188,17 +2221,84 @@ const styles = StyleSheet.create({
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
+    backgroundColor: '#EF4444',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   logoutText: {
-    color: '#EF4444',
+    color: '#FFFFFF',
     fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  seekerWelcomeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 16,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  seekerBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  seekerBadgePillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#4F46E5',
+  },
+  seekerGreetingTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 3,
+  },
+  seekerGreetingSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  seekerAvatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#4F46E5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  seekerAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: '800',
   },
   completenessBanner: {

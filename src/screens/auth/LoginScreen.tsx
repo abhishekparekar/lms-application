@@ -91,40 +91,43 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Background Header - Deep Blue */}
+      {/* Background Curved Header */}
       <View style={styles.headerBackground} />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: Math.max(insets.top, 20), paddingBottom: Math.max(insets.bottom, 24) }
+            { paddingTop: Math.max(insets.top + 8, 16), paddingBottom: Math.max(insets.bottom + 30, 40) }
           ]}
           keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}
           showsVerticalScrollIndicator={false}
-          bounces={false}
+          bounces={true}
         >
-
           {/* Top Bar with Back Button */}
           <View style={styles.topBar}>
             {onBack ? (
-              <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+              <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
                 <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             ) : <View style={{ width: 40 }} />}
           </View>
 
-          {/* Branding Section */}
+          {/* Compact Branding Section */}
           <View style={styles.brandingSection}>
-            <Image source={require('../../assets/images/logo1.jpeg')} style={styles.authLogoImage} />
-            <Text style={styles.brandTitle}>गनिमी कावा</Text>
+            <View style={styles.logoBadgeContainer}>
+              <Image source={require('../../assets/images/logoimg22.png')} style={styles.authLogoImage} resizeMode="contain" />
+            </View>
+            <Text style={styles.brandTitle}>Ganimi Kava</Text>
             <Text style={styles.brandSubtitle}>Empowering your career journey</Text>
           </View>
 
-          {/* Login Form Card */}
+          {/* Modern Compact Login Form Card */}
           <View style={styles.formCard}>
             <Text style={styles.cardTitle}>Welcome Back</Text>
             <Text style={styles.cardDesc}>Sign in to your account to continue</Text>
@@ -165,7 +168,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               inputStyle={styles.modernInput}
             />
 
-            <TouchableOpacity onPress={onForgotPasswordPress} style={styles.forgotBtn}>
+            <TouchableOpacity onPress={onForgotPasswordPress} style={styles.forgotBtn} activeOpacity={0.7}>
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
 
@@ -184,8 +187,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </View>
 
             <View style={styles.socialRow}>
-              <TouchableOpacity onPress={() => handleSocialLogin('Google')} style={styles.socialBtn}>
-                <Ionicons name="logo-google" size={22} color="#DB4437" />
+              <TouchableOpacity onPress={() => handleSocialLogin('Google')} style={styles.socialBtn} activeOpacity={0.8}>
+                <Ionicons name="logo-google" size={20} color="#DB4437" />
                 <Text style={styles.socialBtnText}>Google</Text>
               </TouchableOpacity>
             </View>
@@ -194,15 +197,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           {/* Bottom Signup Link */}
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>{"Don't have an account? "}</Text>
-            <TouchableOpacity onPress={() => setUserTypeModalVisible(true)}>
+            <TouchableOpacity onPress={() => setUserTypeModalVisible(true)} activeOpacity={0.7}>
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ── MODAL: User Type Selection Modal (Web style popup) ── */}
+      {/* ── MODAL: User Type Selection Modal ── */}
       <Modal
         visible={userTypeModalVisible}
         animationType="slide"
@@ -211,19 +213,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       >
         <View style={styles.modalOverlay}>
           <View style={styles.typeModalContainer}>
-            {/* Top decorative accent bar */}
             <View style={styles.typeModalAccentBar} />
 
             <View style={styles.typeModalHeader}>
               <View style={styles.typeModalHeaderIconBox}>
-                <Ionicons name="person-add" size={24} color="#FFFFFF" />
+                <Ionicons name="person-add" size={22} color="#FFFFFF" />
               </View>
               <Text style={styles.typeModalTitle}>Create Your Account</Text>
               <Text style={styles.typeModalSubtitle}>Choose the account type that suits your needs</Text>
             </View>
 
             <View style={styles.typeModalOptions}>
-              {/* Option: Job Seeker */}
+              {/* Option: Student */}
               <TouchableOpacity
                 style={styles.typeOptionCard}
                 onPress={() => {
@@ -233,12 +234,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 activeOpacity={0.8}
               >
                 <View style={[styles.typeOptionIconBox, { backgroundColor: '#EEF2FF' }]}>
-                  <Ionicons name="briefcase" size={22} color="#4F46E5" />
+                  <Ionicons name="school" size={22} color="#4F46E5" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.typeOptionTitle}>I am a Student </Text>
+                  <Text style={styles.typeOptionTitle}>I am a Student</Text>
                   <Text style={styles.typeOptionDesc}>
-                    Find verified courses for your skills.
+                    Find verified courses and build skills for your career.
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
@@ -260,7 +261,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   <View style={{ flex: 1 }}>
                     <Text style={styles.typeOptionTitle}>I am an Employer</Text>
                     <Text style={styles.typeOptionDesc}>
-                      Post requirements, review matching profiles, and hire top talent directly.
+                      Post requirements and review matching talent profiles.
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
@@ -271,6 +272,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <TouchableOpacity
               style={styles.typeModalCancelBtn}
               onPress={() => setUserTypeModalVisible(false)}
+              activeOpacity={0.7}
             >
               <Text style={styles.typeModalCancelText}>Cancel</Text>
             </TouchableOpacity>
@@ -284,137 +286,146 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6', // Light gray background
+    backgroundColor: '#F8FAFC',
   },
   headerBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: '40%',
-    backgroundColor: '#1E3A8A', // Deep Trustworthy Blue
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    height: 260,
+    backgroundColor: '#4F46E5',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    height: 44,
+    marginBottom: 12,
+    height: 40,
   },
   backBtn: {
-    padding: 8,
-    marginLeft: -8,
+    padding: 6,
+    marginLeft: -6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   brandingSection: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 20,
   },
-  authLogoImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+  logoBadgeContainer: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 6,
+    marginBottom: 12,
+  },
+  authLogoImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
   },
   brandTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 3,
+    letterSpacing: 0.3,
   },
   brandSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   formCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 4, // Clean elevation for Android
-    marginBottom: 24,
+    borderRadius: 22,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.8)',
   },
   cardTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 6,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
   },
   cardDesc: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 24,
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 18,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   modernInput: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
     borderRadius: 12,
     borderWidth: 1,
-    height: 52,
+    height: 48,
   },
   forgotBtn: {
     alignSelf: 'flex-end',
-    marginBottom: 24,
+    marginBottom: 18,
+    marginTop: -2,
+    paddingVertical: 4,
   },
   forgotText: {
-    color: '#1E3A8A',
-    fontWeight: '600',
-    fontSize: 14,
+    color: '#4F46E5',
+    fontWeight: '700',
+    fontSize: 13,
   },
   loginBtn: {
-    height: 52,
+    height: 48,
     borderRadius: 12,
-    backgroundColor: '#1E3A8A',
-    elevation: 2,
+    backgroundColor: '#4F46E5',
+    elevation: 3,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
   loginBtnText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    marginVertical: 18,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E2E8F0',
   },
   dividerText: {
-    marginHorizontal: 16,
-    color: '#9CA3AF',
-    fontSize: 14,
+    marginHorizontal: 12,
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '500',
   },
   socialRow: {
     flexDirection: 'row',
@@ -424,49 +435,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 50,
+    height: 46,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     width: '100%',
   },
   socialBtnText: {
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
+    marginLeft: 10,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#334155',
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto',
+    paddingVertical: 8,
   },
   signupText: {
-    color: '#6B7280',
-    fontSize: 15,
+    color: '#64748B',
+    fontSize: 14,
   },
   signupLink: {
-    color: '#1E3A8A',
-    fontSize: 15,
-    fontWeight: 'bold',
+    color: '#4F46E5',
+    fontSize: 14,
+    fontWeight: '800',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
     justifyContent: 'flex-end',
   },
   typeModalContainer: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    padding: 24,
+    padding: 22,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
     elevation: 20,
     position: 'relative',
   },
@@ -475,88 +486,89 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 6,
-    backgroundColor: '#1E3A8A',
+    height: 5,
+    backgroundColor: '#4F46E5',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
   },
   typeModalHeader: {
     alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 8,
+    marginBottom: 20,
+    marginTop: 6,
   },
   typeModalHeaderIconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: '#1E3A8A',
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: '#4F46E5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: '#1E3A8A',
+    marginBottom: 10,
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 4,
   },
   typeModalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#111827',
-    marginBottom: 6,
+    color: '#0F172A',
+    marginBottom: 4,
   },
   typeModalSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#64748B',
     textAlign: 'center',
   },
   typeModalOptions: {
-    gap: 12,
-    marginBottom: 20,
+    gap: 10,
+    marginBottom: 18,
   },
   typeOptionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 20,
-    gap: 14,
-    backgroundColor: '#F9FAFB',
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    gap: 12,
+    backgroundColor: '#F8FAFC',
   },
   typeOptionIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   typeOptionTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#111827',
+    color: '#0F172A',
     marginBottom: 2,
   },
   typeOptionDesc: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#64748B',
     lineHeight: 16,
   },
   typeModalCancelBtn: {
-    height: 50,
+    height: 46,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    marginBottom: 8,
+    backgroundColor: '#F8FAFC',
+    marginBottom: 4,
   },
   typeModalCancelText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#4B5563',
+    color: '#475569',
   },
 });
+

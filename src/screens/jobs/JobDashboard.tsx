@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   TextInput,
   TouchableOpacity,
   Alert,
@@ -11,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { jobService, Job } from '@/services/jobs/jobService';
+import { jobService, Job, JobApplication } from '@/services/jobs/jobService';
 import { lmsService } from '@/services/lms/lmsService';
 import { JobCard } from '@/components/cards/JobCard';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,8 +27,26 @@ interface JobDashboardProps {
   onRedirectToProfile?: () => void;
 }
 
-const JOB_TYPES = ['All', 'Full-time', 'Part-time', 'Contract', 'Internship'];
-const WORKSPACE_MODES = ['All', 'Remote', 'Hybrid', 'Office'];
+interface FilterOption {
+  id: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+const JOB_TYPES: FilterOption[] = [
+  { id: 'All', label: 'All Jobs', icon: 'briefcase-outline' },
+  { id: 'Full-time', label: 'Full-time', icon: 'flash-outline' },
+  { id: 'Part-time', label: 'Part-time', icon: 'time-outline' },
+  { id: 'Contract', label: 'Contract', icon: 'document-text-outline' },
+  { id: 'Internship', label: 'Internship', icon: 'school-outline' },
+];
+
+const WORKSPACE_MODES: FilterOption[] = [
+  { id: 'All', label: 'All Modes', icon: 'globe-outline' },
+  { id: 'Remote', label: 'Remote', icon: 'home-outline' },
+  { id: 'Hybrid', label: 'Hybrid', icon: 'business-outline' },
+  { id: 'Office', label: 'Office', icon: 'location-outline' },
+];
 
 export const JobDashboard: React.FC<JobDashboardProps> = ({
   onJobPress,
@@ -58,83 +77,40 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    const jobsQ = (user && user.role === 'recruiter')
-      ? query(collection(db, 'jobs'), where('recruiterId', '==', user.uid))
-      : collection(db, 'jobs');
-
-    const unsubscribeJobs = onSnapshot(
-      jobsQ,
-      (snapshot) => {
+    const unsub = onSnapshot(
+      collection(db, 'jobs'),
+      (snap) => {
         const list: Job[] = [];
-        snapshot.forEach((docSnap) => {
-          list.push({ id: docSnap.id, ...docSnap.data() } as Job);
-        });
-        if (list.length === 0) {
-          jobService.getJobs().then((allJobs) => {
-            const filtered = (user && user.role === 'recruiter')
-              ? allJobs.filter(j => j.recruiterId === user.uid)
-              : allJobs;
-            setJobs(filtered);
-            setLoading(false);
-          });
-        } else {
-          setJobs(list);
-          setLoading(false);
-        }
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Job));
+        setJobs(list);
+        setLoading(false);
       },
-      async (err) => {
-        console.warn('Error listening to jobs:', err);
-        const allJobs = await jobService.getJobs();
-        const filtered = (user && user.role === 'recruiter')
-          ? allJobs.filter(j => j.recruiterId === user.uid)
-          : allJobs;
-        setJobs(filtered);
+      async () => {
+        setJobs(await jobService.getJobs());
         setLoading(false);
       }
     );
+    return () => unsub();
+  }, []);
 
-    let unsubscribeUser: (() => void) | undefined;
-    let unsubscribeApps: (() => void) | undefined;
+  useEffect(() => {
+    if (!user) return;
+    const qApps = query(collection(db, 'job_applications'), where('applicantId', '==', user.uid));
+    const unsubApps = onSnapshot(qApps, (snap) => {
+      const ids = snap.docs.map((d) => (d.data() as JobApplication).jobId);
+      setAppliedIds(ids);
+    });
 
-    if (user) {
-      unsubscribeUser = onSnapshot(
-        doc(db, 'users', user.uid),
-        (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setSavedJobIds(data.savedJobIds || []);
-          }
-        },
-        async (err) => {
-          console.warn('Error listening to saved jobs:', err);
-          const saved = await lmsService.getSavedJobs(user.uid);
-          setSavedJobIds(saved);
-        }
-      );
-
-      const appsQ = query(collection(db, 'applications'), where('seekerId', '==', user.uid));
-      unsubscribeApps = onSnapshot(
-        appsQ,
-        (snapshot) => {
-          const list: string[] = [];
-          snapshot.forEach((docSnap) => {
-            const appData = docSnap.data();
-            if (appData.jobId) list.push(appData.jobId);
-          });
-          setAppliedIds(list);
-        },
-        async (err) => {
-          console.warn('Error listening to applications:', err);
-          const apps = await jobService.getSeekerApplications(user.uid);
-          setAppliedIds(apps.map(a => a.jobId));
-        }
-      );
-    }
+    const unsubUser = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+      if (snap.exists()) {
+        const u = snap.data();
+        setSavedJobIds(u.savedJobs || u.savedJobIds || []);
+      }
+    });
 
     return () => {
-      unsubscribeJobs();
-      if (unsubscribeUser) unsubscribeUser();
-      if (unsubscribeApps) unsubscribeApps();
+      unsubApps();
+      unsubUser();
     };
   }, [user]);
 
@@ -142,9 +118,9 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
     if (!user) return;
     try {
       await jobService.applyForJob(user.uid, jobId);
-      Alert.alert('Application Submitted!', 'Your application has been logged.');
-    } catch (e) {
-      console.error(e);
+      Alert.alert('🎉 Applied!', 'Your application has been logged successfully.');
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to submit application.');
     }
   };
 
@@ -153,49 +129,53 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
     const isCurrentlySaved = savedJobIds.includes(jobId);
 
     if (isCurrentlySaved) {
-      setSavedJobIds(prev => prev.filter(id => id !== jobId));
+      setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
     } else {
-      setSavedJobIds(prev => [...prev, jobId]);
+      setSavedJobIds((prev) => [...prev, jobId]);
     }
 
     try {
       await lmsService.toggleBookmarkJob(user.uid, jobId, isCurrentlySaved);
       Alert.alert(
-        isCurrentlySaved ? 'Job Removed' : 'Job Saved',
-        isCurrentlySaved ? 'Job removed from saved bookmarks.' : 'Job saved to bookmarks.'
+        isCurrentlySaved ? 'Job Removed' : '🎉 Job Saved',
+        isCurrentlySaved ? 'Job removed from saved bookmarks.' : 'Job saved to your bookmarks!'
       );
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Failed to toggle bookmark job:', e);
     }
   };
 
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch =
-      (typeof job.title === 'string' ? job.title.toLowerCase() : '').includes(search.toLowerCase()) ||
-      (typeof job.company === 'string' ? job.company.toLowerCase() : '').includes(search.toLowerCase()) ||
-      formatLocation(job.location).toLowerCase().includes(search.toLowerCase());
-
-    const matchesType =
-      selectedType === 'All' ||
-      job.type === selectedType;
-
-    const formattedLoc = formatLocation(job.location).toLowerCase();
-    const matchesWorkspace =
-      selectedWorkspace === 'All' ||
-      (selectedWorkspace === 'Remote' && formattedLoc.includes('remote')) ||
-      (selectedWorkspace === 'Hybrid' && formattedLoc.includes('hybrid')) ||
-      (selectedWorkspace === 'Office' && !formattedLoc.includes('remote') && !formattedLoc.includes('hybrid'));
-
-    return matchesSearch && matchesType && matchesWorkspace;
-  });
-
   const isRecruiter = user?.role === 'recruiter';
 
-  if (!isJobsVisible && !isRecruiter) {
+  const filteredJobs = jobs.filter((j) => {
+    const q = search.toLowerCase().trim();
+    const matchSearch =
+      !q ||
+      j.title?.toLowerCase().includes(q) ||
+      j.company?.toLowerCase().includes(q) ||
+      j.location?.toLowerCase().includes(q) ||
+      j.description?.toLowerCase().includes(q);
+
+    const matchType = selectedType === 'All' || j.type === selectedType;
+
+    const loc = formatLocation(j.location).toLowerCase();
+    const matchWorkspace =
+      selectedWorkspace === 'All' ||
+      (selectedWorkspace === 'Remote' && loc.includes('remote')) ||
+      (selectedWorkspace === 'Hybrid' && loc.includes('hybrid')) ||
+      (selectedWorkspace === 'Office' && !loc.includes('remote') && !loc.includes('hybrid'));
+
+    return matchSearch && matchType && matchWorkspace;
+  });
+
+  if (!isJobsVisible) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC', justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
-        <Ionicons name="lock-closed-outline" size={64} color="#9CA3AF" />
-        <Text style={{ color: '#1F2937', marginTop: 16, fontSize: 16, fontWeight: 'bold', textAlign: 'center', paddingHorizontal: 24 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC', justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="briefcase-outline" size={48} color="#9CA3AF" />
+        <Text style={{ fontSize: 16, fontWeight: '700', color: '#374151', marginTop: 12 }}>
+          Jobs Section Temporarily Offline
+        </Text>
+        <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'center', paddingHorizontal: 32 }}>
           Job portal access has been temporarily restricted by the administrator.
         </Text>
       </SafeAreaView>
@@ -204,117 +184,160 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC' }]} edges={['top']}>
-      {/* Search & Actions Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={18} color="#9CA3AF" style={styles.searchIcon} />
+          <Ionicons name="search" size={18} color="#4F46E5" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search roles, companies, locations..."
-            placeholderTextColor="#9CA3AF"
+            placeholder="Search jobs, skills, locations..."
+            placeholderTextColor="#94A3B8"
             value={search}
             onChangeText={setSearch}
+            returnKeyType="search"
           />
           {search ? (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+            <TouchableOpacity onPress={() => setSearch('')} activeOpacity={0.7}>
+              <Ionicons name="close-circle" size={18} color="#94A3B8" />
             </TouchableOpacity>
           ) : null}
         </View>
 
         {isRecruiter && onPostJobPress && (
-          <TouchableOpacity style={styles.postJobBtn} onPress={onPostJobPress}>
-            <Text style={styles.postJobBtnText}>+ Post</Text>
+          <TouchableOpacity style={styles.postJobBtn} onPress={onPostJobPress} activeOpacity={0.85}>
+            <Ionicons name="add" size={18} color="#FFFFFF" />
+            <Text style={styles.postJobBtnText}>Post</Text>
           </TouchableOpacity>
         )}
 
         {!isRecruiter && (
-          <TouchableOpacity style={styles.savedJobsBtn} onPress={onSavedJobsPress}>
-            <Ionicons name="bookmark" size={16} color="#4F46E5" />
-            <Text style={styles.savedJobsBtnText}>Saved</Text>
+          <TouchableOpacity style={styles.savedJobsBtn} onPress={onSavedJobsPress} activeOpacity={0.85}>
+            <Ionicons name="bookmark" size={16} color={savedJobIds.length > 0 ? '#4F46E5' : '#64748B'} />
+            <Text style={[styles.savedJobsBtnText, savedJobIds.length > 0 && styles.savedJobsBtnTextActive]}>
+              Saved
+            </Text>
+            {savedJobIds.length > 0 && (
+              <View style={styles.savedBadge}>
+                <Text style={styles.savedBadgeText}>{savedJobIds.length}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Filters Panel */}
       <View style={styles.filtersContainer}>
         <View style={styles.filterSectionRow}>
-          <Text style={styles.filterLabel}>Type:</Text>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={JOB_TYPES}
-            keyExtractor={(item) => item}
-            contentContainerStyle={styles.filterPillsScroll}
-            renderItem={({ item }) => {
-              const isSelected = selectedType === item;
+          <Text style={styles.filterLabel}>TYPE</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsScroll}>
+            {JOB_TYPES.map((typeObj) => {
+              const isSelected = selectedType === typeObj.id;
               return (
                 <TouchableOpacity
-                  style={[styles.typePill, isSelected && styles.selectedPill]}
-                  onPress={() => setSelectedType(item)}
+                  key={typeObj.id}
+                  style={[styles.typePill, isSelected && styles.selectedPill, { flexDirection: 'row', alignItems: 'center' }]}
+                  onPress={() => setSelectedType(typeObj.id)}
+                  activeOpacity={0.8}
                 >
+                  <Ionicons
+                    name={typeObj.icon}
+                    size={13}
+                    color={isSelected ? '#ffffff' : '#64748B'}
+                    style={{ marginRight: 4 }}
+                  />
                   <Text style={[styles.typeText, isSelected && styles.selectedTypeText]}>
-                    {item}
+                    {typeObj.label}
                   </Text>
                 </TouchableOpacity>
               );
-            }}
-          />
+            })}
+          </ScrollView>
         </View>
 
-        <View style={[styles.filterSectionRow, { marginTop: 6 }]}>
-          <Text style={styles.filterLabel}>Work:</Text>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={WORKSPACE_MODES}
-            keyExtractor={(item) => item}
-            contentContainerStyle={styles.filterPillsScroll}
-            renderItem={({ item }) => {
-              const isSelected = selectedWorkspace === item;
+        <View style={[styles.filterSectionRow, { marginTop: 8 }]}>
+          <Text style={styles.filterLabel}>MODE</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsScroll}>
+            {WORKSPACE_MODES.map((modeObj) => {
+              const isSelected = selectedWorkspace === modeObj.id;
               return (
                 <TouchableOpacity
-                  style={[styles.typePill, isSelected && styles.selectedWorkspacePill]}
-                  onPress={() => setSelectedWorkspace(item)}
+                  key={modeObj.id}
+                  style={[styles.typePill, isSelected && styles.selectedWorkspacePill, { flexDirection: 'row', alignItems: 'center' }]}
+                  onPress={() => setSelectedWorkspace(modeObj.id)}
+                  activeOpacity={0.8}
                 >
+                  <Ionicons
+                    name={modeObj.icon}
+                    size={13}
+                    color={isSelected ? '#ffffff' : '#64748B'}
+                    style={{ marginRight: 4 }}
+                  />
                   <Text style={[styles.typeText, isSelected && styles.selectedTypeText]}>
-                    {item}
+                    {modeObj.label}
                   </Text>
                 </TouchableOpacity>
               );
-            }}
-          />
+            })}
+          </ScrollView>
         </View>
       </View>
 
-      {/* Job List */}
-      <FlatList
-        data={filteredJobs}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <JobCard
-            job={item}
-            onPress={() => onJobPress(item.id)}
-            onApply={user?.role === 'seeker' ? () => handleApplyDirect(item.id) : undefined}
-            hasApplied={appliedIds.includes(item.id)}
-            isSaved={savedJobIds.includes(item.id)}
-            onSaveToggle={user?.role === 'seeker' ? () => handleToggleSave(item.id) : undefined}
-          />
+      <View style={styles.resultsBar}>
+        <Text style={styles.resultsCountText}>
+          Showing <Text style={styles.resultsHighlight}>{filteredJobs.length}</Text> opportunities
+        </Text>
+        {(search || selectedType !== 'All' || selectedWorkspace !== 'All') && (
+          <TouchableOpacity
+            onPress={() => {
+              setSearch('');
+              setSelectedType('All');
+              setSelectedWorkspace('All');
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.clearFiltersText}>Reset ✕</Text>
+          </TouchableOpacity>
         )}
-        ListEmptyComponent={
+      </View>
+
+      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+        {filteredJobs.length === 0 ? (
           <View style={styles.emptyContainer}>
             {loading ? (
               <ActivityIndicator size="large" color="#4F46E5" />
             ) : (
               <>
-                <Ionicons name="briefcase-outline" size={36} color="#9CA3AF" />
+                <Ionicons name="briefcase-outline" size={40} color="#9CA3AF" />
                 <Text style={styles.emptyText}>No job openings found matching your criteria.</Text>
+                <TouchableOpacity
+                  style={styles.resetBtn}
+                  onPress={() => {
+                    setSearch('');
+                    setSelectedType('All');
+                    setSelectedWorkspace('All');
+                  }}
+                >
+                  <Text style={styles.resetBtnText}>Clear All Filters</Text>
+                </TouchableOpacity>
               </>
             )}
           </View>
-        }
-      />
+        ) : (
+          <View style={{ paddingHorizontal: 16 }}>
+            {filteredJobs.map((item) => (
+              <View key={item.id} style={{ width: '100%', marginBottom: 12 }}>
+                <JobCard
+                  job={item}
+                  layoutMode="vertical"
+                  onPress={() => onJobPress(item.id)}
+                  onApply={user?.role === 'seeker' ? () => handleApplyDirect(item.id) : undefined}
+                  hasApplied={appliedIds.includes(item.id)}
+                  isSaved={savedJobIds.includes(item.id)}
+                  onSaveToggle={user?.role === 'seeker' ? () => handleToggleSave(item.id) : undefined}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -391,57 +414,105 @@ const styles = StyleSheet.create({
     borderColor: '#C7D2FE',
   },
   savedJobsBtnText: {
+    color: '#4B5563',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  savedJobsBtnTextActive: {
     color: '#4F46E5',
     fontWeight: '800',
-    fontSize: 13,
+  },
+  savedBadge: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 2,
+  },
+  savedBadgeText: {
+    color: '#ffffff',
+    fontSize: 10.5,
+    fontWeight: '800',
   },
   filtersContainer: {
     backgroundColor: '#ffffff',
     paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F1F5F9',
   },
   filterSectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   filterLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
-    color: '#9CA3AF',
-    width: 42,
-    textTransform: 'uppercase',
+    color: '#94A3B8',
+    width: 38,
+    letterSpacing: 0.5,
   },
   filterPillsScroll: {
     gap: 6,
   },
   typePill: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
   },
   selectedPill: {
     backgroundColor: '#4F46E5',
     borderColor: '#4F46E5',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedWorkspacePill: {
     backgroundColor: '#0EA5E9',
     borderColor: '#0EA5E9',
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   typeText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: '#4B5563',
+    color: '#475569',
   },
   selectedTypeText: {
     color: '#ffffff',
   },
+  resultsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  resultsCountText: {
+    fontSize: 12.5,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  resultsHighlight: {
+    color: '#0F172A',
+    fontWeight: '800',
+  },
+  clearFiltersText: {
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '700',
+  },
   listContent: {
-    padding: 16,
+    paddingTop: 8,
     paddingBottom: 100,
   },
   emptyContainer: {
@@ -455,5 +526,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     fontWeight: '600',
+  },
+  resetBtn: {
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  resetBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
