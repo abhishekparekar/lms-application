@@ -21,6 +21,7 @@ import {
   Text,
   TextInput,
   StatusBar as RNStatusBar,
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -73,6 +74,14 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   const [isResourcesVisible, setIsResourcesVisible] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
 
   useEffect(() => {
     setCoursesLoading(courses.length === 0);
