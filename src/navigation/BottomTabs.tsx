@@ -194,7 +194,9 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
         return <ResourcesScreen />;
       case 'learning':
         return (
-          <SafeAreaView style={styles.learningWrapper} edges={['top']}>
+          <SafeAreaView style={[styles.learningWrapper, { backgroundColor: '#4F46E5' }]} edges={['top']}>
+            <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+            <StatusBar style="light" />
             <View style={styles.segmentHeaderWrapper}>
               <View style={styles.segmentContainer}>
                 <TouchableOpacity
@@ -404,7 +406,7 @@ const styles = StyleSheet.create({
   },
   learningWrapper: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#4F46E5',
   },
   segmentHeaderWrapper: {
     backgroundColor: '#FFFFFF',
