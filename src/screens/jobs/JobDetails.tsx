@@ -12,7 +12,9 @@ import {
   TouchableOpacity,
   useColorScheme,
   View,
+  StatusBar as RNStatusBar,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { jobService, Job } from '@/services/jobs/jobService';
@@ -183,21 +185,23 @@ export const JobDetails: React.FC<JobDetailsProps> = ({
   const requirementsList = Array.isArray(job.requirements) ? job.requirements : [];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
       {/* Top Navigation Header Bar */}
-      <View style={styles.headerBar}>
+      <View style={[styles.headerBar, { backgroundColor: '#4F46E5', borderBottomColor: '#4338CA' }]}>
         <TouchableOpacity onPress={onBack} style={styles.headerBackButton} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
-          <Text style={[styles.headerBackText, { color: colors.text }]}>Back</Text>
+          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          <Text style={[styles.headerBackText, { color: '#FFFFFF' }]}>Back</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]} numberOfLines={1}>
           Job Details
         </Text>
 
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={handleShareJob} style={styles.headerIconBtn} activeOpacity={0.7}>
-            <Ionicons name="share-social-outline" size={20} color={colors.text} />
+            <Ionicons name="share-social-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
 
           {isSeeker && (
@@ -205,14 +209,15 @@ export const JobDetails: React.FC<JobDetailsProps> = ({
               <Ionicons 
                 name={isSaved ? 'heart' : 'heart-outline'} 
                 size={20} 
-                color={isSaved ? '#EF4444' : colors.text} 
+                color={isSaved ? '#EF4444' : '#FFFFFF'} 
               />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {/* Company & Job Card Header */}
         <View style={styles.heroCard}>
           <View style={styles.logoShadow}>
@@ -359,6 +364,7 @@ export const JobDetails: React.FC<JobDetailsProps> = ({
             <Text style={styles.recruiterBadgeTxt}>Recruiter View Only</Text>
           </View>
         )}
+      </View>
       </View>
     </SafeAreaView>
   );

@@ -12,7 +12,9 @@ import {
   TouchableOpacity,
   useColorScheme,
   View,
+  StatusBar as RNStatusBar,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { courseService, Course } from '@/services/lms/lmsService';
 import { Colors } from '@/constants/theme';
 import { Button } from '@/components/common/Button';
@@ -310,14 +312,16 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
   const courseDescription = course.description || '';
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
       {/* Top Header Navigation Bar */}
-      <View style={styles.headerBar}>
+      <View style={[styles.headerBar, { backgroundColor: '#4F46E5', borderBottomColor: '#4338CA' }]}>
         <TouchableOpacity onPress={onBack} style={styles.headerBackButton} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
-          <Text style={[styles.headerBackText, { color: colors.text }]}>Back</Text>
+          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          <Text style={[styles.headerBackText, { color: '#FFFFFF' }]}>Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]} numberOfLines={1}>
           Course Details
         </Text>
         <View style={styles.headerActions}>
@@ -331,7 +335,8 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]}>
         {/* Course Banner Card */}
         <View style={styles.bannerWrap}>
           {courseImageUrl ? (
@@ -713,6 +718,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
           Alert.alert('Payment Failed', errMsg);
         }}
       />
+      </View>
     </SafeAreaView>
   );
 };

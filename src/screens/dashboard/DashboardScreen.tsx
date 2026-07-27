@@ -112,8 +112,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     }
   }, [user, companyModalVisible, companyFromCollection]);
 
-  const enrolledCourses = allCourses.filter(c => 
-    enrolledIds.includes(c.id) || 
+  const enrolledCourses = allCourses.filter(c =>
+    enrolledIds.includes(c.id) ||
     (user && c.enrolledUsers && c.enrolledUsers.includes(user.uid)) ||
     c.price === 0 ||
     (c as any).isFree
@@ -431,7 +431,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Generate dynamic recent activities for recruiter
   const getRecruiterActivities = () => {
     const list: Array<{ id: string; text: string; time: string; type: 'post' | 'apply' | 'review' | 'shortlist' | 'reject' }> = [];
-    
+
     applications.forEach(app => {
       if (app.status === 'reviewing') {
         list.push({
@@ -591,8 +591,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <Ionicons name="folder-open-outline" size={22} color="#D97706" style={styles.toolIcon} />
                   <Text style={styles.toolLabel}>Study Files</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.toolItem, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]} 
+                <TouchableOpacity
+                  style={[styles.toolItem, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}
                   onPress={() => setTestSeriesModalVisible(true)}
                   activeOpacity={0.8}
                 >
@@ -740,75 +740,75 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             )}
           </ScrollView>
 
-        {/* Test Series Modal */}
-        <Modal
-          visible={testSeriesModalVisible}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setTestSeriesModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.editModalContent, { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' }]}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Test Series / परीक्षा</Text>
-                <TouchableOpacity onPress={() => setTestSeriesModalVisible(false)} style={styles.editCloseBtn}>
-                  <Ionicons name="close" size={24} color="#6B7280" />
-                </TouchableOpacity>
-              </View>
+          {/* Test Series Modal */}
+          <Modal
+            visible={testSeriesModalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setTestSeriesModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.editModalContent, { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Test Series / परीक्षा</Text>
+                  <TouchableOpacity onPress={() => setTestSeriesModalVisible(false)} style={styles.editCloseBtn}>
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
 
-              <ScrollView contentContainerStyle={{ padding: 20 }}>
-                <Text style={styles.modalSubtitle}>Select a course to start its exam series</Text>
-                
-                {enrolledCourses.length === 0 ? (
-                  <View style={styles.emptyCard}>
-                    <Ionicons name="book-outline" size={48} color="#94A3B8" />
-                    <Text style={styles.emptyText}>You are not enrolled in any courses yet.</Text>
-                  </View>
-                ) : (
-                  enrolledCourses.map((c) => {
-                    const progress = progressMap[c.id] || 0;
-                    const isLocked = progress < 100;
-                    return (
-                      <TouchableOpacity
-                        key={c.id}
-                        style={[styles.testCourseItem, isLocked ? styles.testCourseLocked : styles.testCourseUnlocked]}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          setTestSeriesModalVisible(false);
-                          if (isLocked) {
-                            Alert.alert(
-                              'Quiz Locked / परीक्षा कुलूपबंद आहे',
-                              `You must complete 100% lectures of this course to unlock the final quiz.\n\nYour progress: ${progress}%\n\nपरीक्षा देण्यासाठी सर्व लेक्चर्स १००% पूर्ण करा.`
-                            );
-                          } else {
-                            if (onTakeTest) onTakeTest(c.id);
-                          }
-                        }}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.testCourseTitle}>{c.title}</Text>
-                          <Text style={styles.testCourseProgress}>Lectures Progress: {progress}%</Text>
-                        </View>
-                        <View style={[styles.lockStatusBadge, { backgroundColor: isLocked ? '#FEF3C7' : '#D1FAE5' }]}>
-                          <Ionicons 
-                            name={isLocked ? "lock-closed" : "checkmark-circle"} 
-                            size={14} 
-                            color={isLocked ? "#D97706" : "#059669"} 
-                            style={{ marginRight: 4 }} 
-                          />
-                          <Text style={{ fontSize: 11, fontWeight: '700', color: isLocked ? "#B45309" : "#047857" }}>
-                            {isLocked ? "Locked" : "Start"}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })
-                )}
-              </ScrollView>
+                <ScrollView contentContainerStyle={{ padding: 20 }}>
+                  <Text style={styles.modalSubtitle}>Select a course to start its exam series</Text>
+
+                  {enrolledCourses.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                      <Ionicons name="book-outline" size={48} color="#94A3B8" />
+                      <Text style={styles.emptyText}>You are not enrolled in any courses yet.</Text>
+                    </View>
+                  ) : (
+                    enrolledCourses.map((c) => {
+                      const progress = progressMap[c.id] || 0;
+                      const isLocked = progress < 100;
+                      return (
+                        <TouchableOpacity
+                          key={c.id}
+                          style={[styles.testCourseItem, isLocked ? styles.testCourseLocked : styles.testCourseUnlocked]}
+                          activeOpacity={0.8}
+                          onPress={() => {
+                            setTestSeriesModalVisible(false);
+                            if (isLocked) {
+                              Alert.alert(
+                                'Quiz Locked / परीक्षा कुलूपबंद आहे',
+                                `You must complete 100% lectures of this course to unlock the final quiz.\n\nYour progress: ${progress}%\n\nपरीक्षा देण्यासाठी सर्व लेक्चर्स १००% पूर्ण करा.`
+                              );
+                            } else {
+                              if (onTakeTest) onTakeTest(c.id);
+                            }
+                          }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.testCourseTitle}>{c.title}</Text>
+                            <Text style={styles.testCourseProgress}>Lectures Progress: {progress}%</Text>
+                          </View>
+                          <View style={[styles.lockStatusBadge, { backgroundColor: isLocked ? '#FEF3C7' : '#D1FAE5' }]}>
+                            <Ionicons
+                              name={isLocked ? "lock-closed" : "checkmark-circle"}
+                              size={14}
+                              color={isLocked ? "#D97706" : "#059669"}
+                              style={{ marginRight: 4 }}
+                            />
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: isLocked ? "#B45309" : "#047857" }}>
+                              {isLocked ? "Locked" : "Start"}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })
+                  )}
+                </ScrollView>
+              </View>
             </View>
-          </View>
-        </Modal>
-      </>
+          </Modal>
+        </>
       ) : (
         // ════════════════════════════════════════════════════════════
         // RECRUITER / EMPLOYER DASHBOARD VIEW (Overhauled)
@@ -1050,8 +1050,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       <Ionicons name="briefcase-outline" size={32} color="#94A3B8" />
                       <Text style={styles.emptyText}>{"You haven't posted any jobs yet."}</Text>
                       {onPostJobPress && (
-                        <TouchableOpacity 
-                          style={[styles.emptyBtn, { backgroundColor: '#4F46E5', marginTop: 10 }]} 
+                        <TouchableOpacity
+                          style={[styles.emptyBtn, { backgroundColor: '#4F46E5', marginTop: 10 }]}
                           onPress={() => onPostJobPress()}
                         >
                           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Post a Job</Text>
@@ -1061,7 +1061,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   ) : (
                     recruiterJobs.map((job) => {
                       const jobAppsCount = applications.filter(a => a.jobId === job.id).length;
-                      
+
                       const handleViewJobApplicants = () => {
                         setAppsSearchTerm(job.title);
                         setAppsStatusFilter('all');
@@ -1105,7 +1105,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                           {/* Action Buttons Row */}
                           <View style={styles.recruiterJobActionsRow}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                               style={[styles.jobActionBtn, { borderColor: '#4F46E5', borderWidth: 1 }]}
                               onPress={() => onPostJobPress?.(job.id)}
                               activeOpacity={0.7}
@@ -1114,7 +1114,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                               <Text style={[styles.jobActionText, { color: '#4F46E5' }]}>Edit / बदला</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                               style={[styles.jobActionBtn, { borderColor: '#EF4444', borderWidth: 1 }]}
                               onPress={() => handleDeleteJob(job.id)}
                               activeOpacity={0.7}
@@ -1123,9 +1123,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                               <Text style={[styles.jobActionText, { color: '#EF4444' }]}>Delete / काढा</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                               style={[
-                                styles.jobActionBtn, 
+                                styles.jobActionBtn,
                                 { backgroundColor: '#4F46E5', flex: 1.2 }
                               ]}
                               onPress={handleViewJobApplicants}
@@ -1149,7 +1149,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               const filteredApps = applications.filter((app) => {
                 // Status Filter
                 if (appsStatusFilter !== 'all') {
-                  const match = 
+                  const match =
                     (appsStatusFilter === 'pending' && app.status === 'pending') ||
                     (appsStatusFilter === 'reviewing' && app.status === 'reviewing') ||
                     (appsStatusFilter === 'interviewing' && app.status === 'interviewing') ||
@@ -1160,7 +1160,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 // Search term filter
                 if (appsSearchTerm.trim()) {
                   const query = appsSearchTerm.toLowerCase();
-                  const matchQuery = 
+                  const matchQuery =
                     (app.candidateName && app.candidateName.toLowerCase().includes(query)) ||
                     (app.candidateEmail && app.candidateEmail.toLowerCase().includes(query)) ||
                     (app.jobTitle && app.jobTitle.toLowerCase().includes(query));
@@ -1190,8 +1190,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <Text style={styles.sectionTitle}>Manage Applications</Text>
 
                   {/* Horizontal Filter Tabs Scroll */}
-                  <ScrollView 
-                    horizontal 
+                  <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.appsFilterScroll}
                   >
@@ -1217,11 +1217,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             {tab.label}
                           </Text>
                           <View style={[
-                            styles.appsFilterBadge, 
+                            styles.appsFilterBadge,
                             { backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : '#F1F5F9' }
                           ]}>
                             <Text style={[
-                              styles.appsFilterBadgeText, 
+                              styles.appsFilterBadgeText,
                               isActive ? { color: '#ffffff' } : { color: '#475569' }
                             ]}>
                               {tab.value}
@@ -1259,16 +1259,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     ) : (
                       filteredApps.map((app) => {
                         const progressStep = getStatusProgressStep(app.status);
-                        const initials = app.candidateName 
-                          ? app.candidateName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) 
+                        const initials = app.candidateName
+                          ? app.candidateName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
                           : 'C';
 
                         // Status Color Mapping
-                        const themeColor = 
+                        const themeColor =
                           app.status === 'rejected' ? '#EF4444' :
-                          app.status === 'accepted' ? '#10B981' :
-                          app.status === 'interviewing' ? '#8B5CF6' :
-                          app.status === 'reviewing' ? '#2563EB' : '#F59E0B';
+                            app.status === 'accepted' ? '#10B981' :
+                              app.status === 'interviewing' ? '#8B5CF6' :
+                                app.status === 'reviewing' ? '#2563EB' : '#F59E0B';
 
                         const themeBg = themeColor + '15';
 
@@ -1310,7 +1310,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             {/* Contact Pills */}
                             <View style={styles.contactPillsContainer}>
                               {app.candidateEmail ? (
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                   style={[styles.contactPill, { backgroundColor: '#EFF6FF' }]}
                                   onPress={() => Linking.openURL('mailto:' + app.candidateEmail)}
                                 >
@@ -1322,7 +1322,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                               ) : null}
 
                               {app.candidatePhone ? (
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                   style={[styles.contactPill, { backgroundColor: '#ECFDF5' }]}
                                   onPress={() => Linking.openURL('tel:' + app.candidatePhone)}
                                 >
@@ -1414,7 +1414,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             <View style={styles.stepperContainer}>
                               <View style={styles.stepperTrackLine}>
                                 <View style={[
-                                  styles.stepperFillLine, 
+                                  styles.stepperFillLine,
                                   { width: app.status === 'rejected' ? '100%' : `${((progressStep - 1) / 3) * 100}%` }
                                 ]} />
                               </View>
@@ -1493,7 +1493,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <>
                   <Text style={styles.sectionTitle}>Performance Analytics</Text>
                   <View style={{ gap: 14, marginTop: 10, paddingBottom: 20 }}>
-                    
+
                     {/* Visual Performance Ratio Cards */}
                     <View style={styles.analyticsGridRow}>
                       <View style={[styles.analyticsStatBigCard, { borderColor: '#8B5CF6' }]}>
@@ -1575,12 +1575,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     {/* Overall Summary List */}
                     <View style={styles.analyticsCard}>
                       <Text style={styles.analyticsTitle}>Summary Overview</Text>
-                      
+
                       <View style={styles.analyticsStatRow}>
                         <Text style={styles.analyticsLabel}>Total Posted Listings</Text>
                         <Text style={styles.analyticsVal}>{activeJobsCount + draftsCount}</Text>
                       </View>
-                      
+
                       <View style={styles.analyticsStatRow}>
                         <Text style={styles.analyticsLabel}>Total Candidate Apps</Text>
                         <Text style={styles.analyticsVal}>{totalAppsCount}</Text>
@@ -1605,7 +1605,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {recruiterTab === 'profile' && (
               <>
                 <Text style={styles.sectionTitle}>Company Profile Details</Text>
-                
+
                 <View style={styles.profileDetailCard}>
                   {/* Avatar / Title Box */}
                   <View style={styles.profileHeaderBox}>
@@ -1638,7 +1638,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     </View>
 
                     {user?.recruiterProfile?.companyWebsite ? (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.profileInfoRow}
                         onPress={() => {
                           const url = user?.recruiterProfile?.companyWebsite;
@@ -1676,7 +1676,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       <View style={{ flex: 1 }}>
                         <Text style={styles.profileInfoLabel}>About the Company</Text>
                         <Text style={[
-                          styles.profileInfoValue, 
+                          styles.profileInfoValue,
                           !user?.recruiterProfile?.bio && { color: '#94A3B8', fontStyle: 'italic' }
                         ]}>
                           {user?.recruiterProfile?.bio || 'No description provided yet. Tap edit to write a brief summary.'}
@@ -1686,7 +1686,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   </View>
 
                   {/* Edit profile action button inside card */}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.profileEditCardBtn}
                     onPress={() => setCompanyModalVisible(true)}
                     activeOpacity={0.8}
@@ -1701,7 +1701,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {recruiterTab === 'candidates' && (() => {
               const filteredCandidates = candidateList.filter((cand) => {
                 const seekerProf = cand.seekerProfile || {};
-                
+
                 // Name or Email match
                 if (candidatesSearch.trim()) {
                   const queryText = candidatesSearch.toLowerCase();
@@ -1711,7 +1711,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     return false;
                   }
                 }
-                
+
                 // State filter
                 if (candidatesStateFilter.trim()) {
                   const stateVal = cand.state || cand.location || '';
@@ -1757,7 +1757,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               return (
                 <View style={{ marginTop: 8 }}>
                   <Text style={styles.sectionTitle}>Talent Database Search</Text>
-                  
+
                   {/* Search and Filters Card */}
                   <View style={styles.candidateSearchCard}>
                     <View style={styles.appsSearchBox}>
@@ -1827,7 +1827,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
                         const skills = seekerProf.skills || [];
                         const isUnlocked = revealedIds.includes(cand.id);
-                        
+
                         // Masked info helper
                         const getMaskedPhone = (p: string) => {
                           if (!p) return 'Not Provided';
@@ -1914,11 +1914,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                                 onPress={handleUnlockCandidate}
                                 activeOpacity={0.8}
                               >
-                                <Ionicons 
-                                  name={isUnlocked ? "checkmark-circle" : "lock-closed"} 
-                                  size={12} 
-                                  color="#fff" 
-                                  style={{ marginRight: 4 }} 
+                                <Ionicons
+                                  name={isUnlocked ? "checkmark-circle" : "lock-closed"}
+                                  size={12}
+                                  color="#fff"
+                                  style={{ marginRight: 4 }}
                                 />
                                 <Text style={styles.unlockBtnText}>
                                   {isUnlocked ? 'Unlocked' : 'Unlock Contact'}
