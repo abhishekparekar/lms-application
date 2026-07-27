@@ -49,7 +49,7 @@ export const JobCard: React.FC<JobCardProps> = ({
       style={[
         styles.card,
         isHorizontal ? styles.horizontalCard : null,
-        { backgroundColor: scheme === 'dark' ? '#1E293B' : '#FFFFFF', borderColor: scheme === 'dark' ? '#334155' : '#EEF2FF' }
+        { backgroundColor: '#FFFFFF', borderColor: '#EEF2FF' }
       ]}
     >
       {/* Top Row: Logo & Top Right Badges */}

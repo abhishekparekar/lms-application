@@ -146,11 +146,11 @@ const PremiumCard: React.FC<{
   isDark: boolean;
 }> = ({ course, enrolled, onPress, onAction, isDark }) => {
   const isFree = course.price === 0 || (course as any).isFree;
-  const cardBg = isDark ? '#1A1A2E' : '#FFFFFF';
-  const border = isDark ? '#2A2A3E' : '#F3F4F8';
-  const textPrimary = isDark ? '#F0F0FF' : '#111827';
-  const textSec = isDark ? '#8888AA' : '#6B7280';
-  const accent = '#6C63FF';
+  const cardBg = '#FFFFFF';
+  const border = '#F3F4F8';
+  const textPrimary = '#111827';
+  const textSec = '#6B7280';
+  const accent = '#4F46E5';
 
   const img = course.imageUrl || course.thumbnail ||
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop';
@@ -219,9 +219,9 @@ const FeaturedCard: React.FC<{
   course: Course; onPress: () => void; isDark: boolean;
 }> = ({ course, onPress, isDark }) => {
   const img = course.imageUrl || course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop';
-  const textPrimary = isDark ? '#F9FAFB' : '#111827';
-  const textSec = isDark ? '#9CA3AF' : '#6B7280';
-  const cardBg = isDark ? '#1A1A2E' : '#FFFFFF';
+  const textPrimary = '#111827';
+  const textSec = '#6B7280';
+  const cardBg = '#FFFFFF';
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={[styles.featWrap, { backgroundColor: cardBg }]}>
@@ -242,15 +242,12 @@ const FeaturedCard: React.FC<{
 // ─────────────────────────────────────────────────────────────────────────────
 export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) => {
   const { user } = useAuth();
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-
-  const bg = isDark ? '#0A0A14' : '#F9FAFB';
-  const cardBg = isDark ? '#1A1A2E' : '#FFFFFF';
-  const border = isDark ? '#2A2A3E' : '#E5E7EB';
-  const textPrimary = isDark ? '#F9FAFB' : '#111827';
-  const textSec = isDark ? '#9CA3AF' : '#6B7280';
-  const accent = '#6C63FF';
+  const bg = '#F9FAFB';
+  const cardBg = '#FFFFFF';
+  const border = '#E5E7EB';
+  const textPrimary = '#111827';
+  const textSec = '#6B7280';
+  const accent = '#4F46E5';
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrolledIds, setEnrolledIds] = useState<string[]>([]);
@@ -379,7 +376,7 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
             keyExtractor={c => 'feat-' + c.id}
             contentContainerStyle={styles.featList}
             renderItem={({ item }) => (
-              <FeaturedCard course={item} onPress={() => onCoursePress(item.id)} isDark={isDark} />
+              <FeaturedCard course={item} onPress={() => onCoursePress(item.id)} isDark={false} />
             )}
           />
         </View>
