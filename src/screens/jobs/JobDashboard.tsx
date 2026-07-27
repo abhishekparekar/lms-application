@@ -269,33 +269,6 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
             })}
           </ScrollView>
         </View>
-
-        <View style={[styles.filterSectionRow, { marginTop: 8 }]}>
-          <Text style={styles.filterLabel}>MODE</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsScroll}>
-            {WORKSPACE_MODES.map((modeObj) => {
-              const isSelected = selectedWorkspace === modeObj.id;
-              return (
-                <TouchableOpacity
-                  key={modeObj.id}
-                  style={[styles.typePill, isSelected && styles.selectedWorkspacePill, { flexDirection: 'row', alignItems: 'center' }]}
-                  onPress={() => setSelectedWorkspace(modeObj.id)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name={modeObj.icon}
-                    size={13}
-                    color={isSelected ? '#ffffff' : '#64748B'}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text style={[styles.typeText, isSelected && styles.selectedTypeText]}>
-                    {modeObj.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
       </View>
 
       <View style={styles.resultsBar}>
