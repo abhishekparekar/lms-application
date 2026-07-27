@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
-import { useColorScheme, LogBox, StatusBar as RNStatusBar, Platform } from 'react-native';
+import { useColorScheme, LogBox, StatusBar as RNStatusBar, Platform, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '@/context/AuthContext';
 import { Slot } from 'expo-router';
@@ -26,13 +26,28 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    RNStatusBar.setBarStyle('light-content');
-    if (Platform.OS === 'android') {
-      RNStatusBar.setBackgroundColor('#4F46E5');
-      RNStatusBar.setTranslucent(false);
-    }
+    const forceWhiteStatusBar = () => {
+      RNStatusBar.setBarStyle('light-content', true);
+      if (Platform.OS === 'android') {
+        RNStatusBar.setBackgroundColor('#4F46E5', true);
+        RNStatusBar.setTranslucent(false);
+      }
+    };
+
+    forceWhiteStatusBar();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        forceWhiteStatusBar();
+      }
+    });
+
     SplashScreen.hideAsync().catch(() => {});
-  }, []);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [colorScheme]);
 
   return (
     <AuthProvider>
