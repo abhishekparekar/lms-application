@@ -9,7 +9,10 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  StatusBar as RNStatusBar,
+  Platform,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { jobService, Job, JobApplication } from '@/services/jobs/jobService';
@@ -168,22 +171,37 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
     return matchSearch && matchType && matchWorkspace;
   });
 
+  useEffect(() => {
+    RNStatusBar.setBarStyle('light-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setTranslucent(false);
+    }
+  }, []);
+
   if (!isJobsVisible) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC', justifyContent: 'center', alignItems: 'center' }]}>
-        <Ionicons name="briefcase-outline" size={48} color="#9CA3AF" />
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#374151', marginTop: 12 }}>
-          Jobs Section Temporarily Offline
-        </Text>
-        <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'center', paddingHorizontal: 32 }}>
-          Job portal access has been temporarily restricted by the administrator.
-        </Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+        <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+        <StatusBar style="light" />
+        <View style={[styles.container, { backgroundColor: '#F8F9FC', justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+          <Ionicons name="briefcase-outline" size={48} color="#9CA3AF" />
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#374151', marginTop: 12 }}>
+            Jobs Section Temporarily Offline
+          </Text>
+          <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 4, textAlign: 'center', paddingHorizontal: 32 }}>
+            Job portal access has been temporarily restricted by the administrator.
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#F8F9FC' }]} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
+      <View style={[styles.container, { backgroundColor: '#F8F9FC' }]}>
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
           <Ionicons name="search" size={18} color="#4F46E5" style={styles.searchIcon} />
@@ -338,6 +356,7 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
           </View>
         )}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
