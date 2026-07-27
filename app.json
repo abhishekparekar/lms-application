@@ -2,6 +2,7 @@
   "expo": {
     "name": "Ganimi Kava",
     "slug": "ganimi-kawa",
+    "scheme": "lmsjobportal1",
     "version": "1.0.0",
     "orientation": "portrait",
     "backgroundColor": "#4F46E5",
