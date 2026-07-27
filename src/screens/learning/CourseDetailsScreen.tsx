@@ -328,9 +328,9 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
           <TouchableOpacity
             style={styles.headerIconBtn}
             onPress={handleShareCourse}
-            activeOpacity={0.7}
+            activeOpacity={0.75}
           >
-            <Ionicons name="share-social" size={20} color="#4F46E5" />
+            <Ionicons name="share-social" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -764,7 +764,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerIconBtn: {
-    padding: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     paddingBottom: 110,
