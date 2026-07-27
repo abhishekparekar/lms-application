@@ -264,22 +264,16 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
         );
       case 'jobs':
         return (
-          <SafeAreaView style={[styles.learningWrapper, { backgroundColor: '#4F46E5' }]} edges={['top']}>
-            <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
-            <StatusBar style="light" />
-            <View style={{ flex: 1, backgroundColor: '#F8F9FC' }}>
-              <JobDashboard
-                onJobPress={onJobPress}
-                onSavedJobsPress={onSavedJobsPress}
-                onRedirectToProfile={() => handleTabPress('profile')}
-                onPostJobPress={
-                  user?.role === 'recruiter'
-                    ? onPostJobPress
-                    : undefined
-                }
-              />
-            </View>
-          </SafeAreaView>
+          <JobDashboard
+            onJobPress={onJobPress}
+            onSavedJobsPress={onSavedJobsPress}
+            onRedirectToProfile={() => handleTabPress('profile')}
+            onPostJobPress={
+              user?.role === 'recruiter'
+                ? onPostJobPress
+                : undefined
+            }
+          />
         );
       case 'resume':
         return (

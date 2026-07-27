@@ -201,6 +201,10 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
     <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
       <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
       <StatusBar style="light" />
+      {/* Top Header */}
+      <View style={styles.headerBar}>
+        <Text style={styles.headerTitle}>Job Portal</Text>
+      </View>
       <View style={[styles.container, { backgroundColor: '#F8F9FC' }]}>
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
@@ -337,6 +341,20 @@ export const JobDashboard: React.FC<JobDashboardProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  headerBar: {
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#4338CA',
+    backgroundColor: '#4F46E5',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   headerTitleRow: {
     paddingHorizontal: 16,
