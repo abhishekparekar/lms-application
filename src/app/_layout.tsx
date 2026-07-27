@@ -10,6 +10,18 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 
 LogBox.ignoreLogs(['Cannot connect to Expo CLI', 'Setting a timer', 'WebChannelConnection RPC', 'transport errored']);
 
+const CustomTheme = {
+  ...DefaultTheme,
+  dark: true,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#ffffff',
+    card: '#ffffff',
+    text: '#111827',
+    border: '#E2E8F0',
+  },
+};
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -24,7 +36,7 @@ export default function TabLayout() {
 
   return (
     <AuthProvider>
-      <ThemeProvider value={DefaultTheme}>
+      <ThemeProvider value={CustomTheme}>
         <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
         <StatusBar style="light" />
         <AnimatedSplashOverlay />
