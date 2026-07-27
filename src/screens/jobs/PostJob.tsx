@@ -9,8 +9,10 @@ import {
   Platform,
   Alert,
   TextInput,
-  Switch
+  Switch,
+  StatusBar as RNStatusBar
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -481,17 +483,22 @@ ${benefits.length > 0 ? `• Added Benefits: ${benefits.join(', ')}\n` : ''}
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
       <KeyboardAvoidingView 
         style={styles.keyboardContainer} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header */}
         <View style={styles.headerBar}>
-          <TouchableOpacity onPress={onBack} style={styles.iconButton}>
-            <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <TouchableOpacity onPress={onBack} style={styles.iconButton} activeOpacity={0.75}>
+            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{currentStep === 4 ? 'Review & Publish' : 'Create Job Listing'}</Text>
+          <Text style={styles.headerTitle}>{editingJobId ? 'Edit Job Listing' : currentStep === 4 ? 'Review & Publish' : 'Create Job Listing'}</Text>
+          <View style={styles.stepCounterBadge}>
+            <Text style={styles.stepCounterText}>{currentStep}/4</Text>
+          </View>
         </View>
 
         {/* Stepper progress dots */}
@@ -500,22 +507,22 @@ ${benefits.length > 0 ? `• Added Benefits: ${benefits.join(', ')}\n` : ''}
             const active = currentStep === s;
             const completed = currentStep > s;
             return (
-              <View key={s} style={styles.stepIndicatorCol}>
+              <TouchableOpacity key={s} onPress={() => setCurrentStep(s)} style={styles.stepIndicatorCol} activeOpacity={0.8}>
                 <View style={[
                   styles.stepBadge,
                   active && styles.stepBadgeActive,
                   completed && styles.stepBadgeCompleted
                 ]}>
                   {completed ? (
-                    <Ionicons name="checkmark" size={14} color="#ffffff" />
+                    <Ionicons name="checkmark" size={12} color="#ffffff" />
                   ) : (
                     <Text style={[styles.stepText, active && styles.stepTextActive]}>{s}</Text>
                   )}
                 </View>
-                <Text style={[styles.stepLabel, active && styles.stepLabelActive]}>
+                <Text style={[styles.stepLabel, active && styles.stepLabelActive]} numberOfLines={1}>
                   {s === 1 ? 'Details' : s === 2 ? 'Location' : s === 3 ? 'Skills' : 'Publish'}
                 </Text>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -913,53 +920,79 @@ ${benefits.length > 0 ? `• Added Benefits: ${benefits.join(', ')}\n` : ''}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FC',
+    backgroundColor: '#F8FAFC',
   },
   keyboardContainer: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
+    justifyContent: 'space-between',
+    height: 54,
     paddingHorizontal: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#4F46E5',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#4338CA',
   },
   iconButton: {
-    paddingRight: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 8,
+  },
+  stepCounterBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  stepCounterText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
   },
   stepperContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
   },
   stepIndicatorCol: {
     alignItems: 'center',
     flex: 1,
   },
   stepBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#F1F5F9',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepBadgeActive: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#4F46E5',
     borderColor: '#4F46E5',
   },
   stepBadgeCompleted: {
@@ -969,18 +1002,18 @@ const styles = StyleSheet.create({
   stepText: {
     fontSize: 11,
     color: '#64748B',
-    fontWeight: '700',
+    fontWeight: '800',
   },
   stepTextActive: {
-    color: '#4F46E5',
+    color: '#FFFFFF',
   },
   stepLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#64748B',
-    marginTop: 4,
+    marginTop: 3,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   stepLabelActive: {
     color: '#4F46E5',
@@ -994,44 +1027,45 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     padding: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.01,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 3,
     marginBottom: 20,
   },
   stepTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
     color: '#0F172A',
     marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   fieldLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
-    color: '#475569',
+    color: '#334155',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 12,
+    letterSpacing: 0.4,
+    marginTop: 14,
     marginBottom: 6,
   },
   textInput: {
-    height: 46,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 13,
-    color: '#1E293B',
+    height: 48,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    fontSize: 13.5,
+    color: '#0F172A',
+    fontWeight: '500',
   },
   textArea: {
-    height: 100,
-    paddingTop: 10,
+    height: 110,
+    paddingTop: 12,
     alignItems: 'flex-start',
   },
   errorInput: {
@@ -1041,21 +1075,21 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 11,
     color: '#EF4444',
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 4,
   },
   pillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginVertical: 4,
+    marginVertical: 6,
   },
   pill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 14,
     backgroundColor: '#F8FAFC',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
   },
   pillActive: {
@@ -1063,7 +1097,7 @@ const styles = StyleSheet.create({
     borderColor: '#4F46E5',
   },
   pillText: {
-    fontSize: 12,
+    fontSize: 12.5,
     color: '#64748B',
     fontWeight: '600',
   },
