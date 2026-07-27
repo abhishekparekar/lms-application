@@ -200,19 +200,17 @@ export const JobDetails: React.FC<JobDetailsProps> = ({
         </Text>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={handleShareJob} style={styles.headerIconBtn} activeOpacity={0.7}>
-            <Ionicons name="share-social-outline" size={20} color="#FFFFFF" />
+          <TouchableOpacity onPress={handleShareJob} style={styles.headerIconBtn} activeOpacity={0.75}>
+            <Ionicons name="share-social" size={18} color="#FFFFFF" />
           </TouchableOpacity>
 
-          {isSeeker && (
-            <TouchableOpacity onPress={toggleSaveJob} style={styles.headerIconBtn} activeOpacity={0.7}>
-              <Ionicons 
-                name={isSaved ? 'heart' : 'heart-outline'} 
-                size={20} 
-                color={isSaved ? '#EF4444' : '#FFFFFF'} 
-              />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={toggleSaveJob} style={styles.headerIconBtn} activeOpacity={0.75}>
+            <Ionicons 
+              name={isSaved ? 'bookmark' : 'bookmark-outline'} 
+              size={18} 
+              color={isSaved ? '#FFD700' : '#FFFFFF'} 
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -429,11 +427,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   scrollContent: {
     padding: 12,
