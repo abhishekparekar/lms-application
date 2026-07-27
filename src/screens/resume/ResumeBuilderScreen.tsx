@@ -453,14 +453,15 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#4F46E5' }]} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
       <StatusBar style="light" />
       {/* Top Header */}
       <View style={styles.headerBar}>
         <Text style={styles.headerTitle}>ATS Resume Builder</Text>
       </View>
 
-      {/* Segmented Mode Selector: Edit Form vs Preview */}
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Segmented Mode Selector: Edit Form vs Preview */}
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'edit' && styles.tabItemActive]}
@@ -919,6 +920,7 @@ export const ResumeBuilderScreen: React.FC<ResumeBuilderScreenProps> = ({
           </View>
         )}
       </ScrollView>
+      </View>
 
       {/* PDF Generator Loading Modal */}
       <Modal visible={isGeneratingPdf} transparent animationType="fade">
