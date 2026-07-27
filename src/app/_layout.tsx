@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
-import { useColorScheme, LogBox, StatusBar as RNStatusBar } from 'react-native';
+import { useColorScheme, LogBox, StatusBar as RNStatusBar, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '@/context/AuthContext';
 import { Slot } from 'expo-router';
@@ -14,6 +14,12 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
+    // Force Android window status bar to white text & #4F46E5 background
+    RNStatusBar.setBarStyle('light-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setTranslucent(false);
+    }
     // Hide native splash screen as soon as React component mounts
     SplashScreen.hideAsync().catch(() => {});
   }, []);

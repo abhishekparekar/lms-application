@@ -6,8 +6,12 @@
     "orientation": "portrait",
     "backgroundColor": "#4F46E5",
     "icon": "./assets/images/logoimg22.png",
-    "scheme": "lmsjobportal1",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
+    "statusBar": {
+      "style": "light",
+      "backgroundColor": "#4F46E5",
+      "translucent": false
+    },
     "splash": {
       "image": "./assets/images/logoimg22.png",
       "resizeMode": "contain",
