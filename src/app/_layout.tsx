@@ -14,21 +14,12 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    const applyStatusBar = () => {
-      RNStatusBar.setBarStyle('light-content', true);
-      if (Platform.OS === 'android') {
-        RNStatusBar.setBackgroundColor('#4F46E5', true);
-        RNStatusBar.setTranslucent(false);
-      }
-    };
-
-    applyStatusBar();
-    const interval = setInterval(applyStatusBar, 500);
-
-    // Hide native splash screen as soon as React component mounts
+    RNStatusBar.setBarStyle('light-content');
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor('#4F46E5');
+      RNStatusBar.setTranslucent(false);
+    }
     SplashScreen.hideAsync().catch(() => {});
-
-    return () => clearInterval(interval);
   }, []);
 
   return (
