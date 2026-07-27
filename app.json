@@ -36,8 +36,8 @@
         "backgroundColor": "#4F46E5"
       },
       "adaptiveIcon": {
-        "backgroundColor": "#4F46E5",
-        "foregroundImage": "./assets/images/logoimg22.png"
+        "backgroundColor": "#0b0b14",
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
