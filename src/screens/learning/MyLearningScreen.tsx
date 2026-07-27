@@ -15,8 +15,11 @@ import {
   TextInput,
   TouchableOpacity,
   useColorScheme,
-  View
+  View,
+  StatusBar as RNStatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
 interface MyLearningScreenProps {
   onResumeCourse: (courseId: string) => void;
@@ -234,8 +237,11 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
   );
 
   return (
-    <View style={[styles.mainContainer, { backgroundColor: colors.backgroundElement }]}>
-      <View style={[styles.headerBackground, { backgroundColor: colors.primary }]} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
+      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
+      <StatusBar style="light" />
+      <View style={[styles.mainContainer, { backgroundColor: colors.backgroundElement }]}>
+        <View style={[styles.headerBackground, { backgroundColor: '#4F46E5' }]} />
 
       <View style={styles.safeAreaWrapper}>
         <FlatList
@@ -361,6 +367,7 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
         />
       </View>
     </View>
+    </SafeAreaView>
   );
 };
 
