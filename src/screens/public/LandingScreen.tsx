@@ -76,9 +76,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
-    RNStatusBar.setBarStyle('light-content', true);
+    RNStatusBar.setBarStyle('light-content');
     if (Platform.OS === 'android') {
-      RNStatusBar.setBackgroundColor('#4F46E5', true);
+      RNStatusBar.setBackgroundColor('#4F46E5');
       RNStatusBar.setTranslucent(false);
     }
   }, []);
