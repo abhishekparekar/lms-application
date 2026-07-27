@@ -38,7 +38,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
       style={[
         styles.card,
         isHorizontal ? styles.horizontalCard : null,
-        { backgroundColor: scheme === 'dark' ? '#1E293B' : '#FFFFFF', borderColor: scheme === 'dark' ? '#334155' : '#EEF2FF' }
+        { backgroundColor: '#FFFFFF', borderColor: '#EEF2FF' }
       ]}
     >
       {/* Thumbnail Container with Badges */}
@@ -61,7 +61,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
       {/* Card Content Body */}
       <View style={[styles.content, isHorizontal ? styles.horizontalContent : null]}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          <Text style={styles.title} numberOfLines={2}>
             {course.title}
           </Text>
           <Text style={styles.instructor} numberOfLines={1}>By {course.instructor || 'Ganimi Kava'}</Text>
@@ -79,7 +79,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
         {/* Footer Action */}
         <View style={[styles.footer, !isHorizontal ? styles.verticalFooter : null]}>
           {isHorizontal && (
-            <Text style={[styles.priceText, { color: colors.text }]}>
+            <Text style={styles.priceText}>
               {course.price === 0 ? 'Free Access' : `₹${course.price}`}
             </Text>
           )}
