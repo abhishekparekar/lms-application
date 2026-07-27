@@ -167,9 +167,6 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
 
   const renderHeader = () => (
     <View style={styles.headerContent}>
-      <Text style={styles.headerTitle}>My Learning</Text>
-      <Text style={styles.headerSubtitle}>Track your active lectures & video progress</Text>
-
       <View style={styles.searchBox}>
         <Ionicons name="search" size={18} color="#4F46E5" />
         <TextInput
@@ -237,22 +234,16 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
-      <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
-      <StatusBar style="light" />
-      <View style={[styles.mainContainer, { backgroundColor: colors.backgroundElement }]}>
-        <View style={[styles.headerBackground, { backgroundColor: '#4F46E5' }]} />
-
-      <View style={styles.safeAreaWrapper}>
-        <FlatList
-          data={filteredEnrolled}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={renderHeader}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#FFFFFF" />
-          }
+    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+      <FlatList
+        data={filteredEnrolled}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={renderHeader}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4F46E5" />
+        }
           ListEmptyComponent={
             !loading ? (
               <View style={styles.emptyContainer}>
@@ -364,10 +355,8 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
               </TouchableOpacity>
             );
           }}
-        />
-      </View>
+      />
     </View>
-    </SafeAreaView>
   );
 };
 
@@ -376,23 +365,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 250,
-    backgroundColor: '#4F46E5',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
   safeAreaWrapper: {
     flex: 1,
   },
   headerContent: {
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: '#F8FAFC',
   },
   headerTitle: {
     fontSize: 24,
@@ -457,26 +437,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderColor: '#E2E8F0',
   },
   filterChipActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
   },
   filterChipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#64748B',
   },
   filterChipTextActive: {
-    color: '#4F46E5',
+    color: '#FFFFFF',
   },
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
-    paddingTop: 8,
+    paddingTop: 4,
   },
   formattedCard: {
     backgroundColor: '#FFFFFF',
