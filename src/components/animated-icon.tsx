@@ -12,14 +12,18 @@ import * as SplashScreen from 'expo-splash-screen';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export function AnimatedSplashOverlay() {
+interface AnimatedSplashOverlayProps {
+  autoFade?: boolean;
+}
+
+export function AnimatedSplashOverlay({ autoFade = false }: AnimatedSplashOverlayProps) {
   const [visible, setVisible] = useState(true);
 
   // Shared values for animations
   const bgOpacity = useSharedValue(1);
-  const logoScale = useSharedValue(0.3);
+  const logoScale = useSharedValue(0.4);
   const logoOpacity = useSharedValue(0);
-  const textTranslateY = useSharedValue(25);
+  const textTranslateY = useSharedValue(20);
   const textOpacity = useSharedValue(0);
   const taglineOpacity = useSharedValue(0);
 
@@ -27,7 +31,7 @@ export function AnimatedSplashOverlay() {
     // Hide native splash screen immediately when React Native splash overlay mounts
     SplashScreen.hideAsync().catch(() => {});
 
-    // Fast, responsive animation sequence (~1.1 seconds total)
+    // Fast, responsive animation sequence
     logoScale.value = withTiming(1.0, {
       duration: 450,
       easing: Easing.out(Easing.back(1.4)),
@@ -36,28 +40,29 @@ export function AnimatedSplashOverlay() {
       duration: 350,
     });
 
-    textTranslateY.value = withDelay(150, withTiming(0, {
+    textTranslateY.value = withDelay(120, withTiming(0, {
       duration: 400,
       easing: Easing.out(Easing.quad),
     }));
-    textOpacity.value = withDelay(150, withTiming(1, {
+    textOpacity.value = withDelay(120, withTiming(1, {
       duration: 400,
     }));
 
-    taglineOpacity.value = withDelay(350, withTiming(1, {
+    taglineOpacity.value = withDelay(300, withTiming(1, {
       duration: 350,
     }));
 
-    // Fade out and close splash screen after 900ms delay
-    bgOpacity.value = withDelay(850, withTiming(0, {
-      duration: 300,
-      easing: Easing.inOut(Easing.quad),
-    }, (finished) => {
-      if (finished) {
-        runOnJS(setVisible)(false);
-      }
-    }));
-  }, []);
+    if (autoFade) {
+      bgOpacity.value = withDelay(1000, withTiming(0, {
+        duration: 300,
+        easing: Easing.inOut(Easing.quad),
+      }, (finished) => {
+        if (finished) {
+          runOnJS(setVisible)(false);
+        }
+      }));
+    }
+  }, [autoFade]);
 
   const bgAnimatedStyle = useAnimatedStyle(() => ({
     opacity: bgOpacity.value,
@@ -80,19 +85,20 @@ export function AnimatedSplashOverlay() {
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.overlayContainer, bgAnimatedStyle]} pointerEvents="none">
+    <Animated.View style={[styles.overlayContainer, bgAnimatedStyle]}>
+      <StatusBar barStyle="light-content" backgroundColor="#4F46E5" />
       <View style={styles.contentWrap}>
         {/* Animated logo image container */}
         <Animated.View style={[logoAnimatedStyle, styles.logoCircle]}>
           <Image source={require('../../assets/images/logoimg22.png')} style={styles.logoImage} resizeMode="contain" />
         </Animated.View>
 
-        {/* Animated Brand Text */}
+        {/* Animated Brand Name */}
         <Animated.View style={textAnimatedStyle}>
           <Text style={styles.brandText}>Ganimi Kava</Text>
         </Animated.View>
 
-        {/* Animated tagline */}
+        {/* Animated tagline & loading */}
         <Animated.View style={[taglineAnimatedStyle, styles.taglineWrap]}>
           <Text style={styles.taglineText}>Learn • Grow • Succeed</Text>
           <View style={styles.indicatorContainer}>

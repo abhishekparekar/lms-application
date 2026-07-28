@@ -6,6 +6,9 @@ import { AuthProvider } from '@/context/AuthContext';
 import { Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
+// Prevent splash screen from auto-hiding before auth check is ready
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 LogBox.ignoreLogs(['Cannot connect to Expo CLI', 'Setting a timer', 'WebChannelConnection RPC', 'transport errored']);
 
 export default function TabLayout() {
@@ -16,7 +19,6 @@ export default function TabLayout() {
       RNStatusBar.setBackgroundColor('#4F46E5');
       RNStatusBar.setTranslucent(false);
     }
-    SplashScreen.hideAsync().catch(() => {});
   }, []);
 
   return (

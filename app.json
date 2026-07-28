@@ -3,7 +3,7 @@
     "name": "Ganimi Kava",
     "slug": "LMSJobPortal1",
     "scheme": "lmsjobportal1",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "backgroundColor": "#4F46E5",
     "icon": "./assets/images/logoimg22.png",
@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.lmsjobportal1.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "backgroundColor": "#4F46E5",
       "splash": {
         "image": "./assets/images/logoimg22.png",

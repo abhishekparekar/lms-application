@@ -42,7 +42,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   onFailure,
 }) => {
   const [webViewLoading, setWebViewLoading] = useState(true);
-  const keyId = "rzp_test_SndmEhyiZ6FWtK"; // Provided key
+  const keyId = "rzp_live_TIuAENTLzeEAzn";
 
   const checkoutHtml = `
     <!DOCTYPE html>

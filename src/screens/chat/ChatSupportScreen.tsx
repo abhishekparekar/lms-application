@@ -26,7 +26,7 @@ export const ChatSupportScreen: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! Welcome to LMS & Job Portal Support. How can we help you today?',
+      text: 'Hello! Welcome to Ganimi Kava Support. How can we help you today? You can also email us directly at company.icoded@gmail.com.',
       sender: 'support',
       timestamp: '10:00 AM',
     }
@@ -50,7 +50,7 @@ export const ChatSupportScreen: React.FC = () => {
     setTimeout(() => {
       const supportReply: Message = {
         id: `s-${Date.now()}`,
-        text: "Thank you for reaching out. A support executive has been notified and will join this thread shortly. For immediate course questions, you can check our Resources tab.",
+        text: "Thank you for reaching out. A support executive has been notified. For urgent issues, feel free to email company.icoded@gmail.com.",
         sender: 'support',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };

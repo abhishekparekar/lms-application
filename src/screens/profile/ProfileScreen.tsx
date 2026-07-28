@@ -790,7 +790,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           label: 'Help & Support',
           sub: 'Contact our support team',
           color: '#6B7280',
-          onPress: () => Alert.alert('Support', 'Email: support@ganimikawa.in'),
+          onPress: () => Linking.openURL('mailto:company.icoded@gmail.com').catch(() => Alert.alert('Help & Support', 'Email: company.icoded@gmail.com')),
         },
       ],
     },
@@ -827,7 +827,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           label: 'Help & Support',
           sub: 'Contact our support team',
           color: '#6B7280',
-          onPress: () => Alert.alert('Support', 'Email: support@ganimikawa.in'),
+          onPress: () => Linking.openURL('mailto:company.icoded@gmail.com').catch(() => Alert.alert('Help & Support', 'Email: company.icoded@gmail.com')),
         },
       ],
     },
@@ -1179,7 +1179,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>गनिमी कावा v1.1 · © 2026</Text>
+        <Text style={styles.version}>गनिमी कावा v1.0.2 · © 2026</Text>
       </ScrollView>
 
       {/* ── MODAL: Preset Avatar Selector & Simulated Uploader ── */}

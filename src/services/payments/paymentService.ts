@@ -31,8 +31,8 @@ export const paymentService = {
    * Create order directly via Razorpay REST API
    */
   async createRazorpayOrder(amount: number): Promise<{ id: string; amount: number } | null> {
-    const keyId = "rzp_test_SndmEhyiZ6FWtK";
-    const keySecret = "8KZkBmESji16SSmiISUdFyWa";
+    const keyId = "rzp_live_TIuAENTLzeEAzn";
+    const keySecret = "Hc0FJaWr54LykzG4eywladwG";
     const authHeader = 'Basic ' + this.btoa(keyId + ':' + keySecret);
 
     try {

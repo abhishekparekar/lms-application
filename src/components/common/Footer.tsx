@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
           </Text>
           <View style={styles.contactInfo}>
             <Text style={styles.contactText}>📍 Chh Sambhaji Nagar, India</Text>
-            <Text style={styles.contactText}>✉️ support@icodedjobs.com</Text>
+            <Text style={styles.contactText}>✉️ company.icoded@gmail.com</Text>
           </View>
         </View>
 
