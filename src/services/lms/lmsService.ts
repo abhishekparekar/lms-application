@@ -4,6 +4,7 @@ import {
   getDoc, 
   doc, 
   updateDoc, 
+  deleteDoc,
   arrayUnion, 
   arrayRemove,
   setDoc,
@@ -209,6 +210,19 @@ const extractEnrolledCourseIds = async (userId: string): Promise<string[]> => {
 };
 
 export const courseService = {
+  /**
+   * Delete a course permanently from Firestore
+   */
+  async deleteCourse(courseId: string): Promise<void> {
+    try {
+      const courseRef = doc(db, 'courses', courseId);
+      await deleteDoc(courseRef);
+    } catch (e) {
+      console.error('Failed to delete course:', e);
+      throw e;
+    }
+  },
+
   /**
    * Get all courses from Firestore
    */

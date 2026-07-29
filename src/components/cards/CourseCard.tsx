@@ -14,6 +14,7 @@ interface CourseCardProps {
   course: Course;
   onPress: () => void;
   onEnroll?: () => void;
+  onDelete?: () => void;
   isEnrolled?: boolean;
   layoutMode?: 'horizontal' | 'vertical';
 }
@@ -22,6 +23,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
   course,
   onPress,
   onEnroll,
+  onDelete,
   isEnrolled = false,
   layoutMode = 'vertical',
 }) => {
@@ -50,12 +52,25 @@ export const CourseCard: React.FC<CourseCardProps> = ({
           <Text style={styles.categoryText} numberOfLines={1}>{course.category || 'Course'}</Text>
         </View>
 
-        {/* Floating Price Tag Top-Right */}
-        <View style={[styles.priceBadge, course.price === 0 ? styles.freeBadge : styles.paidBadge]}>
-          <Text style={styles.priceBadgeText}>
-            {course.price === 0 ? 'FREE' : `₹${course.price}`}
-          </Text>
-        </View>
+        {/* Delete Button (if provided) or Floating Price Tag Top-Right */}
+        {onDelete ? (
+          <TouchableOpacity
+            style={[styles.priceBadge, { backgroundColor: '#EF4444' }]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.priceBadgeText, { color: '#FFFFFF', fontWeight: 'bold' }]}>🗑️ Delete</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={[styles.priceBadge, (!course.price || course.price === 0) ? styles.freeBadge : styles.paidBadge]}>
+            <Text style={styles.priceBadgeText}>
+              {!course.price || course.price === 0 ? 'FREE' : `₹${course.price}`}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Card Content Body */}

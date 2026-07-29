@@ -30,112 +30,7 @@ interface Props {
 
 const CATS = ['All', 'Development', 'Design', 'Business', 'Marketing', 'Personal Development'];
 
-const MOCK_COURSES: Course[] = [
-  {
-    id: 'c1',
-    title: 'गनिमी कावा: मानसिक रणनीती मास्टरक्लास',
-    description: 'छत्रपतींच्या गनिमी काव्यासारखी मानसिक रणनीती आणि यशाचे वैज्ञानिक तंत्र.',
-    instructor: 'माइंड स्ट्रॅटेजी तज्ज्ञ',
-    category: 'Personal Development',
-    duration: '3h 30m',
-    lessonsCount: 12,
-    rating: 4.9,
-    price: 0,
-    imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop',
-    syllabus: ['मानसिक ताण मुक्ती', 'रणनीती रचना']
-  },
-  {
-    id: 'c2',
-    title: 'UPSC/MPSC: यशाचा अचूक फॉर्म्युला',
-    description: 'स्पर्धा परीक्षांमध्ये उत्तम गुण मिळवण्याची शास्त्रीय अभ्यास पद्धती.',
-    instructor: 'प्रो. सचिन पाटील',
-    category: 'Development',
-    duration: '5h 15m',
-    lessonsCount: 20,
-    rating: 4.8,
-    price: 499,
-    imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&auto=format&fit=crop',
-    syllabus: ['स्मरणशक्ती विकास', 'टाईम मॅनेजमेंट']
-  },
-  {
-    id: 'c3',
-    title: 'फुलस्टॅक वेब डेव्हलपमेंट मास्टरक्लास',
-    description: 'React, Node.js आणि React Native शिकून आयटी क्षेत्रात स्वतःचे करिअर घडवा.',
-    instructor: 'अभिषेक पारेकर',
-    category: 'Development',
-    duration: '12h 00m',
-    lessonsCount: 45,
-    rating: 4.9,
-    price: 999,
-    imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format&fit=crop',
-    syllabus: ['Frontend', 'Backend', 'Database']
-  },
-  {
-    id: 'c4',
-    title: 'उद्योजकता आणि व्यवसाय व्यवस्थापन',
-    description: 'शून्यातून उद्योग कसा उभारावा आणि नफा वाढवावा याचे प्रॅक्टिकल ज्ञान.',
-    instructor: 'संजय देशपांडे',
-    category: 'Business',
-    duration: '4h 45m',
-    lessonsCount: 16,
-    rating: 4.7,
-    price: 299,
-    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop',
-    syllabus: ['बिझनेस प्लॅन', 'मार्केटिंग']
-  },
-  {
-    id: 'c5',
-    title: 'UI/UX डिझाईन आणि फिड्मा मास्टरक्लास',
-    description: 'मोबाईल ॲप्स आणि वेबसाईटसाठी आकर्षक युझर इंटरफेस कसा डिझाईन करावा.',
-    instructor: 'नेहा जोशी',
-    category: 'Design',
-    duration: '6h 20m',
-    lessonsCount: 24,
-    rating: 4.9,
-    price: 0,
-    imageUrl: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=600&auto=format&fit=crop',
-    syllabus: ['Figma Basics', 'Wireframing']
-  },
-  {
-    id: 'c6',
-    title: 'डिजिटल मार्केटिंग आणि ब्रँडिंग',
-    description: 'सोशल मीडिया, SEO आणि ॲड्सद्वारे तुमच्या ब्रँडचा व्यवसाय वाढवा.',
-    instructor: 'अमित कदम',
-    category: 'Marketing',
-    duration: '4h 10m',
-    lessonsCount: 18,
-    rating: 4.6,
-    price: 399,
-    imageUrl: 'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=600&auto=format&fit=crop',
-    syllabus: ['Social Media', 'SEO']
-  },
-  {
-    id: 'c7',
-    title: 'कम्युनिकेशन आणि पर्सनॅलिटी डेव्हलपमेंट',
-    description: 'आत्मविश्वास वाढवून इंग्रजी व संवाद कौशल्यात प्रभुत्व मिळवा.',
-    instructor: 'डॉ. स्वाती केळकर',
-    category: 'Business',
-    duration: '3h 50m',
-    lessonsCount: 15,
-    rating: 4.8,
-    price: 0,
-    imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&auto=format&fit=crop',
-    syllabus: ['Public Speaking', 'Body Language']
-  },
-  {
-    id: 'c8',
-    title: 'आर्थिक नियोजन आणि इन्व्हेस्टमेंट',
-    description: 'शेअर मार्केट, म्युच्युअल फंड आणि स्मार्ट सेव्हिंग्सचे अचूक नियम.',
-    instructor: 'रोहन शहा',
-    category: 'Business',
-    duration: '5h 00m',
-    lessonsCount: 22,
-    rating: 4.9,
-    price: 499,
-    imageUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop',
-    syllabus: ['Mutual Funds', 'Stock Market']
-  }
-];
+const MOCK_COURSES: Course[] = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Premium Main Course Card
@@ -304,11 +199,32 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
 
   // ── filter + sort ─────────────────────────────────────────────
   const sourceCourses = useMemo(() => {
-    if (courses.length >= 8) return courses;
-    const existingIds = new Set(courses.map((c) => c.id));
-    const extra = MOCK_COURSES.filter((c) => !existingIds.has(c.id));
-    return [...courses, ...extra].slice(0, 8);
+    return courses;
   }, [courses]);
+
+  const isAdmin = (user as any)?.role === 'admin' || user?.role === 'recruiter' || (user as any)?.role === 'employer' || (user as any)?.isAdmin;
+
+  const handleDeleteCourse = useCallback((courseId: string) => {
+    Alert.alert(
+      'Delete Course / कोर्स काढा',
+      'Are you sure you want to delete this course permanently? / आपण हा कोर्स कायमचा काढू इच्छिता?',
+      [
+        { text: 'Cancel / रद्द करा', style: 'cancel' },
+        {
+          text: 'Delete / काढा',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await courseService.deleteCourse(courseId);
+              Alert.alert('Success 🎉', 'Course deleted successfully.');
+            } catch (e: any) {
+              Alert.alert('Error', e.message || 'Could not delete course.');
+            }
+          }
+        }
+      ]
+    );
+  }, []);
 
   const filtered = useMemo(() => sourceCourses
     .filter(c => {
@@ -337,8 +253,7 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
 
   const isEnrolled = useCallback((c: Course) =>
     enrolledIds.includes(c.id) ||
-    !!(c.enrolledUsers?.includes(user?.uid || '')) ||
-    c.price === 0 || !!(c as any).isFree
+    !!(c.enrolledUsers?.includes(user?.uid || ''))
     , [enrolledIds, user]);
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -461,6 +376,7 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
                   layoutMode="vertical"
                   isEnrolled={isEnrolled(item)}
                   onPress={() => onCoursePress(item.id)}
+                  onDelete={isAdmin ? () => handleDeleteCourse(item.id) : undefined}
                   onEnroll={() => {
                     if (isEnrolled(item)) {
                       if (onWatchVideo) onWatchVideo(item.id, 0);

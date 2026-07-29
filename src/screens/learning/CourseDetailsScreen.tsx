@@ -31,7 +31,7 @@ interface CourseDetailsScreenProps {
   courseId: string;
   onBack: () => void;
   onWatchVideo: (courseId: string, lessonIndex: number) => void;
-  onTakeTest?: (courseId: string) => void;
+  onTakeTest?: (courseId: string, courseTitle?: string) => void;
 }
 
 export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({

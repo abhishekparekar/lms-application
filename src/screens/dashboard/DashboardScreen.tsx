@@ -42,7 +42,7 @@ interface DashboardScreenProps {
   onLogout: () => void;
   onCoursePress: (courseId: string) => void;
   onJobPress: (jobId: string) => void;
-  onTakeTest?: (courseId: string) => void;
+  onTakeTest?: (courseId: string, courseTitle?: string) => void;
   onApplyPress?: (jobId: string) => void;
 }
 
@@ -99,6 +99,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [revealedIds, setRevealedIds] = useState<string[]>([]);
   const [isJobsVisible, setIsJobsVisible] = useState(true);
+  const [isCurrentAffairsVisible, setIsCurrentAffairsVisible] = useState(true);
+  const [isResourcesVisible, setIsResourcesVisible] = useState(true);
+  const [isTestSeriesVisible, setIsTestSeriesVisible] = useState(true);
   const [testSeriesModalVisible, setTestSeriesModalVisible] = useState(false);
 
   // Sync editor fields with database recruiter profile data
@@ -116,9 +119,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const enrolledCourses = allCourses.filter(c =>
     enrolledIds.includes(c.id) ||
-    (user && c.enrolledUsers && c.enrolledUsers.includes(user.uid)) ||
-    c.price === 0 ||
-    (c as any).isFree
+    (user && c.enrolledUsers && c.enrolledUsers.includes(user.uid))
   );
 
   useEffect(() => {
@@ -280,6 +281,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         if (snap.exists()) {
           const data = snap.data();
           setIsJobsVisible(data.jobs !== false);
+          setIsCurrentAffairsVisible(data['current-affairs'] !== false && data.currentAffairs !== false && data.news !== false);
+          setIsResourcesVisible(data.resources !== false && data['study-files'] !== false && data.studyFiles !== false);
+          setIsTestSeriesVisible(data['test-series'] !== false && data.testSeries !== false && data.tests !== false);
         }
       },
       (err) => {
@@ -582,31 +586,46 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
 
             {/* Study Resources */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Study Resources</Text>
-              <View style={styles.toolsGrid}>
-                <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]} onPress={onViewNews} activeOpacity={0.8}>
-                  <Ionicons name="newspaper-outline" size={22} color="#16A34A" style={styles.toolIcon} />
-                  <Text style={styles.toolLabel}>Current Affairs</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5' }]} onPress={onViewResources} activeOpacity={0.8}>
-                  <Ionicons name="folder-open-outline" size={22} color="#D97706" style={styles.toolIcon} />
-                  <Text style={styles.toolLabel}>Study Files</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.toolItem, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}
-                  onPress={() => setTestSeriesModalVisible(true)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="school-outline" size={22} color="#4F46E5" style={styles.toolIcon} />
-                  <Text style={styles.toolLabel}>Test Series</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F5F3FF', borderColor: '#EDE9FE' }]} onPress={onViewSupport} activeOpacity={0.8}>
-                  <Ionicons name="chatbubbles-outline" size={22} color="#7C3AED" style={styles.toolIcon} />
-                  <Text style={styles.toolLabel}>Support Desk</Text>
-                </TouchableOpacity>
+            {(isCurrentAffairsVisible || isResourcesVisible || isTestSeriesVisible) && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Study Resources</Text>
+                <View style={styles.toolsGrid}>
+                  {isCurrentAffairsVisible && (
+                    <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]} onPress={onViewNews} activeOpacity={0.8}>
+                      <Ionicons name="newspaper-outline" size={22} color="#16A34A" style={styles.toolIcon} />
+                      <Text style={styles.toolLabel}>Current Affairs</Text>
+                    </TouchableOpacity>
+                  )}
+                  {isResourcesVisible && (
+                    <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5' }]} onPress={onViewResources} activeOpacity={0.8}>
+                      <Ionicons name="folder-open-outline" size={22} color="#D97706" style={styles.toolIcon} />
+                      <Text style={styles.toolLabel}>Study Files</Text>
+                    </TouchableOpacity>
+                  )}
+                  {isTestSeriesVisible && (
+                    <TouchableOpacity
+                      style={[styles.toolItem, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}
+                      onPress={() => {
+                        const coursesList = enrolledCourses.length > 0 ? enrolledCourses : allCourses;
+                        if (coursesList.length === 1 && onTakeTest) {
+                          onTakeTest(coursesList[0].id, coursesList[0].title);
+                        } else {
+                          setTestSeriesModalVisible(true);
+                        }
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="school-outline" size={22} color="#4F46E5" style={styles.toolIcon} />
+                      <Text style={styles.toolLabel}>Test Series</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity style={[styles.toolItem, { backgroundColor: '#F5F3FF', borderColor: '#EDE9FE' }]} onPress={onViewSupport} activeOpacity={0.8}>
+                    <Ionicons name="chatbubbles-outline" size={22} color="#7C3AED" style={styles.toolIcon} />
+                    <Text style={styles.toolLabel}>Support Desk</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* My Lecture Progress */}
             {enrolledCourses.length > 0 && (
@@ -767,46 +786,53 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <ScrollView contentContainerStyle={{ padding: 20 }}>
                   <Text style={styles.modalSubtitle}>Select a course to start its exam series</Text>
 
-                  {enrolledCourses.length === 0 ? (
+                  {(enrolledCourses.length > 0 ? enrolledCourses : allCourses).length === 0 ? (
                     <View style={styles.emptyCard}>
                       <Ionicons name="book-outline" size={48} color="#94A3B8" />
-                      <Text style={styles.emptyText}>You are not enrolled in any courses yet.</Text>
+                      <Text style={styles.emptyText}>No courses available for Test Series currently.</Text>
                     </View>
                   ) : (
-                    enrolledCourses.map((c) => {
-                      const progress = progressMap[c.id] || 0;
-                      const isLocked = progress < 100;
+                    (enrolledCourses.length > 0 ? enrolledCourses : allCourses).map((c, idx) => {
+                      const progress = progressMap[c.id] || 100;
                       return (
                         <TouchableOpacity
                           key={c.id}
-                          style={[styles.testCourseItem, isLocked ? styles.testCourseLocked : styles.testCourseUnlocked]}
-                          activeOpacity={0.8}
+                          style={{
+                            backgroundColor: '#F8FAFC',
+                            borderColor: '#E2E8F0',
+                            borderWidth: 1.5,
+                            borderRadius: 16,
+                            padding: 16,
+                            marginBottom: 12,
+                          }}
+                          activeOpacity={0.85}
                           onPress={() => {
                             setTestSeriesModalVisible(false);
-                            if (isLocked) {
-                              Alert.alert(
-                                'Quiz Locked / परीक्षा कुलूपबंद आहे',
-                                `You must complete 100% lectures of this course to unlock the final quiz.\n\nYour progress: ${progress}%\n\nपरीक्षा देण्यासाठी सर्व लेक्चर्स १००% पूर्ण करा.`
-                              );
-                            } else {
-                              if (onTakeTest) onTakeTest(c.id);
-                            }
+                            if (onTakeTest) onTakeTest(c.id, c.title);
                           }}
                         >
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.testCourseTitle}>{c.title}</Text>
-                            <Text style={styles.testCourseProgress}>Lectures Progress: {progress}%</Text>
-                          </View>
-                          <View style={[styles.lockStatusBadge, { backgroundColor: isLocked ? '#FEF3C7' : '#D1FAE5' }]}>
-                            <Ionicons
-                              name={isLocked ? "lock-closed" : "checkmark-circle"}
-                              size={14}
-                              color={isLocked ? "#D97706" : "#059669"}
-                              style={{ marginRight: 4 }}
-                            />
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: isLocked ? "#B45309" : "#047857" }}>
-                              {isLocked ? "Locked" : "Start"}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                              <Text style={{ fontSize: 11, fontWeight: '700', color: '#4F46E5' }}>Test Series #{idx + 1}</Text>
+                            </View>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#10B981' }}>
+                              Lectures Progress: {progress}%
                             </Text>
+                          </View>
+
+                          <Text style={{ fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 8 }}>
+                            {c.title}
+                          </Text>
+
+                          <View style={{ height: 6, backgroundColor: '#E2E8F0', borderRadius: 3, overflow: 'hidden', marginBottom: 14 }}>
+                            <View style={{ height: '100%', width: `${progress}%`, backgroundColor: '#10B981', borderRadius: 3 }} />
+                          </View>
+
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#4F46E5', borderRadius: 10, paddingVertical: 10 }}>
+                            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginRight: 6 }}>
+                              Start Exam Series
+                            </Text>
+                            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
                           </View>
                         </TouchableOpacity>
                       );

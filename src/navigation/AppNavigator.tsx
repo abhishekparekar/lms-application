@@ -41,7 +41,7 @@ type ScreenState =
   | { type: 'tabs' }
   | { type: 'course_details'; courseId: string }
   | { type: 'video_player'; courseId: string; lessonIndex: number }
-  | { type: 'test_series'; courseId: string }
+  | { type: 'test_series'; courseId: string; courseTitle?: string }
   | { type: 'job_details'; jobId: string }
   | { type: 'apply_job'; jobId: string }
   | { type: 'saved_jobs' }
@@ -415,7 +415,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
           onViewCertificates={() => setScreen({ type: 'certificates' })}
           onLogout={onLogout}
           onPostJobPress={(editingJobId) => setScreen({ type: 'post_job', editingJobId })}
-          onTakeTest={(cid) => setScreen({ type: 'test_series', courseId: cid })}
+          onTakeTest={(cid, title) => setScreen({ type: 'test_series', courseId: cid, courseTitle: title })}
           onApplyPress={(jid) => setScreen({ type: 'apply_job', jobId: jid })}
         />
       );
@@ -429,7 +429,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
           onWatchVideo={(cid, index) =>
             setScreen({ type: 'video_player', courseId: cid, lessonIndex: index })
           }
-          onTakeTest={(cid) => setScreen({ type: 'test_series', courseId: cid })}
+          onTakeTest={(cid, title) => setScreen({ type: 'test_series', courseId: cid, courseTitle: title })}
         />
       );
 
@@ -448,14 +448,13 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
       return (
         <TestSeriesScreen
           courseId={screen.courseId}
-          onBack={() =>
-            setScreen({ type: 'course_details', courseId: screen.courseId })
-          }
+          initialCourseTitle={screen.courseTitle}
+          onBack={() => setScreen({ type: 'tabs' })}
           onFinishQuiz={(passed) => {
             if (passed) {
               setScreen({ type: 'certificates' });
             } else {
-              setScreen({ type: 'course_details', courseId: screen.courseId });
+              setScreen({ type: 'tabs' });
             }
           }}
         />

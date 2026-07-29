@@ -51,7 +51,7 @@ interface BottomTabsProps {
   onViewCertificates: () => void;
   onLogout: () => void;
   onPostJobPress?: (editingJobId?: string) => void;
-  onTakeTest?: (courseId: string) => void;
+  onTakeTest?: (courseId: string, courseTitle?: string) => void;
   onApplyPress?: (jobId: string) => void;
 }
 
@@ -178,8 +178,8 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
             onBrowseCourses={() => handleTabPress('learning')}
             onBrowseJobs={() => handleTabPress('jobs')}
             onViewApplications={() => handleTabPress('jobs')}
-            onViewNews={() => handleTabPress('learning')}
-            onViewResources={() => handleTabPress('learning')}
+            onViewNews={() => handleTabPress('news')}
+            onViewResources={() => handleTabPress('resources')}
             onViewSupport={() => handleTabPress('profile')}
             onLogout={onLogout}
             onCoursePress={onCoursePress}
@@ -192,9 +192,9 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
       case 'courses':
         return <CoursesScreen onCoursePress={onCoursePress} onWatchVideo={onWatchVideo} />;
       case 'news':
-        return <CurrentAffairsScreen />;
+        return <CurrentAffairsScreen onBack={() => handleTabPress('dashboard')} />;
       case 'resources':
-        return <ResourcesScreen />;
+        return <ResourcesScreen onBack={() => handleTabPress('dashboard')} />;
       case 'learning':
         return (
           <SafeAreaView style={[styles.learningWrapper, { backgroundColor: '#4F46E5' }]} edges={['top']}>
@@ -312,7 +312,7 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
       {/* Tab Bar */}
       <View style={styles.tabBar}>
         {visibleTabs.map((tab) => {
-          const isActive = activeTab === tab.key;
+          const isActive = activeTab === tab.key || (tab.key === 'dashboard' && (activeTab === 'news' || activeTab === 'resources'));
           return (
             <TouchableOpacity
               key={tab.key}

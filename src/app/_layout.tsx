@@ -9,7 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 // Prevent splash screen from auto-hiding before auth check is ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-LogBox.ignoreLogs(['Cannot connect to Expo CLI', 'Setting a timer', 'WebChannelConnection RPC', 'transport errored']);
+LogBox.ignoreLogs(['Cannot connect to Expo CLI', 'Setting a timer', 'WebChannelConnection RPC', 'transport errored', 'ERR_STREAM_UNABLE_TO_PIPE', 'Cannot pipe to a closed']);
 
 export default function TabLayout() {
   useEffect(() => {

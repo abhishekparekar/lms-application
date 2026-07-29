@@ -46,9 +46,7 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
   const enrolled = useMemo(() => {
     return allCourses.filter(c =>
       enrolledIds.includes(c.id) ||
-      (user && c.enrolledUsers && c.enrolledUsers.includes(user.uid)) ||
-      c.price === 0 ||
-      (c as any).isFree
+      (user && c.enrolledUsers && c.enrolledUsers.includes(user.uid))
     );
   }, [allCourses, enrolledIds, user]);
 

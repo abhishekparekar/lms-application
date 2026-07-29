@@ -51,80 +51,9 @@ export interface JobApplication {
   [key: string]: any;
 }
 
-const mockJobs: Job[] = [
-  {
-    id: 'job-1',
-    title: 'Junior React Native Developer',
-    company: 'Tech Solutions Inc.',
-    logoUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=150&auto=format&fit=crop',
-    location: 'Remote (US/Canada)',
-    type: 'Full-time',
-    experienceLevel: 'Entry Level',
-    description: 'We are seeking a junior mobile developer to help build and maintain our mobile products. You will work closely with senior engineers to implement new features using React Native and Firebase.',
-    requirements: [
-      'Basic understanding of JavaScript / TypeScript',
-      'Knowledge of React or React Native lifecycle',
-      'Experience with CSS or styling systems (like Tailwind)',
-      'Eager to learn and work in an Agile team'
-    ],
-    salaryRange: '$60,000 - $80,000',
-    postedDate: '2026-06-20',
-    applicantsCount: 14,
-    recruiterId: 'recruiter-123',
-  },
-  {
-    id: 'job-2',
-    title: 'Senior Mobile Engineer (iOS & Android)',
-    company: 'InnovateTech Corp',
-    logoUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=150&auto=format&fit=crop',
-    location: 'Hybrid (New York, NY)',
-    type: 'Full-time',
-    experienceLevel: 'Senior Level',
-    description: 'Lead the development of our high-traffic flagship mobile application. Optimize app startup performance, implement complex reanimated transitions, and mentor junior developers.',
-    requirements: [
-      '5+ years of software development experience',
-      '3+ years of building React Native apps in production',
-      'Strong expertise in native iOS (Swift) or Android (Kotlin) bridge code',
-      'Experience with performance profiling and memory management'
-    ],
-    salaryRange: '$140,000 - $170,000',
-    postedDate: '2026-06-22',
-    applicantsCount: 5,
-    recruiterId: 'recruiter-123',
-  },
-  {
-    id: 'job-3',
-    title: 'Full Stack Intern',
-    company: 'StartupLabs',
-    logoUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=150&auto=format&fit=crop',
-    location: 'Remote (Global)',
-    type: 'Internship',
-    experienceLevel: 'Entry Level',
-    description: 'Join our fast-paced product squad. You will write code for our Node.js backends and build beautiful frontends in React. Perfect position for university students or boot camp grads looking for real experience.',
-    requirements: [
-      'Familiarity with Node.js and Express',
-      'Familiarity with HTML, CSS, React',
-      'Strong communication skills',
-      'Self-starter who is comfortable with ambiguity'
-    ],
-    salaryRange: '$25 - $35 / hr',
-    postedDate: '2026-06-23',
-    applicantsCount: 22,
-    recruiterId: 'mock-recruiter-id-2',
-  }
-];
+const mockJobs: Job[] = [];
 
-const mockApplications: JobApplication[] = [
-  {
-    id: 'app-1',
-    jobId: 'job-1',
-    jobTitle: 'Junior React Native Developer',
-    company: 'Tech Solutions Inc.',
-    seekerId: 'seeker-123',
-    appliedDate: '2026-06-21',
-    status: 'reviewing',
-  }
-];
+const mockApplications: JobApplication[] = [];
 
 export const jobService = {
   /**
@@ -160,10 +89,10 @@ export const jobService = {
       querySnapshot.forEach((docSnap) => {
         jobs.push({ id: docSnap.id, ...docSnap.data() } as Job);
       });
-      return jobs.length > 0 ? jobs : mockJobs;
+      return jobs;
     } catch (e) {
-      console.warn('Failed to fetch jobs from Firebase, falling back to mock jobs:', e);
-      return mockJobs;
+      console.warn('Failed to fetch jobs from Firebase:', e);
+      return [];
     }
   },
 
@@ -177,9 +106,9 @@ export const jobService = {
       if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() } as Job;
       }
-      return mockJobs.find(j => j.id === id) || null;
+      return null;
     } catch (e) {
-      return mockJobs.find(j => j.id === id) || null;
+      return null;
     }
   },
 

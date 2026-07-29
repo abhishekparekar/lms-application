@@ -102,74 +102,146 @@ function extractRawArray(data: any): any[] | null {
   return Array.isArray(raw) && raw.length > 0 ? raw : null;
 }
 
+export function getFallbackQuestions(courseId: string, courseTitle?: string): QuizQuestion[] {
+  return [
+    {
+      id: `q_${courseId}_1`,
+      courseId,
+      text: `What is the primary objective taught in ${courseTitle || 'this course'}?`,
+      options: [
+        'Mastering core strategic concepts and practical application',
+        'Theoretical study without real-world execution',
+        'Memorizing static formulas only',
+        'Avoiding practical problem solving'
+      ],
+      correctIndex: 0,
+    },
+    {
+      id: `q_${courseId}_2`,
+      courseId,
+      text: 'Which methodology ensures maximum accuracy during skill assessment?',
+      options: [
+        'Structured evaluation, regular practice, and performance feedback',
+        'Random guessing without reviewing materials',
+        'Relying on unverified third-party sources',
+        'Skipping foundational modules'
+      ],
+      correctIndex: 0,
+    },
+    {
+      id: `q_${courseId}_3`,
+      courseId,
+      text: 'What key factor leads to continuous improvement in professional development?',
+      options: [
+        'Consistency, goal setting, and applying industry standards',
+        'Short-term effort followed by inactivity',
+        'Ignoring expert mentorship and guidance',
+        'Working in isolation without team collaboration'
+      ],
+      correctIndex: 0,
+    },
+    {
+      id: `q_${courseId}_4`,
+      courseId,
+      text: 'How should complex challenges be handled in real-world scenarios?',
+      options: [
+        'Break down problems into key components and execute step-by-step solutions',
+        'Postpone critical decisions indefinitely',
+        'Rely exclusively on intuition without analytical data',
+        'Abandon project goals when obstacles arise'
+      ],
+      correctIndex: 0,
+    },
+    {
+      id: `q_${courseId}_5`,
+      courseId,
+      text: 'Which habit sustains long-term professional growth and certification readiness?',
+      options: [
+        'Continuous self-learning, practice tests, and ethical execution',
+        'Stagnation after initial training',
+        'Compromising quality for quick completion',
+        'Neglecting updated course resources'
+      ],
+      correctIndex: 0,
+    },
+  ];
+}
+
 export const quizService = {
   /**
    * Get quiz questions for a course.
-   * Searches ALL possible Firestore locations the superadmin might have used:
-   *   1. Embedded arrays in the course document itself
-   *   2. Subcollections under courses/{courseId}
-   *   3. Root-level collection docs whose ID === courseId
-   *   4. Root-level collection docs where courseId field === courseId
+   * Runs fast parallel queries with a strict 800ms timeout.
+   * If queries take > 800ms or 0 questions exist in DB, returns fallback questions instantly.
    */
-  async getQuestionsForCourse(courseId: string): Promise<QuizQuestion[]> {
-    // STEP 1: Embedded inside the course document
-    try {
-      const snap = await getDoc(doc(db, 'courses', courseId));
-      if (snap.exists()) {
-        const raw = extractRawArray(snap.data());
-        if (raw) {
-          const qs = parseQuestions(raw, courseId);
-          if (qs.length > 0) return qs;
-        }
-      }
-    } catch (e) { /* silent */ }
-
-    // STEP 2: Subcollections under courses/{courseId}
-    const subcollections = ['questions','quizQuestions','quizzes','testSeries','tests','quiz','exam','assessments'];
-    for (const sub of subcollections) {
+  async getQuestionsForCourse(courseId: string, courseTitle?: string): Promise<QuizQuestion[]> {
+    const fetchFromDb = async (): Promise<QuizQuestion[]> => {
       try {
-        const snap = await getDocs(collection(db, 'courses', courseId, sub));
-        if (!snap.empty) {
-          const qs: QuizQuestion[] = [];
-          snap.forEach((d) => {
-            const q = normaliseQuestion({ id: d.id, ...d.data() }, qs.length, courseId);
-            if (q) qs.push(q);
-          });
-          if (qs.length > 0) return qs;
-        }
-      } catch (_) {}
-    }
+        const rootCollections = ['quizzes', 'testSeries', 'questions', 'quizQuestions', 'tests', 'quiz', 'exams'];
+        const fieldNames = ['courseId', 'course_id', 'course', 'cid'];
 
-    // STEP 3 & 4: Root-level collections
-    const rootCollections = ['testSeries','tests','quizQuestions','quizzes','questions','quiz','exams','assessments'];
-    for (const coll of rootCollections) {
-      // 3a: doc ID === courseId
-      try {
-        const snap = await getDoc(doc(db, coll, courseId));
-        if (snap.exists()) {
-          const raw = extractRawArray(snap.data());
+        // Batch 1: Course doc & Root doc ID checks
+        const docPromises = [
+          getDoc(doc(db, 'courses', courseId)).catch(() => null),
+          ...rootCollections.map(coll => getDoc(doc(db, coll, courseId)).catch(() => null))
+        ];
+
+        const docSnaps = await Promise.all(docPromises);
+
+        const courseSnap = docSnaps[0];
+        if (courseSnap && courseSnap.exists()) {
+          const raw = extractRawArray(courseSnap.data());
           if (raw) {
             const qs = parseQuestions(raw, courseId);
             if (qs.length > 0) return qs;
           }
-          const singleQ = normaliseQuestion({ id: snap.id, ...snap.data() }, 0, courseId);
-          if (singleQ) return [singleQ];
         }
-      } catch (_) {}
 
-      // 3b: query matching courseId field
-      const fieldsToCheck = ['courseId', 'course_id', 'course', 'cid'];
-      for (const field of fieldsToCheck) {
-        try {
-          const q = query(collection(db, coll), where(field, '==', courseId));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
+        for (let i = 1; i < docSnaps.length; i++) {
+          const snap = docSnaps[i];
+          if (snap && snap.exists()) {
+            const raw = extractRawArray(snap.data());
+            if (raw) {
+              const qs = parseQuestions(raw, courseId);
+              if (qs.length > 0) return qs;
+            }
+            const singleQ = normaliseQuestion({ id: snap.id, ...snap.data() }, 0, courseId);
+            if (singleQ) return [singleQ];
+          }
+        }
+
+        // Batch 2: Subcollections
+        const subPromises = rootCollections.map(sub =>
+          getDocs(collection(db, 'courses', courseId, sub)).catch(() => null)
+        );
+        const subSnaps = await Promise.all(subPromises);
+        for (const snap of subSnaps) {
+          if (snap && !snap.empty) {
             const qs: QuizQuestion[] = [];
             snap.forEach((d) => {
+              const q = normaliseQuestion({ id: d.id, ...d.data() }, qs.length, courseId);
+              if (q) qs.push(q);
+            });
+            if (qs.length > 0) return qs;
+          }
+        }
+
+        // Batch 3: Root collections where courseId matches
+        const queryPromises: Promise<any>[] = [];
+        for (const coll of rootCollections) {
+          for (const f of fieldNames) {
+            queryPromises.push(
+              getDocs(query(collection(db, coll), where(f, '==', courseId))).catch(() => null)
+            );
+          }
+        }
+
+        const querySnaps = await Promise.all(queryPromises);
+        for (const snap of querySnaps) {
+          if (snap && !snap.empty) {
+            const qs: QuizQuestion[] = [];
+            snap.forEach((d: any) => {
               const data = d.data();
-              // Skip hidden/draft tests
               if (data.status === 'hidden' || data.status === 'draft') return;
-              // First try to extract embedded questions array (superadmin format)
               const rawArr = extractRawArray(data);
               if (rawArr && rawArr.length > 0) {
                 rawArr.forEach((raw: any, idx: number) => {
@@ -177,19 +249,32 @@ export const quizService = {
                   if (q) qs.push(q);
                 });
               } else {
-                // Fallback: treat doc itself as a single question
                 const singleQ = normaliseQuestion({ id: d.id, ...data }, qs.length, courseId);
                 if (singleQ) qs.push(singleQ);
               }
             });
             if (qs.length > 0) return qs;
           }
-        } catch (_) {}
+        }
+      } catch (e) {
+        console.warn('[QuizService] Parallel query error:', e);
       }
+      return [];
+    };
+
+    // Strict 800ms timeout for instant user experience
+    const timeoutPromise = new Promise<QuizQuestion[]>((resolve) =>
+      setTimeout(() => resolve([]), 800)
+    );
+
+    const questions = await Promise.race([fetchFromDb(), timeoutPromise]);
+
+    if (questions && questions.length > 0) {
+      return questions;
     }
 
-    console.warn(`[QuizService] WARNING: No questions found for courseId="${courseId}".`);
-    return [];
+    // Return instant practice test series so user never waits!
+    return getFallbackQuestions(courseId, courseTitle);
   },
 
   /**

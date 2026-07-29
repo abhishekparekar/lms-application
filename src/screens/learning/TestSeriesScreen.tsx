@@ -8,11 +8,13 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '@/services/firebase/config';
 import { Colors } from '@/constants/theme';
-import { quizService, QuizQuestion } from '@/services/lms/quizService';
+import { quizService, QuizQuestion, getFallbackQuestions } from '@/services/lms/quizService';
 import { courseService } from '@/services/lms/lmsService';
 import { useAuth } from '@/hooks/useAuth';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface TestSeriesScreenProps {
   courseId: string;
+  initialCourseTitle?: string;
   onBack: () => void;
   onFinishQuiz: (passed: boolean) => void;
 }
@@ -62,6 +65,7 @@ async function getUserCourseProgress(userId: string, courseId: string): Promise<
 
 export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
   courseId,
+  initialCourseTitle,
   onBack,
   onFinishQuiz,
 }) => {
@@ -70,12 +74,14 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
-  type ScreenState = 'loading' | 'access_denied' | 'no_questions' | 'intro' | 'quiz' | 'result';
+  type ScreenState = 'access_denied' | 'no_questions' | 'intro' | 'quiz' | 'result';
 
-  const [screen, setScreen] = useState<ScreenState>('loading');
+  const defaultQs = getFallbackQuestions(courseId, initialCourseTitle);
+
+  const [screen, setScreen] = useState<ScreenState>('intro');
   const [errorMsg, setErrorMsg] = useState('');
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [courseTitle, setCourseTitle] = useState('');
+  const [questions, setQuestions] = useState<QuizQuestion[]>(defaultQs);
+  const [courseTitle, setCourseTitle] = useState(initialCourseTitle || 'Course Exam');
   const [userProgress, setUserProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -90,6 +96,12 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    const isDark = scheme === 'dark';
+    RNStatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content', true);
+    if (Platform.OS === 'android') {
+      RNStatusBar.setBackgroundColor(isDark ? '#0F172A' : '#FFFFFF', true);
+    }
+
     const init = async () => {
       try {
         if (!user) {
@@ -100,25 +112,29 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
 
         const isAdmin = user.role === 'admin' || user.originalRole === 'superadmin' || user.originalRole === 'admin';
 
-        if (!isAdmin) {
-          const progress = await getUserCourseProgress(user.uid, courseId);
-          setUserProgress(progress);
-          // NOTE: We allow students to attempt the test anytime they are enrolled.
-          // Certificate is only generated when they PASS (60%+) AND have 100% progress.
-          // This allows practice attempts without blocking access.
-        }
-
-        const [course, qs] = await Promise.all([
-          courseService.getCourseById(courseId),
-          quizService.getQuestionsForCourse(courseId),
+        const [visSnap, progress, course] = await Promise.all([
+          getDoc(doc(db, 'lms_config', 'tabs_visibility')).catch(() => null),
+          isAdmin ? Promise.resolve(100) : getUserCourseProgress(user.uid, courseId).catch(() => 0),
+          courseService.getCourseById(courseId).catch(() => null),
         ]);
 
-        setCourseTitle(course?.title || 'Final Exam');
-
-        if (!qs || qs.length === 0) {
-          setScreen('no_questions');
-          return;
+        if (visSnap && visSnap.exists()) {
+          const vData = visSnap.data();
+          if (vData['test-series'] === false || vData.testSeries === false || vData.tests === false) {
+            setErrorMsg('Test Series section is currently disabled by Admin.');
+            setScreen('access_denied');
+            return;
+          }
         }
+
+        const title = course?.title || 'Course Exam';
+        setCourseTitle(title);
+        if (!isAdmin) {
+          setUserProgress(progress);
+        }
+
+        // Fetch questions with fast 800ms race & practice fallback
+        const qs = await quizService.getQuestionsForCourse(courseId, title);
 
         setQuestions(qs);
         setSecondsLeft(qs.length * SECONDS_PER_QUESTION);
@@ -129,6 +145,7 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
         setScreen('access_denied');
       }
     };
+
     init();
   }, [courseId, user]);
 
@@ -214,16 +231,7 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
     setScreen('quiz');
   };
 
-  if (screen === 'loading') {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#4F46E5" />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading test series...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+
 
   if (screen === 'access_denied') {
     return (
@@ -497,6 +505,11 @@ export const TestSeriesScreen: React.FC<TestSeriesScreenProps> = ({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <RNStatusBar
+        barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={scheme === 'dark' ? '#0F172A' : '#FFFFFF'}
+        translucent={false}
+      />
       {/* Header */}
       <View style={styles.headerBar}>
         <TouchableOpacity
@@ -813,12 +826,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  dotActive: { backgroundColor: '#EEF2FF', borderColor: '#4F46E5' },
+  dotActive: { backgroundColor: '#4F46E5', borderColor: '#4F46E5', shadowColor: '#4F46E5', shadowOpacity: 0.3, elevation: 3 },
   dotAnswered: { backgroundColor: '#D1FAE5', borderColor: '#10B981' },
   dotFlagged: { backgroundColor: '#FEE2E2', borderColor: '#EF4444' },
   dotText: { fontSize: 12, fontWeight: '700', color: '#4B5563' },
-  dotTextActive: { color: '#4F46E5' },
-  dotTextAnswered: { color: '#10B981' },
+  dotTextActive: { color: '#FFFFFF', fontWeight: '800' },
+  dotTextAnswered: { color: '#059669' },
 
   progressBarBg: {
     height: 6,
@@ -854,20 +867,28 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  optionCardSelected: { backgroundColor: '#EEF2FF', borderColor: '#4F46E5' },
+  optionCardSelected: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#4F46E5',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   optionRadio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
     borderColor: '#D1D5DB',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  optionRadioSelected: { borderColor: '#4F46E5' },
-  optionRadioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4F46E5' },
+  optionRadioSelected: { borderColor: '#4F46E5', backgroundColor: '#4F46E5' },
+  optionRadioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
   optionLabel: { fontSize: 14, fontWeight: '600', flex: 1, lineHeight: 20 },
-  optionLabelSelected: { fontWeight: '700', color: '#312E81' },
+  optionLabelSelected: { fontWeight: '700', color: '#1E1B4B' },
   
   actionRow: {
     flexDirection: 'row',

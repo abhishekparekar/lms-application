@@ -112,15 +112,8 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
         snapshot.forEach((docSnap) => {
           list.push({ id: docSnap.id, ...docSnap.data() } as Job);
         });
-        if (list.length === 0) {
-          jobService.getJobs().then((allJobs) => {
-            setFeaturedJobs(allJobs);
-            setJobsLoading(false);
-          });
-        } else {
-          setFeaturedJobs(list);
-          setJobsLoading(false);
-        }
+        setFeaturedJobs(list);
+        setJobsLoading(false);
       },
       async (err) => {
         console.warn('Error listening to jobs:', err);
@@ -261,119 +254,10 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     }
   };
 
-  const MOCK_LANDING_COURSES: Course[] = [
-    {
-      id: 'c1',
-      title: 'गनिमी कावा: मानसिक रणनीती मास्टरक्लास',
-      description: 'छत्रपतींच्या गनिमी काव्यासारखी मानसिक रणनीती आणि यशाचे वैज्ञानिक तंत्र.',
-      instructor: 'माइंड स्ट्रॅटेजी तज्ज्ञ',
-      category: 'Personal Development',
-      duration: '3h 30m',
-      lessonsCount: 12,
-      rating: 4.9,
-      price: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop',
-      syllabus: ['मानसिक ताण मुक्ती', 'रणनीती रचना']
-    },
-    {
-      id: 'c2',
-      title: 'UPSC/MPSC: यशाचा अचूक फॉर्म्युला',
-      description: 'स्पर्धा परीक्षांमध्ये उत्तम गुण मिळवण्याची शास्त्रीय अभ्यास पद्धती.',
-      instructor: 'प्रो. सचिन पाटील',
-      category: 'Development',
-      duration: '5h 15m',
-      lessonsCount: 20,
-      rating: 4.8,
-      price: 499,
-      imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&auto=format&fit=crop',
-      syllabus: ['स्मरणशक्ती विकास', 'टाईम मॅनेजमेंट']
-    },
-    {
-      id: 'c3',
-      title: 'फुलस्टॅक वेब डेव्हलपमेंट मास्टरक्लास',
-      description: 'React, Node.js आणि React Native शिकून आयटी क्षेत्रात स्वतःचे करिअर घडवा.',
-      instructor: 'अभिषेक पारेकर',
-      category: 'Development',
-      duration: '12h 00m',
-      lessonsCount: 45,
-      rating: 4.9,
-      price: 999,
-      imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&auto=format&fit=crop',
-      syllabus: ['Frontend', 'Backend', 'Database']
-    },
-    {
-      id: 'c4',
-      title: 'उद्योजकता आणि व्यवसाय व्यवस्थापन',
-      description: 'शून्यातून उद्योग कसा उभारावा आणि नफा वाढवावा याचे प्रॅक्टिकल ज्ञान.',
-      instructor: 'संजय देशपांडे',
-      category: 'Business',
-      duration: '4h 45m',
-      lessonsCount: 16,
-      rating: 4.7,
-      price: 299,
-      imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop',
-      syllabus: ['बिझनेस प्लॅन', 'मार्केटिंग']
-    },
-    {
-      id: 'c5',
-      title: 'UI/UX डिझाईन आणि फिड्मा मास्टरक्लास',
-      description: 'मोबाईल ॲप्स आणि वेबसाईटसाठी आकर्षक युझर इंटरफेस कसा डिझाईन करावा.',
-      instructor: 'नेहा जोशी',
-      category: 'Design',
-      duration: '6h 20m',
-      lessonsCount: 24,
-      rating: 4.9,
-      price: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=600&auto=format&fit=crop',
-      syllabus: ['Figma Basics', 'Wireframing']
-    },
-    {
-      id: 'c6',
-      title: 'डिजिटल मार्केटिंग आणि ब्रँडिंग',
-      description: 'सोशल मीडिया, SEO आणि ॲड्सद्वारे तुमच्या ब्रँडचा व्यवसाय वाढवा.',
-      instructor: 'अमित कदम',
-      category: 'Marketing',
-      duration: '4h 10m',
-      lessonsCount: 18,
-      rating: 4.6,
-      price: 399,
-      imageUrl: 'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=600&auto=format&fit=crop',
-      syllabus: ['Social Media', 'SEO']
-    },
-    {
-      id: 'c7',
-      title: 'कम्युनिकेशन आणि पर्सनॅलिटी डेव्हलपमेंट',
-      description: 'आत्मविश्वास वाढवून इंग्रजी व संवाद कौशल्यात प्रभुत्व मिळवा.',
-      instructor: 'डॉ. स्वाती केळकर',
-      category: 'Business',
-      duration: '3h 50m',
-      lessonsCount: 15,
-      rating: 4.8,
-      price: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&auto=format&fit=crop',
-      syllabus: ['Public Speaking', 'Body Language']
-    },
-    {
-      id: 'c8',
-      title: 'आर्थिक नियोजन आणि इन्व्हेस्टमेंट',
-      description: 'शेअर मार्केट, म्युच्युअल फंड आणि स्मार्ट सेव्हिंग्सचे अचूक नियम.',
-      instructor: 'रोहन शहा',
-      category: 'Business',
-      duration: '5h 00m',
-      lessonsCount: 22,
-      rating: 4.9,
-      price: 499,
-      imageUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop',
-      syllabus: ['Mutual Funds', 'Stock Market']
-    }
-  ];
+  const MOCK_LANDING_COURSES: Course[] = [];
 
   const filteredCourses = React.useMemo(() => {
-    const base = courses.length >= 8
-      ? courses
-      : [...courses, ...MOCK_LANDING_COURSES.filter(m => !courses.some(c => c.id === m.id))].slice(0, 8);
-
-    return base.filter((course) => {
+    return courses.filter((course) => {
       const title = course.title || '';
       const description = (course as any).description || '';
       const instructor = course.instructor || '';
@@ -394,134 +278,10 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
     });
   }, [courses, searchQuery, selectedCategory]);
 
-  const MOCK_LANDING_JOBS: Job[] = [
-    {
-      id: 'j1',
-      title: 'React Native Mobile Developer',
-      company: 'Ganimi Tech Solutions',
-      location: 'Pune / Remote',
-      type: 'Full-time',
-      experienceLevel: 'Entry Level',
-      salaryRange: '₹4.5L - ₹7.0L',
-      description: 'Build high performance React Native apps.',
-      postedDate: '2 days ago',
-      logoUrl: '',
-      requirements: ['React Native', 'TypeScript'],
-      applicantsCount: 5,
-      recruiterId: 'rec1'
-    },
-    {
-      id: 'j2',
-      title: 'Fullstack Web Engineer',
-      company: 'Swarajya Systems',
-      location: 'Mumbai (Hybrid)',
-      type: 'Full-time',
-      experienceLevel: 'Mid Level',
-      salaryRange: '₹8.0L - ₹12.0L',
-      description: 'Develop Node.js and React web portals.',
-      postedDate: '1 day ago',
-      logoUrl: '',
-      requirements: ['Node.js', 'React'],
-      applicantsCount: 8,
-      recruiterId: 'rec2'
-    },
-    {
-      id: 'j3',
-      title: 'UI/UX Product Designer',
-      company: 'Creative Design Studio',
-      location: 'Bangalore / Remote',
-      type: 'Full-time',
-      experienceLevel: 'Entry Level',
-      salaryRange: '₹5.0L - ₹8.5L',
-      description: 'Design mobile apps and Figma prototypes.',
-      postedDate: '3 days ago',
-      logoUrl: '',
-      requirements: ['Figma', 'UI/UX'],
-      applicantsCount: 12,
-      recruiterId: 'rec3'
-    },
-    {
-      id: 'j4',
-      title: 'Digital Marketing Executive',
-      company: 'GrowthX Media',
-      location: 'Nashik (Office)',
-      type: 'Full-time',
-      experienceLevel: 'Entry Level',
-      salaryRange: '₹3.5L - ₹5.5L',
-      description: 'Manage SEO, Meta ads, and brand marketing.',
-      postedDate: 'Just now',
-      logoUrl: '',
-      requirements: ['SEO', 'Digital Marketing'],
-      applicantsCount: 4,
-      recruiterId: 'rec4'
-    },
-    {
-      id: 'j5',
-      title: 'Data Analyst & Python Dev',
-      company: 'Analytics India',
-      location: 'Pune (Hybrid)',
-      type: 'Full-time',
-      experienceLevel: 'Mid Level',
-      salaryRange: '₹6.5L - ₹10.0L',
-      description: 'Analyze business datasets with Python & SQL.',
-      postedDate: '4 days ago',
-      logoUrl: '',
-      requirements: ['Python', 'SQL'],
-      applicantsCount: 6,
-      recruiterId: 'rec5'
-    },
-    {
-      id: 'j6',
-      title: 'Backend Node.js Architect',
-      company: 'CloudScale Services',
-      location: 'Remote',
-      type: 'Full-time',
-      experienceLevel: 'Senior Level',
-      salaryRange: '₹12.0L - ₹18.0L',
-      description: 'Build scalable microservices and APIs.',
-      postedDate: '5 days ago',
-      logoUrl: '',
-      requirements: ['Node.js', 'AWS', 'Microservices'],
-      applicantsCount: 15,
-      recruiterId: 'rec6'
-    },
-    {
-      id: 'j7',
-      title: 'Business Development Manager',
-      company: 'Apex Innovations',
-      location: 'Chhatrapati Sambhajinagar',
-      type: 'Full-time',
-      experienceLevel: 'Mid Level',
-      salaryRange: '₹6.0L - ₹9.0L',
-      description: 'Drive B2B sales and business partnerships.',
-      postedDate: '1 week ago',
-      logoUrl: '',
-      requirements: ['B2B Sales', 'Business Strategy'],
-      applicantsCount: 9,
-      recruiterId: 'rec7'
-    },
-    {
-      id: 'j8',
-      title: 'HR & Talent Acquisition Lead',
-      company: 'TalentHub Solutions',
-      location: 'Kolhapur (Office)',
-      type: 'Full-time',
-      experienceLevel: 'Mid Level',
-      salaryRange: '₹4.0L - ₹6.5L',
-      description: 'Recruit top engineering and management talent.',
-      postedDate: '2 days ago',
-      logoUrl: '',
-      requirements: ['Hiring', 'HR Operations'],
-      applicantsCount: 7,
-      recruiterId: 'rec8'
-    }
-  ];
+  const MOCK_LANDING_JOBS: Job[] = [];
 
   const displayJobs = React.useMemo(() => {
-    if (featuredJobs.length >= 8) return featuredJobs;
-    const existingIds = new Set(featuredJobs.map(j => j.id));
-    const extra = MOCK_LANDING_JOBS.filter(j => !existingIds.has(j.id));
-    return [...featuredJobs, ...extra].slice(0, 8);
+    return featuredJobs;
   }, [featuredJobs]);
 
   const featuredCourse = React.useMemo(() => {
