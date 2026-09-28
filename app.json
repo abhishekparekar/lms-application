@@ -1,0 +1,83 @@
+{
+  "expo": {
+    "name": "Ganimi Kava",
+    "slug": "LMSJobPortal1",
+    "scheme": "lmsjobportal1",
+    "version": "1.0.3",
+    "orientation": "portrait",
+    "backgroundColor": "#4F46E5",
+    "icon": "./assets/images/logoimg22.png",
+    "userInterfaceStyle": "automatic",
+    "statusBar": {
+      "style": "light",
+      "backgroundColor": "#4F46E5",
+      "translucent": false
+    },
+    "splash": {
+      "image": "./assets/images/logoimg22.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    },
+    "ios": {
+      "icon": "./assets/images/logoimg22.png",
+      "splash": {
+        "image": "./assets/images/logoimg22.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4F46E5"
+      }
+    },
+    "android": {
+      "package": "com.lmsjobportal1.app",
+      "versionCode": 4,
+      "backgroundColor": "#4F46E5",
+      "splash": {
+        "image": "./assets/images/logoimg22.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4F46E5"
+      },
+      "adaptiveIcon": {
+        "backgroundColor": "#0b0b14",
+        "foregroundImage": "./assets/images/adaptive-icon.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize",
+      "statusBar": {
+        "barStyle": "light-content",
+        "backgroundColor": "#4F46E5",
+        "translucent": false
+      }
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#4F46E5",
+          "image": "./assets/images/logoimg22.png",
+          "imageWidth": 140,
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-video",
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3010fc21-103e-4ff0-8800-9ecb594b5848"
+      }
+    },
+    "owner": "abhiparekar"
+  }
+}
