@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { Job, JobApplication, jobService } from '@/services/jobs/jobService';
 import { Course, courseService, lmsService, calculateCoursePrice } from '@/services/lms/lmsService';
+import { getCourseTitle } from '@/services/lms/courseMaterialService';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, doc, onSnapshot, query, where, getDocs, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { formatJobSalary } from '@/utils';
@@ -659,7 +660,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       {/* Info */}
                       <View style={styles.enrolledCourseInfo}>
                         <Text style={[styles.enrolledCourseTitle, { color: colors.text }]} numberOfLines={2}>
-                          {course.title}
+                          {getCourseTitle(course)}
                         </Text>
                         <Text style={styles.enrolledCourseInstructor} numberOfLines={1}>
                           By {course.instructor || 'Ganimi Kava'}

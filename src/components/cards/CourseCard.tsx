@@ -8,6 +8,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { Course, calculateCoursePrice } from '@/services/lms/lmsService';
+import { getCourseTitle } from '@/services/lms/courseMaterialService';
 import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -108,7 +109,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
           style={[styles.title, isHorizontal ? styles.titleHorizontal : styles.titleVertical]}
           numberOfLines={2}
         >
-          {course.title}
+          {getCourseTitle(course)}
         </Text>
 
         {/* Instructor */}

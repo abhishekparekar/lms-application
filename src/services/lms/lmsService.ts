@@ -22,6 +22,9 @@ import { db } from '../firebase/config';
 export interface Course {
   id: string;
   title: string;
+  courseTitle?: string;
+  courseName?: string;
+  name?: string;
   description: string;
   instructor: string;
   category: 'Development' | 'Design' | 'Business' | 'Marketing' | 'Personal Development' | 'Mind Power' | string;
@@ -38,6 +41,15 @@ export interface Course {
   thumbnail?: string;
   syllabus: string[];
   modules?: CourseModule[];
+  pdfUrl?: string;
+  materialUrl?: string;
+  pdf?: string;
+  material?: string;
+  courseMaterial?: string;
+  studyMaterial?: string;
+  notesUrl?: string;
+  materials?: any[];
+  pdfUrls?: string[];
   enrolledUsers?: string[];
   createdAt?: string;
 }
@@ -140,6 +152,13 @@ export interface Lesson {
   title: string;
   duration: string;
   videoUrl: string;
+  pdfUrl?: string;
+  materialUrl?: string;
+  pdf?: string;
+  material?: string;
+  fileUrl?: string;
+  notesUrl?: string;
+  downloadUrl?: string;
 }
 
 export interface CurrentAffairs {

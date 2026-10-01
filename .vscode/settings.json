@@ -1,0 +1,40 @@
+{
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.autobuild.enabled": false,
+  "java.import.gradle.enabled": false,
+  "java.import.maven.enabled": false,
+  "java.project.importOnFirstTimeStartup": "disabled",
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/android/build/**",
+    "**/android/.gradle/**",
+    "**/android/app/build/**"
+  ],
+  "java.project.resourceFilters": [
+    "node_modules",
+    ".git",
+    "android/build",
+    "android/.gradle",
+    "android/app/build"
+  ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/android/build/**": true,
+    "**/android/.gradle/**": true,
+    "**/android/app/build/**": true
+  }
+}

@@ -16,6 +16,14 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { courseService, Course, calculateCoursePrice } from '@/services/lms/lmsService';
+import {
+  getCourseTitle,
+  resolveCourseMaterials,
+  resolveLectureMaterial,
+  downloadAndOpenPdf,
+  previewPdf,
+  CourseMaterialItem,
+} from '@/services/lms/courseMaterialService';
 import { Colors } from '@/constants/theme';
 import { Button } from '@/components/common/Button';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,7 +38,7 @@ import { RazorpayCheckoutModal } from '@/components/modals/RazorpayCheckoutModal
 interface CourseDetailsScreenProps {
   courseId: string;
   onBack: () => void;
-  onWatchVideo: (courseId: string, lessonIndex: number) => void;
+  onWatchVideo: (courseId: string, lessonIndex: number, courseTitle?: string) => void;
   onTakeTest?: (courseId: string, courseTitle?: string) => void;
 }
 
@@ -50,7 +58,9 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [hasQuiz, setHasQuiz] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'syllabus' | 'quiz'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'syllabus' | 'materials' | 'quiz'>('overview');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   // Checkout Modal State
   const [checkoutVisible, setCheckoutVisible] = useState(false);
@@ -147,6 +157,24 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
 
   const priceInfo = calculateCoursePrice(course);
   const finalPrice = priceInfo.finalPrice;
+  const courseTitle = getCourseTitle(course);
+  const courseMaterials = React.useMemo(() => resolveCourseMaterials(course), [course]);
+
+  const handleDownloadMaterial = async (mat: CourseMaterialItem) => {
+    if (downloadingId) return;
+    setDownloadingId(mat.id);
+    setDownloadProgress(0);
+    try {
+      await downloadAndOpenPdf(mat, (pct) => setDownloadProgress(pct));
+    } finally {
+      setDownloadingId(null);
+      setDownloadProgress(0);
+    }
+  };
+
+  const handlePreviewMaterial = async (mat: CourseMaterialItem) => {
+    await previewPdf(mat.url, mat.title);
+  };
 
   const handleEnrollOrBuy = async () => {
     if (!user || !course) return;
@@ -156,7 +184,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
       try {
         await courseService.enrollInCourse(user.uid, course.id);
         setIsEnrolled(true);
-        Alert.alert('Success 🎉', `You have successfully enrolled in ${course.title}!`);
+        Alert.alert('Success 🎉', `You have successfully enrolled in ${courseTitle}!`);
       } catch {
         Alert.alert('Enrollment Failed', 'Could not complete enrollment.');
       }
@@ -203,7 +231,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
         setIsEnrolled(true);
         Alert.alert(
           'Payment Successful! 🎉',
-          `You have purchased and enrolled in ${course.title}!\n\nPayment ID: ${data.razorpay_payment_id}`
+          `You have purchased and enrolled in ${courseTitle}!\n\nPayment ID: ${data.razorpay_payment_id}`
         );
       } else {
         Alert.alert('Verification Failed', 'Payment signature could not be verified.');
@@ -226,7 +254,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
       return;
     }
     if (onTakeTest) {
-      onTakeTest(course.id);
+      onTakeTest(course.id, courseTitle);
     }
   };
 
@@ -242,18 +270,18 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
       const appCourseLink = `${appPackageUrl}&referrer=course_id%3D${course.id}`;
       const deepLink = `lmsjobportal://course/${course.id}`;
 
-      const shareMsg = `🎓 *${course.title}*\n\n👨‍🏫 Instructor: ${course.instructor || 'Expert Trainer'}\n⏱️ Duration: ${course.duration || '2h 30m'}\n💰 Fees: ${priceText}\n\n📱 *Open Course in App*:\n${appCourseLink}\n\n📲 Download App on Play Store:\n${appPackageUrl}\n\nStart learning today on LMS Job Portal App!`;
+      const shareMsg = `🎓 *${courseTitle}*\n\n👨‍🏫 Instructor: ${course.instructor || 'Expert Trainer'}\n⏱️ Duration: ${course.duration || '2h 30m'}\n💰 Fees: ${priceText}\n\n📱 *Open Course in App*:\n${appCourseLink}\n\n📲 Download App on Play Store:\n${appPackageUrl}\n\nStart learning today on LMS Job Portal App!`;
 
       if (Platform.OS === 'android') {
         await Share.share({
           message: shareMsg,
-          title: course.title,
+          title: courseTitle,
         });
       } else {
         await Share.share({
           message: shareMsg,
           url: appCourseLink,
-          title: course.title,
+          title: courseTitle,
         });
       }
     } catch (e: any) {
@@ -329,7 +357,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
           <Text style={[styles.headerBackText, { color: '#FFFFFF' }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: '#FFFFFF' }]} numberOfLines={1}>
-          Course Details
+          {courseTitle || 'Course Details'}
         </Text>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -372,7 +400,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
 
         <View style={styles.bodyContent}>
           {/* Course Main Title & Instructor */}
-          <Text style={[styles.title, { color: colors.text }]}>{course.title}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{courseTitle}</Text>
           
           <View style={styles.instructorRow}>
             <View style={styles.instructorAvatar}>
@@ -404,11 +432,16 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
           </View>
 
           {/* Tab Switcher Bar */}
-          <View style={styles.tabContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabScrollWrap}
+            contentContainerStyle={styles.tabContainer}
+          >
             <TouchableOpacity
               style={[styles.tabBtn, activeTab === 'overview' && styles.tabBtnActive]}
               onPress={() => setActiveTab('overview')}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <Text style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
                 Overview
@@ -418,7 +451,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
             <TouchableOpacity
               style={[styles.tabBtn, activeTab === 'syllabus' && styles.tabBtnActive]}
               onPress={() => setActiveTab('syllabus')}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <Text style={[styles.tabText, activeTab === 'syllabus' && styles.tabTextActive]}>
                 Syllabus ({syllabusList.length})
@@ -426,15 +459,25 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'quiz' && styles.tabBtnActive]}
-              onPress={() => setActiveTab('quiz')}
-              activeOpacity={0.8}
+              style={[styles.tabBtn, activeTab === 'materials' && styles.tabBtnActive]}
+              onPress={() => setActiveTab('materials')}
+              activeOpacity={0.85}
             >
-              <Text style={[styles.tabText, activeTab === 'quiz' && styles.tabTextActive]}>
-                Test Series 🎓
+              <Text style={[styles.tabText, activeTab === 'materials' && styles.tabTextActive]}>
+                Study Notes ({courseMaterials.length})
               </Text>
             </TouchableOpacity>
-          </View>
+
+            <TouchableOpacity
+              style={[styles.tabBtn, activeTab === 'quiz' && styles.tabBtnActive]}
+              onPress={() => setActiveTab('quiz')}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.tabText, activeTab === 'quiz' && styles.tabTextActive]}>
+                Test Series
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
 
           {/* Tab 1: Overview */}
           {activeTab === 'overview' && (
@@ -474,36 +517,139 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
                   <Text style={{ color: '#64748B', fontSize: 14 }}>No lessons published yet.</Text>
                 </View>
               ) : (
-                syllabusList.map((item, index) => (
-                  <TouchableOpacity 
-                    key={index} 
-                    style={[
-                      styles.syllabusItem, 
-                      isEnrolledOrAdmin ? styles.syllabusItemEnrolled : null
-                    ]}
-                    disabled={!isEnrolledOrAdmin}
-                    onPress={() => onWatchVideo(course.id, index)}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.bulletPoint}>
-                      <Text style={styles.bulletText}>{index + 1}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.syllabusText, { color: colors.text }]} numberOfLines={2}>
-                        {item}
-                      </Text>
-                      <Text style={styles.syllabusSubTxt}>Lesson {index + 1} • Video Tutorial</Text>
-                    </View>
-                    {isEnrolledOrAdmin ? (
-                      <View style={styles.playIconContainer}>
-                        <Ionicons name="play" size={14} color="#FFFFFF" />
-                        <Text style={styles.playIconText}>Watch</Text>
+                syllabusList.map((item, index) => {
+                  const lessonMaterial = course ? resolveLectureMaterial(course, index, false) : null;
+                  return (
+                    <TouchableOpacity 
+                      key={index} 
+                      style={[
+                        styles.syllabusItem, 
+                        isEnrolledOrAdmin ? styles.syllabusItemEnrolled : null
+                      ]}
+                      disabled={!isEnrolledOrAdmin}
+                      onPress={() => onWatchVideo(course.id, index, courseTitle)}
+                      activeOpacity={0.85}
+                    >
+                      <View style={styles.bulletPoint}>
+                        <Text style={styles.bulletText}>{index + 1}</Text>
                       </View>
-                    ) : (
-                      <Ionicons name="lock-closed-outline" size={18} color="#94A3B8" />
-                    )}
-                  </TouchableOpacity>
-                ))
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.syllabusText, { color: colors.text }]} numberOfLines={2}>
+                          {item}
+                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                          <Text style={styles.syllabusSubTxt}>Lesson {index + 1} • Video Tutorial</Text>
+                          {lessonMaterial && (
+                            <View style={styles.lessonPdfPill}>
+                              <Ionicons name="document-text" size={10} color="#EF4444" />
+                              <Text style={styles.lessonPdfPillText}>Notes</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                      {isEnrolledOrAdmin ? (
+                        <View style={styles.playIconContainer}>
+                          <Ionicons name="play" size={14} color="#FFFFFF" />
+                          <Text style={styles.playIconText}>Watch</Text>
+                        </View>
+                      ) : (
+                        <Ionicons name="lock-closed-outline" size={18} color="#94A3B8" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </View>
+          )}
+
+          {/* Tab 3: Study Materials & Notes */}
+          {activeTab === 'materials' && (
+            <View style={styles.tabContentBlock}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Course Notes & Study Materials</Text>
+                <Text style={styles.sectionBadgeText}>{courseMaterials.length} Total</Text>
+              </View>
+
+
+
+              {courseMaterials.length === 0 ? (
+                <View style={styles.emptyMaterialsCard}>
+                  <View style={styles.emptyMatIconWrap}>
+                    <Ionicons name="document-text-outline" size={32} color="#94A3B8" />
+                  </View>
+                  <Text style={styles.emptyMatTitle}>No Study Notes Attached</Text>
+                  <Text style={styles.emptyMatSub}>
+                    Admin has not attached study notes or documents to this course yet.
+                  </Text>
+                </View>
+              ) : (
+                courseMaterials.map((mat, index) => {
+                  const isDownloading = downloadingId === mat.id;
+                  return (
+                    <View key={mat.id || index} style={styles.materialCard}>
+                      <View style={styles.materialIconWrap}>
+                        <Ionicons name="document-text" size={24} color="#EF4444" />
+                        <View style={styles.pdfFormatBadge}>
+                          <Text style={styles.pdfFormatText}>PDF</Text>
+                        </View>
+                      </View>
+
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={[styles.materialTitle, { color: colors.text }]} numberOfLines={2}>
+                          {mat.title}
+                        </Text>
+                        <Text style={styles.materialMeta}>
+                          {mat.size || 'PDF File'} {mat.lessonTitle ? `• ${mat.lessonTitle}` : '• Course Material'}
+                        </Text>
+                        {mat.description ? (
+                          <Text style={styles.materialDesc} numberOfLines={2}>
+                            {mat.description}
+                          </Text>
+                        ) : null}
+                      </View>
+
+                      <View style={styles.materialActions}>
+                        {isEnrolledOrAdmin ? (
+                          <>
+                            <TouchableOpacity
+                              style={[styles.matDownloadBtn, isDownloading && { opacity: 0.7 }]}
+                              onPress={() => handleDownloadMaterial(mat)}
+                              disabled={isDownloading}
+                              activeOpacity={0.8}
+                            >
+                              {isDownloading ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                              ) : (
+                                <>
+                                  <Ionicons name="cloud-download-outline" size={14} color="#FFFFFF" />
+                                  <Text style={styles.matDownloadBtnText}>Download</Text>
+                                </>
+                              )}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              style={styles.matPreviewBtn}
+                              onPress={() => handlePreviewMaterial(mat)}
+                              activeOpacity={0.8}
+                            >
+                              <Ionicons name="eye-outline" size={14} color="#4F46E5" />
+                              <Text style={styles.matPreviewBtnText}>Preview</Text>
+                            </TouchableOpacity>
+                          </>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.matLockedBtn}
+                            onPress={handleEnrollOrBuy}
+                            activeOpacity={0.8}
+                          >
+                            <Ionicons name="lock-closed" size={12} color="#94A3B8" />
+                            <Text style={styles.matLockedBtnText}>Enroll to Unlock</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })
               )}
             </View>
           )}
@@ -682,7 +828,7 @@ export const CourseDetailsScreen: React.FC<CourseDetailsScreenProps> = ({
             <ScrollView contentContainerStyle={styles.modalBody} keyboardShouldPersistTaps="handled">
               {/* Invoice details */}
               <View style={styles.invoiceCard}>
-                <Text style={styles.invoiceCourseTitle}>{course?.title}</Text>
+                <Text style={styles.invoiceCourseTitle}>{courseTitle}</Text>
                 <Text style={styles.invoiceInstructor}>Instructor: {course?.instructor || 'Ganimi Kava'}</Text>
                 <View style={styles.invoiceDivider} />
                 <View style={styles.invoiceRow}>
@@ -900,16 +1046,19 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontWeight: '700',
   },
+  tabScrollWrap: {
+    marginBottom: 16,
+  },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F9',
     borderRadius: 14,
     padding: 4,
-    marginBottom: 16,
-    gap: 4,
+    gap: 6,
+    alignItems: 'center',
   },
   tabBtn: {
-    flex: 1,
+    paddingHorizontal: 16,
     paddingVertical: 9,
     alignItems: 'center',
     justifyContent: 'center',
@@ -919,12 +1068,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '700',
     color: '#64748B',
   },
@@ -1391,5 +1540,184 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     textAlign: 'center',
+  },
+  lessonPdfPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  lessonPdfPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#EF4444',
+  },
+  materialOverviewBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+  },
+  matOverviewIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  matOverviewTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#312E81',
+    marginBottom: 2,
+  },
+  matOverviewSub: {
+    fontSize: 11,
+    color: '#6366F1',
+    lineHeight: 16,
+    fontWeight: '500',
+  },
+  emptyMaterialsCard: {
+    padding: 32,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyMatIconWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  emptyMatTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  emptyMatSub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    paddingHorizontal: 16,
+  },
+  materialCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  materialIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  pdfFormatBadge: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginTop: -2,
+  },
+  pdfFormatText: {
+    fontSize: 7,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  materialTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 18,
+    marginBottom: 3,
+  },
+  materialMeta: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  materialDesc: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  materialActions: {
+    flexDirection: 'column',
+    gap: 6,
+    alignItems: 'flex-end',
+  },
+  matDownloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  matDownloadBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  matPreviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4F46E5',
+  },
+  matPreviewBtnText: {
+    color: '#4F46E5',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  matLockedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  matLockedBtnText: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

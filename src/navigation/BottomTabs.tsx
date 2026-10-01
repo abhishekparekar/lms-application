@@ -43,7 +43,7 @@ interface BottomTabsProps {
   initialTab?: TabKey;
   onTabChange?: (tab: TabKey) => void;
   onCoursePress: (courseId: string) => void;
-  onWatchVideo?: (courseId: string, lessonIndex: number) => void;
+  onWatchVideo?: (courseId: string, lessonIndex: number, courseTitle?: string) => void;
   onJobPress: (jobId: string) => void;
   onSavedJobsPress: () => void;
   onStartProfileBuilder: () => void;
@@ -256,8 +256,8 @@ export const BottomTabs: React.FC<BottomTabsProps> = ({
               <CoursesScreen onCoursePress={onCoursePress} onWatchVideo={onWatchVideo} />
             ) : (
               <MyLearningScreen
-                onResumeCourse={(cid) => {
-                  if (onWatchVideo) onWatchVideo(cid, 0);
+                onResumeCourse={(cid, title) => {
+                  if (onWatchVideo) onWatchVideo(cid, 0, title);
                   else onCoursePress(cid);
                 }}
                 onExploreCourses={() => setLearningSubTab('explore')}

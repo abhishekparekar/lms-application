@@ -3,6 +3,14 @@ import { Colors } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { Course, courseService, lmsService } from '@/services/lms/lmsService';
+import {
+  getCourseTitle,
+  resolveCourseMaterials,
+  resolveLectureMaterial,
+  downloadAndOpenPdf,
+  previewPdf,
+  CourseMaterialItem,
+} from '@/services/lms/courseMaterialService';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, onSnapshot } from 'firebase/firestore';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -228,9 +236,19 @@ window.addEventListener('message', function(e) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
-interface Props { courseId: string; lessonIndex: number; onBack: () => void; }
+interface Props {
+  courseId: string;
+  lessonIndex: number;
+  initialCourseTitle?: string;
+  onBack: () => void;
+}
 
-export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBack }) => {
+export const VideoPlayerScreen: React.FC<Props> = ({
+  courseId,
+  lessonIndex,
+  initialCourseTitle,
+  onBack,
+}) => {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
@@ -254,9 +272,43 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [vimeoVol, setVimeoVol] = useState(1);
   const [showVolToast, setShowVolToast] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [activeTab, setActiveTab] = useState<'syllabus' | 'materials'>('syllabus');
   const webViewRef = useRef<any>(null);
   const videoViewRef = useRef<any>(null);
   const syncRef = useRef<any>(null);
+
+  // ── course title & materials ────────────────────────────────────────────────
+  const courseTitle = useMemo(
+    () => getCourseTitle(course, initialCourseTitle || 'Course'),
+    [course, initialCourseTitle]
+  );
+  const allMaterials = useMemo(
+    () => resolveCourseMaterials(course),
+    [course]
+  );
+  const lectureMaterial = useMemo(
+    () => resolveLectureMaterial(course, currentLesson),
+    [course, currentLesson]
+  );
+
+  const handleDownload = async (mat: CourseMaterialItem) => {
+    if (downloadingId) return;
+    setDownloadingId(mat.id);
+    setDownloadProgress(0);
+    try {
+      await downloadAndOpenPdf(mat, (pct) => setDownloadProgress(pct));
+    } finally {
+      setDownloadingId(null);
+      setDownloadProgress(0);
+    }
+  };
+
+  const handlePreview = async (mat: CourseMaterialItem) => {
+    await previewPdf(mat.url, mat.title);
+  };
+
 
   // expo-video hook — MUST be top-level (Rules of Hooks)
   const expoPlayer = useVideoPlayer
@@ -603,26 +655,24 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
       : buildMp4Html(videoUri);
 
   return (
-    <SafeAreaView style={[st.root, { backgroundColor: BG }]} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46E5' }} edges={['top']}>
       <RNStatusBar barStyle="light-content" backgroundColor="#4F46E5" translucent={false} />
       <StatusBar style="light" />
 
       {/* ─── Header ────────────────────────────────────────────────── */}
-      <View style={[st.header, { backgroundColor: BG, borderBottomColor: BORDER }]}>
+      <View style={[st.header, { backgroundColor: '#4F46E5', borderBottomColor: '#4338CA' }]}>
         <TouchableOpacity onPress={onBack} style={st.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="chevron-back" size={26} color={ACCENT} />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={st.headerMid}>
-          <Text style={[st.headerTitle, { color: TXT }]} numberOfLines={1}>{lessonTitle}</Text>
-          <Text style={[st.headerSub, { color: TXT2 }]} numberOfLines={1}>{course.title}</Text>
+          <Text style={[st.headerTitle, { color: '#FFFFFF' }]} numberOfLines={1}>{courseTitle}</Text>
+          <Text style={[st.headerSub, { color: 'rgba(255, 255, 255, 0.85)' }]} numberOfLines={1}>
+            Lesson {currentLesson + 1} of {syllabus.length}: {lessonTitle}
+          </Text>
         </View>
-        {hasAccess && (
-          <View style={[st.accessBadge, { backgroundColor: GREEN + '22', borderColor: GREEN + '55' }]}>
-            <Ionicons name="infinite" size={11} color={GREEN} />
-            <Text style={[st.accessBadgeText, { color: GREEN }]}>Full Access</Text>
-          </View>
-        )}
       </View>
+
+      <View style={{ flex: 1, backgroundColor: BG }}>
 
       {/* ─── Video Player ──────────────────────────────────────────── */}
       <View style={isFullscreen ? { position: 'absolute', top: 0, left: 0, bottom: 0, right: 0, zIndex: 9999, elevation: 9999, backgroundColor: '#000' } : st.playerBox}>
@@ -759,9 +809,42 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
         )}
       </View>
 
-      {/* ─── Lesson info + Mark Done ────────────────────────────────── */}
+      {/* ─── Course Banner Bar ────────────────────────────────────────── */}
+      <View style={[st.courseBar, { backgroundColor: CARD, borderBottomColor: BORDER }]}>
+        <View style={st.courseBadgeRow}>
+          <View style={st.courseBadge}>
+            <Ionicons name="school" size={11} color="#FFFFFF" />
+            <Text style={st.courseBadgeText}>COURSE</Text>
+          </View>
+          <View style={[st.catBadge, { backgroundColor: isDark ? '#262248' : '#EEF2FF' }]}>
+            <Text style={[st.catBadgeText, { color: ACCENT }]} numberOfLines={1}>
+              {course?.category || 'General'}
+            </Text>
+          </View>
+          <View style={[st.catBadge, { backgroundColor: isDark ? '#1F2937' : '#F1F5F9' }]}>
+            <Text style={[st.catBadgeText, { color: TXT2 }]}>
+              {syllabus.length} Lessons
+            </Text>
+          </View>
+        </View>
+        <Text style={[st.courseTitleText, { color: TXT }]} numberOfLines={2}>
+          {courseTitle}
+        </Text>
+        <View style={st.instructorRow}>
+          <Ionicons name="person-circle" size={14} color={ACCENT} />
+          <Text style={[st.instructorText, { color: TXT2 }]}>
+            Instructor: <Text style={{ color: TXT, fontWeight: '700' }}>{course?.instructor || 'Expert Trainer'}</Text>
+          </Text>
+        </View>
+      </View>
+
+      {/* ─── Current Lecture info + Mark Done ────────────────────────── */}
       <View style={[st.infoRow, { backgroundColor: CARD, borderBottomColor: BORDER }]}>
         <View style={{ flex: 1 }}>
+          <View style={st.nowPlayingPill}>
+            <Ionicons name="play" size={9} color="#FFFFFF" />
+            <Text style={st.nowPlayingPillText}>NOW PLAYING • LECTURE {currentLesson + 1}</Text>
+          </View>
           <Text style={[st.infoTitle, { color: TXT }]} numberOfLines={2}>{lessonTitle}</Text>
           <Text style={[st.infoSub, { color: TXT2 }]}>
             {currentLesson + 1} / {syllabus.length} lessons  ·  {Math.round(progress)}% watched
@@ -807,51 +890,175 @@ export const VideoPlayerScreen: React.FC<Props> = ({ courseId, lessonIndex, onBa
         </TouchableOpacity>
       </View>
 
-      {/* ─── Syllabus list ──────────────────────────────────────────── */}
+      {/* ─── Body ScrollView: Lessons & Study Notes Tabs ─────────────── */}
       <ScrollView
         style={{ flex: 1, backgroundColor: BG }}
-        contentContainerStyle={{ padding: 14, paddingBottom: 20 + insets.bottom }}
+        contentContainerStyle={{ padding: 14, paddingBottom: 24 + insets.bottom }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[st.sylLabel, { color: TXT2 }]}>COURSE LESSONS</Text>
-        {syllabus.map((item, idx) => {
-          const active = idx === currentLesson;
-          const done = completed.includes(idx);
-          const locked = !hasAccess && idx > 0;
-          return (
-            <TouchableOpacity
-              key={idx}
-              style={[st.lessonRow,
-              { backgroundColor: active ? ACCENT + '18' : CARD, borderColor: active ? ACCENT : BORDER }
-              ]}
-              onPress={() => locked
-                ? Alert.alert('🔒 Locked', 'Enroll in this course to watch all lessons.')
-                : goToLesson(idx)
-              }
-              activeOpacity={0.75}
-            >
-              <View style={[st.lessonNum,
-              { backgroundColor: done ? GREEN : active ? ACCENT : BORDER }
-              ]}>
-                {done
-                  ? <Ionicons name="checkmark" size={12} color="#fff" />
-                  : locked
-                    ? <Ionicons name="lock-closed" size={10} color={TXT2} />
-                    : <Text style={[st.lessonNumText, { color: active ? '#fff' : TXT2 }]}>{idx + 1}</Text>
-                }
+        {/* ─── Segment Tabs: Lessons vs Study Notes ──────────────────── */}
+        <View style={[st.tabSwitcher, { backgroundColor: isDark ? '#1C1935' : '#F1F5F9' }]}>
+          <TouchableOpacity
+            style={[st.tabSwitchItem, activeTab === 'syllabus' && [st.tabSwitchItemActive, { backgroundColor: CARD }]]}
+            onPress={() => setActiveTab('syllabus')}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="list" size={15} color={activeTab === 'syllabus' ? ACCENT : TXT2} />
+            <Text style={[st.tabSwitchText, { color: activeTab === 'syllabus' ? ACCENT : TXT2 }]}>
+              Lessons
+            </Text>
+            <View style={[st.tabCountBadge, { backgroundColor: activeTab === 'syllabus' ? ACCENT + '20' : isDark ? '#2E2A55' : '#E2E8F0' }]}>
+              <Text style={[st.tabCountBadgeText, { color: activeTab === 'syllabus' ? ACCENT : TXT2 }]}>
+                {syllabus.length}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[st.tabSwitchItem, activeTab === 'materials' && [st.tabSwitchItemActive, { backgroundColor: CARD }]]}
+            onPress={() => setActiveTab('materials')}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="document-text" size={15} color={activeTab === 'materials' ? '#4F46E5' : TXT2} />
+            <Text style={[st.tabSwitchText, { color: activeTab === 'materials' ? '#4F46E5' : TXT2 }]}>
+              Study Notes
+            </Text>
+            <View style={[st.tabCountBadge, { backgroundColor: activeTab === 'materials' ? '#4F46E520' : isDark ? '#2E2A55' : '#E2E8F0' }]}>
+              <Text style={[st.tabCountBadgeText, { color: activeTab === 'materials' ? '#4F46E5' : TXT2 }]}>
+                {allMaterials.length}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Tab 1: Syllabus */}
+        {activeTab === 'syllabus' && (
+          <>
+            <Text style={[st.sylLabel, { color: TXT2 }]}>COURSE LESSONS</Text>
+            {syllabus.map((item, idx) => {
+              const active = idx === currentLesson;
+              const done = completed.includes(idx);
+              const locked = !hasAccess && idx > 0;
+              const hasPdf = !!resolveLectureMaterial(course, idx, false);
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    st.lessonRow,
+                    { backgroundColor: active ? ACCENT + '18' : CARD, borderColor: active ? ACCENT : BORDER }
+                  ]}
+                  onPress={() => locked
+                    ? Alert.alert('🔒 Locked', 'Enroll in this course to watch all lessons.')
+                    : goToLesson(idx)
+                  }
+                  activeOpacity={0.75}
+                >
+                  <View style={[
+                    st.lessonNum,
+                    { backgroundColor: done ? GREEN : active ? ACCENT : BORDER }
+                  ]}>
+                    {done
+                      ? <Ionicons name="checkmark" size={12} color="#fff" />
+                      : locked
+                        ? <Ionicons name="lock-closed" size={10} color={TXT2} />
+                        : <Text style={[st.lessonNumText, { color: active ? '#fff' : TXT2 }]}>{idx + 1}</Text>
+                    }
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[
+                      st.lessonTitle,
+                      { color: locked ? TXT2 : TXT, fontWeight: active ? '700' : '500' }
+                    ]} numberOfLines={2}>{item}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                      {active && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          <Ionicons name="play" size={10} color={ACCENT} />
+                          <Text style={[st.nowPlaying, { color: ACCENT }]}>Now Playing</Text>
+                        </View>
+                      )}
+                      {hasPdf && (
+                        <View style={st.miniPdfPill}>
+                          <Ionicons name="document-text" size={10} color="#EF4444" />
+                          <Text style={st.miniPdfPillText}>Notes</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  {active && <Ionicons name="play-circle" size={20} color={ACCENT} />}
+                  {done && !active && <Ionicons name="checkmark-circle" size={18} color={GREEN} />}
+                </TouchableOpacity>
+              );
+            })}
+          </>
+        )}
+
+        {/* Tab 2: All Materials & PDFs */}
+        {activeTab === 'materials' && (
+          <View style={{ gap: 8 }}>
+            <Text style={[st.sylLabel, { color: TXT2 }]}>STUDY NOTES & REFERENCE MATERIALS</Text>
+            {allMaterials.length === 0 ? (
+              <View style={[st.emptyMatFullCard, { backgroundColor: CARD, borderColor: BORDER }]}>
+                <Ionicons name="document-text-outline" size={32} color={TXT2} />
+                <Text style={[st.emptyMatFullTitle, { color: TXT }]}>No Study Notes Found</Text>
+                <Text style={[st.emptyMatFullSub, { color: TXT2 }]}>
+                  The Admin has not attached any study notes or documents to this course yet.
+                </Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[st.lessonTitle,
-                { color: locked ? TXT2 : TXT, fontWeight: active ? '700' : '500' }
-                ]} numberOfLines={2}>{item}</Text>
-                {active && <Text style={[st.nowPlaying, { color: ACCENT }]}>▶ Now Playing</Text>}
-              </View>
-              {active && <Ionicons name="play-circle" size={20} color={ACCENT} />}
-              {done && !active && <Ionicons name="checkmark-circle" size={18} color={GREEN} />}
-            </TouchableOpacity>
-          );
-        })}
+            ) : (
+              allMaterials.map((mat, idx) => {
+                const isDownloading = downloadingId === mat.id;
+                return (
+                  <View key={mat.id || idx} style={[st.matListItem, { backgroundColor: CARD, borderColor: BORDER }]}>
+                    <View style={st.pdfListIcon}>
+                      <Ionicons name="document-text" size={20} color="#EF4444" />
+                      <Text style={st.pdfListIconText}>PDF</Text>
+                    </View>
+                    <View style={{ flex: 1, paddingRight: 6 }}>
+                      <Text style={[st.matListTitle, { color: TXT }]} numberOfLines={2}>
+                        {mat.title}
+                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        <View style={[st.pdfChip, { backgroundColor: isDark ? '#28244D' : '#F1F5F9' }]}>
+                          <Text style={[st.pdfChipText, { color: TXT2 }]}>
+                            {mat.lessonTitle || (mat.isCourseLevel ? 'Full Course Notes' : `Lecture ${idx + 1}`)}
+                          </Text>
+                        </View>
+                        {!!mat.size && (
+                          <View style={[st.pdfChip, { backgroundColor: isDark ? '#26263A' : '#E2E8F0' }]}>
+                            <Text style={[st.pdfChipText, { color: TXT2 }]}>{mat.size}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                    <View style={st.matListBtnRow}>
+                      <TouchableOpacity
+                        style={[st.matListDownloadBtn, isDownloading && { opacity: 0.7 }]}
+                        onPress={() => handleDownload(mat)}
+                        disabled={isDownloading}
+                        activeOpacity={0.8}
+                      >
+                        {isDownloading ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Ionicons name="cloud-download-outline" size={17} color="#FFFFFF" />
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[st.matListPreviewBtn, { borderColor: ACCENT, backgroundColor: isDark ? '#241E4E' : '#EEF2FF' }]}
+                        onPress={() => handlePreview(mat)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="eye-outline" size={15} color={ACCENT} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        )}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -861,13 +1068,11 @@ const st = StyleSheet.create({
   root: { flex: 1 },
   center: { justifyContent: 'center', alignItems: 'center' },
   // header
-  header: { flexDirection: 'row', alignItems: 'center', height: 54, paddingHorizontal: 14, borderBottomWidth: 1, gap: 10 },
-  backBtn: { width: 34, height: 34, justifyContent: 'center', alignItems: 'center', borderRadius: 17 },
+  header: { flexDirection: 'row', alignItems: 'center', height: 56, paddingHorizontal: 14, gap: 10 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', borderRadius: 18 },
   headerMid: { flex: 1 },
-  headerTitle: { fontSize: 14, fontWeight: '800', lineHeight: 18 },
-  headerSub: { fontSize: 11, lineHeight: 14, marginTop: 1, fontWeight: '500' },
-  accessBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 20, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
-  accessBadgeText: { fontSize: 10, fontWeight: '800' },
+  headerTitle: { fontSize: 15, fontWeight: '800', lineHeight: 20, color: '#FFFFFF' },
+  headerSub: { fontSize: 11, lineHeight: 15, marginTop: 1, fontWeight: '500', color: 'rgba(255, 255, 255, 0.85)' },
   // player
   playerBox: { height: 235, backgroundColor: '#000', position: 'relative' },
   progressBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, backgroundColor: 'rgba(255,255,255,0.15)' },
@@ -970,5 +1175,63 @@ const st = StyleSheet.create({
   lessonNum: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
   lessonNumText: { fontSize: 11, fontWeight: '800' },
   lessonTitle: { fontSize: 13, lineHeight: 18 },
-  nowPlaying: { fontSize: 11, fontWeight: '700', marginTop: 3 },
+  nowPlaying: { fontSize: 11, fontWeight: '700' },
+  // course banner
+  courseBar: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  courseBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  courseBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#4F46E5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  courseBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  catBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  catBadgeText: { fontSize: 11, fontWeight: '700' },
+  courseTitleText: { fontSize: 16, fontWeight: '800', lineHeight: 22, marginBottom: 4 },
+  instructorRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  instructorText: { fontSize: 12, fontWeight: '500' },
+  // now playing
+  nowPlayingPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#4F46E5', alignSelf: 'flex-start', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8, marginBottom: 4 },
+  nowPlayingPillText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
+  miniPdfPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#FEE2E2', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  miniPdfPillText: { color: '#EF4444', fontSize: 9, fontWeight: '800' },
+  // lecture material
+  lectureMatCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 14 },
+  lectureMatHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  lectureMatHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pdfBadgeIcon: { width: 26, height: 26, borderRadius: 6, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center' },
+  lectureMatHeaderTitle: { fontSize: 13, fontWeight: '800' },
+  pdfStatusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 12 },
+  pdfStatusText: { fontSize: 10, fontWeight: '800' },
+  lectureMatBody: { borderRadius: 12, borderWidth: 1, padding: 12 },
+  pdfFileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  pdfExtBadge: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },
+  pdfExtText: { fontSize: 8, fontWeight: '900', color: '#EF4444', marginTop: -2 },
+  pdfTitleText: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
+  pdfChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  pdfChipText: { fontSize: 10, fontWeight: '700' },
+  pdfActionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  downloadPdfBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#4F46E5', paddingVertical: 10, borderRadius: 10, elevation: 1 },
+  downloadPdfBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  previewPdfBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  previewPdfBtnText: { fontSize: 12, fontWeight: '700' },
+  noPdfBox: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
+  noPdfIconCircle: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  noPdfBoxText: { fontSize: 12, lineHeight: 17, fontWeight: '500' },
+  browseAllPdfLink: { marginTop: 4 },
+  browseAllPdfLinkText: { fontSize: 11, fontWeight: '800' },
+  // tab switcher
+  tabSwitcher: { flexDirection: 'row', padding: 4, borderRadius: 14, marginBottom: 14 },
+  tabSwitchItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderRadius: 10 },
+  tabSwitchItemActive: { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 },
+  tabSwitchText: { fontSize: 12, fontWeight: '800' },
+  tabCountBadge: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 10 },
+  tabCountBadgeText: { fontSize: 10, fontWeight: '800' },
+  // all materials list
+  emptyMatFullCard: { padding: 24, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  emptyMatFullTitle: { fontSize: 14, fontWeight: '700' },
+  emptyMatFullSub: { fontSize: 12, textAlign: 'center', lineHeight: 18 },
+  matListItem: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
+  pdfListIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },
+  pdfListIconText: { fontSize: 8, fontWeight: '900', color: '#EF4444', marginTop: -2 },
+  matListTitle: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
+  matListBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  matListDownloadBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', elevation: 1 },
+  matListPreviewBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
 });

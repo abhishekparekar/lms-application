@@ -2,6 +2,7 @@ import { CourseCard } from '@/components/cards/CourseCard';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { Course, courseService, calculateCoursePrice } from '@/services/lms/lmsService';
+import { getCourseTitle } from '@/services/lms/courseMaterialService';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
@@ -25,7 +26,7 @@ import { StatusBar } from 'expo-status-bar';
 
 interface Props {
   onCoursePress: (courseId: string) => void;
-  onWatchVideo?: (courseId: string, lessonIndex: number) => void;
+  onWatchVideo?: (courseId: string, lessonIndex: number, courseTitle?: string) => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ const PremiumCard: React.FC<{
 
       <View style={styles.premiumBody}>
         <Text style={[styles.premiumTitle, { color: textPrimary }]} numberOfLines={2}>
-          {course.title}
+          {getCourseTitle(course)}
         </Text>
 
         <View style={styles.premiumInstructorRow}>
@@ -170,7 +171,7 @@ const FeaturedCard: React.FC<{
         </View>
 
         <Text style={styles.featTitle} numberOfLines={2}>
-          {course.title}
+          {getCourseTitle(course)}
         </Text>
 
         <View style={styles.featInstructorRow}>
@@ -470,7 +471,7 @@ export const CoursesScreen: React.FC<Props> = ({ onCoursePress, onWatchVideo }) 
                 onDelete={isAdmin ? () => handleDeleteCourse(item.id) : undefined}
                 onEnroll={() => {
                   if (isEnrolled(item)) {
-                    if (onWatchVideo) onWatchVideo(item.id, 0);
+                    if (onWatchVideo) onWatchVideo(item.id, 0, getCourseTitle(item));
                     else onCoursePress(item.id);
                   } else if (item.price === 0 || (item as any).isFree) {
                     handleEnroll(item.id);

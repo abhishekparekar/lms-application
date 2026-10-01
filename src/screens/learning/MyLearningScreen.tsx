@@ -2,6 +2,7 @@ import { Colors } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/services/firebase/config';
 import { Course } from '@/services/lms/lmsService';
+import { getCourseTitle } from '@/services/lms/courseMaterialService';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
@@ -22,7 +23,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 
 interface MyLearningScreenProps {
-  onResumeCourse: (courseId: string) => void;
+  onResumeCourse: (courseId: string, courseTitle?: string) => void;
   onExploreCourses: () => void;
 }
 
@@ -352,7 +353,7 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
           return (
             <TouchableOpacity
               style={styles.courseCard}
-              onPress={() => onResumeCourse(item.id)}
+              onPress={() => onResumeCourse(item.id, getCourseTitle(item))}
               activeOpacity={0.92}
             >
               {/* ── Top Meta Row: Status Pill + Category ── */}
@@ -404,7 +405,7 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
 
                 <View style={styles.cardDetails}>
                   <Text style={styles.cardCourseTitle} numberOfLines={2}>
-                    {item.title}
+                    {getCourseTitle(item)}
                   </Text>
 
                   <View style={styles.instructorMetaRow}>
@@ -454,7 +455,7 @@ export const MyLearningScreen: React.FC<MyLearningScreenProps> = ({
                   ]}
                   onPress={(e) => {
                     e.stopPropagation();
-                    onResumeCourse(item.id);
+                    onResumeCourse(item.id, getCourseTitle(item));
                   }}
                   activeOpacity={0.85}
                 >

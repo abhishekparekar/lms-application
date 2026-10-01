@@ -40,7 +40,7 @@ interface AppNavigatorProps {
 type ScreenState =
   | { type: 'tabs' }
   | { type: 'course_details'; courseId: string }
-  | { type: 'video_player'; courseId: string; lessonIndex: number }
+  | { type: 'video_player'; courseId: string; lessonIndex: number; courseTitle?: string }
   | { type: 'test_series'; courseId: string; courseTitle?: string }
   | { type: 'job_details'; jobId: string }
   | { type: 'apply_job'; jobId: string }
@@ -407,7 +407,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
           initialTab={initialTab}
           onTabChange={(tab: any) => setInitialTab(tab)}
           onCoursePress={(id) => setScreen({ type: 'course_details', courseId: id })}
-          onWatchVideo={(cid, index) => setScreen({ type: 'video_player', courseId: cid, lessonIndex: index })}
+          onWatchVideo={(cid, index, title) => setScreen({ type: 'video_player', courseId: cid, lessonIndex: index, courseTitle: title })}
           onJobPress={(id) => setScreen({ type: 'job_details', jobId: id })}
           onSavedJobsPress={() => setScreen({ type: 'saved_jobs' })}
           onStartProfileBuilder={() => setScreen({ type: 'profile_builder', step: 1 })}
@@ -426,8 +426,8 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
         <CourseDetailsScreen
           courseId={screen.courseId}
           onBack={() => setScreen({ type: 'tabs' })}
-          onWatchVideo={(cid, index) =>
-            setScreen({ type: 'video_player', courseId: cid, lessonIndex: index })
+          onWatchVideo={(cid, index, title) =>
+            setScreen({ type: 'video_player', courseId: cid, lessonIndex: index, courseTitle: title })
           }
           onTakeTest={(cid, title) => setScreen({ type: 'test_series', courseId: cid, courseTitle: title })}
         />
@@ -438,6 +438,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
         <VideoPlayerScreen
           courseId={screen.courseId}
           lessonIndex={screen.lessonIndex}
+          initialCourseTitle={screen.courseTitle}
           onBack={() =>
             setScreen({ type: 'course_details', courseId: screen.courseId })
           }
